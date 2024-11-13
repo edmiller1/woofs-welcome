@@ -1,6 +1,6 @@
 import { db } from "../db";
 import { router } from "../__internals/router";
-import { publicProcedure } from "../procedures";
+import { privateProcedure, publicProcedure } from "../procedures";
 import { kindeClient, sessionManager } from "../kinde";
 import * as schema from "../db/schema";
 import { eq } from "drizzle-orm";
@@ -8,6 +8,28 @@ import { eq } from "drizzle-orm";
 export const dynamic = "force-dynamic";
 
 export const authRouter = router({
+  register: publicProcedure.query(async ({ c, ctx }) => {
+    const registerUrl = await kindeClient.register(sessionManager(c));
+    return c.redirect(registerUrl.toString());
+  }),
+  login: publicProcedure.query(async ({ c, ctx }) => {
+    const loginUrl = await kindeClient.login(sessionManager(c));
+    return c.redirect(loginUrl.toString());
+  }),
+  callback: publicProcedure.query(async ({ c, ctx }) => {
+    const url = new URL(c.req.url);
+    await kindeClient.handleRedirectToApp(sessionManager(c), url);
+    return c.redirect("/");
+  }),
+  logout: privateProcedure.query(async ({ c, ctx }) => {
+    const logoutUrl = await kindeClient.logout(sessionManager(c));
+    return c.redirect(logoutUrl.toString());
+  }),
+  currentUser: privateProcedure.query(async ({ c, ctx }) => {
+    const profile = await kindeClient.getUserProfile(sessionManager(c));
+
+    return c.json(profile);
+  }),
   getDatabaseSyncStatusForBusiness: publicProcedure.query(
     async ({ c, ctx }) => {
       const auth = await kindeClient.getUserProfile(sessionManager(c));

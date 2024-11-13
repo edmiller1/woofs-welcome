@@ -1,6 +1,6 @@
 import { Context, TypedResponse } from "hono";
 import { z } from "zod";
-import { StatusCode } from "hono/utils/http-status";
+import { RedirectStatusCode, StatusCode } from "hono/utils/http-status";
 import superjson from "superjson";
 import { Bindings } from "../env";
 import { Middleware, MutationOperation, QueryOperation } from "./types";
@@ -115,6 +115,9 @@ export class Procedure<ctx = {}> {
     }) =>
       | SuperJSONTypedResponse<Output>
       | Promise<SuperJSONTypedResponse<Output>>
+      | Promise<
+          Response & TypedResponse<undefined, RedirectStatusCode, "redirect">
+        >
   ): QueryOperation<{}, Output> {
     return {
       type: "query",
