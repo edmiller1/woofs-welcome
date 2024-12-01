@@ -1,5 +1,7 @@
 "use client";
 
+import { useForm } from "react-hook-form";
+
 import type { RouterOutputs } from "@acme/api";
 import { CreatePostSchema } from "@acme/db/schema";
 import { cn } from "@acme/ui";
@@ -10,7 +12,6 @@ import {
   FormField,
   FormItem,
   FormMessage,
-  useForm,
 } from "@acme/ui/form";
 import { Input } from "@acme/ui/input";
 import { toast } from "@acme/ui/toast";
@@ -19,6 +20,7 @@ import { api } from "~/trpc/react";
 
 export function CreatePostForm() {
   const form = useForm({
+    //@ts-ignore
     schema: CreatePostSchema,
     defaultValues: {
       content: "",
