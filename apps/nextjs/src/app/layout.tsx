@@ -3,7 +3,7 @@ import { GeistMono } from "geist/font/mono";
 import { GeistSans } from "geist/font/sans";
 
 import { cn } from "@acme/ui";
-import { ThemeProvider, ThemeToggle } from "@acme/ui/theme";
+import { ThemeProvider } from "@acme/ui/theme";
 import { Toaster } from "@acme/ui/toast";
 
 import { TRPCReactProvider } from "~/trpc/react";
@@ -18,13 +18,13 @@ export const metadata: Metadata = {
       ? "https://turbo.t3.gg"
       : "http://localhost:3000",
   ),
-  title: "Create T3 Turbo",
-  description: "Simple monorepo with shared backend for web & mobile apps",
+  title: "Woofs Welcome",
+  description: "Discover NZ's most Dog-Friendly places.",
   openGraph: {
-    title: "Create T3 Turbo",
-    description: "Simple monorepo with shared backend for web & mobile apps",
+    title: "Woofs Welcome",
+    description: "Discover NZ's most Dog-Friendly places.",
     url: "https://create-t3-turbo.vercel.app",
-    siteName: "Create T3 Turbo",
+    siteName: "Woofs Welcome",
   },
   twitter: {
     card: "summary_large_image",
@@ -40,7 +40,11 @@ export const viewport: Viewport = {
   ],
 };
 
-export default function RootLayout(props: { children: React.ReactNode }) {
+export default function RootLayout({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
   return (
     <html lang="en" suppressHydrationWarning>
       <body
@@ -50,11 +54,11 @@ export default function RootLayout(props: { children: React.ReactNode }) {
           GeistMono.variable,
         )}
       >
-        <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
-          <TRPCReactProvider>{props.children}</TRPCReactProvider>
-          <div className="absolute bottom-4 right-4">
+        <ThemeProvider attribute="class" defaultTheme="light" enableSystem>
+          <TRPCReactProvider>{children}</TRPCReactProvider>
+          {/* <div className="absolute bottom-4 right-4">
             <ThemeToggle />
-          </div>
+          </div> */}
           <Toaster />
         </ThemeProvider>
       </body>

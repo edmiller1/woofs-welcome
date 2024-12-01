@@ -12,6 +12,9 @@ export default [
       ...nextPlugin.configs["core-web-vitals"].rules,
       // TypeError: context.getAncestors is not a function
       "@next/next/no-duplicate-head": "off",
+      "@typescript-eslint/no-unnecessary-condition": "off",
+      "@typescript-eslint/no-empty-object-type": "off",
+      "@typescript-eslint/prefer-optional-chain": "off",
     },
   },
 ];
