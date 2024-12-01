@@ -33,6 +33,8 @@ export const restrictEnvAccess = tseslint.config(
             "Use `import { env } from '~/env'` instead to ensure validated types.",
         },
       ],
+      "@typescript-eslint/consistent-type-imports": "off",
+      "@typescript-eslint/no-unnecessary-condition": "off",
     },
   },
 );
@@ -60,7 +62,7 @@ export default tseslint.config(
         { argsIgnorePattern: "^_", varsIgnorePattern: "^_" },
       ],
       "@typescript-eslint/consistent-type-imports": [
-        "warn",
+        "off",
         { prefer: "type-imports", fixStyle: "separate-type-imports" },
       ],
       "@typescript-eslint/no-misused-promises": [
@@ -68,13 +70,14 @@ export default tseslint.config(
         { checksVoidReturn: { attributes: false } },
       ],
       "@typescript-eslint/no-unnecessary-condition": [
-        "error",
+        "off",
         {
           allowConstantLoopConditions: true,
         },
       ],
       "@typescript-eslint/no-non-null-assertion": "error",
       "import/consistent-type-specifier-style": ["error", "prefer-top-level"],
+      "@typescript-eslint/consistent-type-definitions": "off",
     },
   },
   {

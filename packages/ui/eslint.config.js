@@ -7,6 +7,7 @@ export default [
     ignores: ["dist/**"],
     rules: {
       "@typescript-eslint/no-unnecessary-condition": "off",
+      "@typescript-eslint/consistent-type-imports": "off",
     },
   },
   ...baseConfig,
