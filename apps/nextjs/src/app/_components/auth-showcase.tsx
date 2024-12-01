@@ -11,6 +11,15 @@ export async function AuthShowcase() {
           size="lg"
           formAction={async () => {
             "use server";
+            await signIn("google");
+          }}
+        >
+          Google
+        </Button>
+        <Button
+          size="lg"
+          formAction={async () => {
+            "use server";
             await signIn("discord");
           }}
         >
