@@ -1,6 +1,8 @@
 import type { TRPCRouterRecord } from "@trpc/server";
 
 import { invalidateSessionToken } from "@acme/auth";
+import { eq } from "@acme/db";
+import { User } from "@acme/db/schema";
 
 import { protectedProcedure, publicProcedure } from "../trpc";
 
@@ -17,5 +19,30 @@ export const authRouter = {
     }
     await invalidateSessionToken(opts.ctx.token);
     return { success: true };
+  }),
+  getDatabaseSyncStatusForBusiness: publicProcedure.query(async ({ ctx }) => {
+    const auth = ctx.session;
+
+    if (!auth) {
+      return { isSynced: false };
+    }
+
+    const user = await ctx.db.query.User.findFirst({
+      where: eq(User.id, auth.user.id),
+    });
+
+    console.log("USER IN DB:", user);
+
+    if (!user) {
+      await ctx.db.update(User).set({
+        name: auth.user.name,
+        image: auth.user.image,
+        email: auth.user.email!,
+        isBusiness: true,
+        businessName: "",
+      });
+    }
+
+    return { isSynced: true };
   }),
 } satisfies TRPCRouterRecord;

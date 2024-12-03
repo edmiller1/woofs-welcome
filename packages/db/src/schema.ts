@@ -1,7 +1,22 @@
 import { relations, sql } from "drizzle-orm";
-import { pgTable, primaryKey } from "drizzle-orm/pg-core";
+import { pgEnum, pgTable, primaryKey } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
+
+export const planEnum = pgEnum("plan", ["none", "starter", "pro"]);
+export const listingTypeEnum = pgEnum("listing_type", [
+  "event",
+  "advertisement",
+  "store",
+  "cafè",
+  "restaurant",
+  "bar",
+  "beach",
+  "walk",
+  "activity",
+  "hike",
+  "park",
+]);
 
 export const Post = pgTable("post", (t) => ({
   id: t.uuid().notNull().primaryKey().defaultRandom(),
@@ -13,14 +28,95 @@ export const Post = pgTable("post", (t) => ({
     .$onUpdateFn(() => sql`now()`),
 }));
 
-export const CreatePostSchema = createInsertSchema(Post, {
-  title: z.string().max(256),
-  content: z.string().max(256),
-}).omit({
-  id: true,
-  createdAt: true,
-  updatedAt: true,
-});
+export const Listing = pgTable("listing", (t) => ({
+  id: t.uuid().notNull().primaryKey().defaultRandom(),
+  title: t.varchar({ length: 255 }).notNull(),
+  description: t.varchar({ length: 255 }).notNull(),
+  address: t.varchar({ length: 255 }).notNull(),
+  city: t.varchar({ length: 255 }).notNull(),
+  region: t.varchar({ length: 255 }).notNull(),
+  country: t.varchar({ length: 255 }).notNull(),
+  website: t.varchar({ length: 255 }).notNull(),
+  instagram: t.varchar({ length: 255 }),
+  facebook: t.varchar({ length: 255 }),
+  type: listingTypeEnum().array().notNull(),
+  userId: t
+    .uuid()
+    .notNull()
+    .references(() => User.id, { onDelete: "cascade" }),
+  createdAt: t.timestamp().defaultNow().notNull(),
+  updatedAt: t
+    .timestamp({ mode: "date", withTimezone: true })
+    .$onUpdateFn(() => sql`now()`),
+}));
+
+export const ListingImages = pgTable("listing_images", (t) => ({
+  id: t.uuid().notNull().primaryKey().defaultRandom(),
+  imageUrl: t.varchar({ length: 255 }).notNull(),
+  listingId: t
+    .uuid()
+    .notNull()
+    .references(() => Listing.id, { onDelete: "cascade" }),
+}));
+
+export const Event = pgTable("event", (t) => ({
+  id: t.uuid().notNull().primaryKey().defaultRandom(),
+  title: t.varchar({ length: 255 }).notNull(),
+  description: t.varchar({ length: 255 }).notNull(),
+  startDate: t.timestamp({ mode: "date", withTimezone: true }).notNull(),
+  endDate: t.timestamp({ mode: "date", withTimezone: true }).notNull(),
+  address: t.varchar({ length: 255 }).notNull(),
+  city: t.varchar({ length: 255 }).notNull(),
+  region: t.varchar({ length: 255 }).notNull(),
+  country: t.varchar({ length: 255 }).notNull(),
+  website: t.varchar({ length: 255 }).notNull(),
+  instagram: t.varchar({ length: 255 }),
+  facebook: t.varchar({ length: 255 }),
+  type: listingTypeEnum().default("event").notNull(),
+  userId: t
+    .uuid()
+    .notNull()
+    .references(() => User.id, { onDelete: "cascade" }),
+  createdAt: t.timestamp().defaultNow().notNull(),
+  updatedAt: t
+    .timestamp({ mode: "date", withTimezone: true })
+    .$onUpdateFn(() => sql`now()`),
+}));
+
+export const EventImages = pgTable("event_images", (t) => ({
+  id: t.uuid().notNull().primaryKey().defaultRandom(),
+  imageUrl: t.varchar({ length: 255 }).notNull(),
+  eventId: t
+    .uuid()
+    .notNull()
+    .references(() => Event.id, { onDelete: "cascade" }),
+}));
+
+export const OpeningHours = pgTable("opening_hours", (t) => ({
+  id: t.uuid().notNull().primaryKey().defaultRandom(),
+  day: t.integer().notNull(),
+  startTime: t.varchar({ length: 255 }).notNull(),
+  endTime: t.varchar({ length: 255 }).notNull(),
+  eventId: t.uuid().references(() => Event.id, { onDelete: "cascade" }),
+  listingId: t.uuid().references(() => Listing.id, { onDelete: "cascade" }),
+}));
+
+export const Advertisement = pgTable("advertisement", (t) => ({
+  id: t.uuid().notNull().primaryKey().defaultRandom(),
+  title: t.varchar({ length: 255 }).notNull(),
+  description: t.varchar({ length: 255 }).notNull(),
+  imageUrl: t.varchar({ length: 255 }).notNull(),
+  link: t.varchar({ length: 255 }).notNull(),
+  type: listingTypeEnum().default("advertisement").notNull(),
+  userId: t
+    .uuid()
+    .notNull()
+    .references(() => User.id, { onDelete: "cascade" }),
+  createdAt: t.timestamp().defaultNow().notNull(),
+  updatedAt: t
+    .timestamp({ mode: "date", withTimezone: true })
+    .$onUpdateFn(() => sql`now()`),
+}));
 
 export const User = pgTable("user", (t) => ({
   id: t.uuid().notNull().primaryKey().defaultRandom(),
@@ -28,10 +124,9 @@ export const User = pgTable("user", (t) => ({
   email: t.varchar({ length: 255 }).notNull(),
   emailVerified: t.timestamp({ mode: "date", withTimezone: true }),
   image: t.varchar({ length: 255 }),
-}));
-
-export const UserRelations = relations(User, ({ many }) => ({
-  accounts: many(Account),
+  isBusiness: t.boolean(),
+  businessName: t.varchar({ length: 255 }),
+  plan: planEnum().default("none"),
 }));
 
 export const Account = pgTable(
@@ -62,10 +157,6 @@ export const Account = pgTable(
   }),
 );
 
-export const AccountRelations = relations(Account, ({ one }) => ({
-  user: one(User, { fields: [Account.userId], references: [User.id] }),
-}));
-
 export const Session = pgTable("session", (t) => ({
   sessionToken: t.varchar({ length: 255 }).notNull().primaryKey(),
   userId: t
@@ -75,6 +166,76 @@ export const Session = pgTable("session", (t) => ({
   expires: t.timestamp({ mode: "date", withTimezone: true }).notNull(),
 }));
 
+//RELATIONS
+
+export const AccountRelations = relations(Account, ({ one }) => ({
+  user: one(User, { fields: [Account.userId], references: [User.id] }),
+}));
+
 export const SessionRelations = relations(Session, ({ one }) => ({
   user: one(User, { fields: [Session.userId], references: [User.id] }),
 }));
+
+export const ListingRelations = relations(Listing, ({ many, one }) => ({
+  images: many(ListingImages),
+  user: one(User, { fields: [Listing.userId], references: [User.id] }),
+  openingHours: many(OpeningHours),
+}));
+
+export const ListingImagesRelations = relations(ListingImages, ({ one }) => ({
+  listing: one(Listing, {
+    fields: [ListingImages.listingId],
+    references: [Listing.id],
+  }),
+}));
+
+export const EventRelations = relations(Event, ({ many, one }) => ({
+  images: many(EventImages),
+  user: one(User, { fields: [Event.userId], references: [User.id] }),
+  openingHours: many(OpeningHours),
+}));
+
+export const EventImagesRelations = relations(EventImages, ({ one }) => ({
+  event: one(Event, {
+    fields: [EventImages.eventId],
+    references: [Event.id],
+  }),
+}));
+
+export const AdvertisementRelations = relations(Advertisement, ({ one }) => ({
+  user: one(User, { fields: [Advertisement.userId], references: [User.id] }),
+}));
+
+export const UserRelations = relations(User, ({ many }) => ({
+  accounts: many(Account),
+  listings: many(Listing),
+  events: many(Event),
+  advertisements: many(Advertisement),
+}));
+
+//SCHEMAS
+
+export const CreatePostSchema = createInsertSchema(Post, {
+  title: z.string().max(256),
+  content: z.string().max(256),
+}).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export const CreateListingSchema = createInsertSchema(Listing, {
+  title: z.string().max(256),
+  description: z.string().max(256),
+  address: z.string().max(256),
+  city: z.string().max(256),
+  region: z.string().max(256),
+  country: z.string().max(256),
+  website: z.string().max(256),
+  instagram: z.string().max(256),
+  facebook: z.string().max(256),
+}).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
