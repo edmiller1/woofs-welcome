@@ -124,7 +124,7 @@ export const Locality = pgTable(
 );
 
 export const Review = pgTable(
-  "reviews",
+  "review",
   {
     id: uuid("id").primaryKey().defaultRandom(),
     placeId: uuid("place_id")
@@ -150,7 +150,7 @@ export const Review = pgTable(
 );
 
 export const Favourite = pgTable(
-  "favorites",
+  "favourite",
   {
     id: uuid("id").primaryKey().defaultRandom(),
     userId: uuid("user_id")
