@@ -4,6 +4,7 @@
     "dev": "bun run --hot src/index.ts"
   },
   "dependencies": {
+    "@hono/zod-validator": "^0.5.0",
     "@types/react": "^19.1.2",
     "dotenv": "^16.5.0",
     "drizzle-orm": "^0.43.1",
@@ -12,7 +13,8 @@
     "react": "^19.1.0",
     "react-dom": "^19.1.0",
     "react-email": "^4.0.11",
-    "resend": "^4.5.0"
+    "resend": "^4.5.0",
+    "zod": "^3.24.3"
   },
   "devDependencies": {
     "@types/bun": "latest",
