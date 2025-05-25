@@ -5,6 +5,8 @@
   },
   "dependencies": {
     "@hono/zod-validator": "^0.5.0",
+    "@react-email/components": "^0.0.41",
+    "@supabase/supabase-js": "^2.49.8",
     "@types/react": "^19.1.2",
     "dotenv": "^16.5.0",
     "drizzle-orm": "^0.43.1",

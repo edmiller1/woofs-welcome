@@ -9,6 +9,7 @@ import config from "@/lib/config";
 import { createClient } from "@/lib/supabase/client";
 import { cn } from "@/lib/utils";
 import { Loader2 } from "lucide-react";
+import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { toast } from "sonner";
 
@@ -17,6 +18,7 @@ export const SignInForm = ({
   ...props
 }: React.ComponentPropsWithoutRef<"form">) => {
   const supabase = createClient();
+  const router = useRouter();
 
   const [signInEmail, setSignInEmail] = useState<string>("");
   const [isLoading, setIsLoading] = useState<boolean>(false);
@@ -65,6 +67,24 @@ export const SignInForm = ({
             duration: 10000,
           }
         );
+        setTimeout(() => {
+          const promise = () =>
+            new Promise((resolve) =>
+              setTimeout(() => resolve({ name: "Sonner" }), 2000)
+            );
+          router.push(
+            `${config.domainName}/verify-otp?email=${encodeURIComponent(
+              signInEmail
+            )}`
+          );
+          toast.promise(promise, {
+            loading: "Loading...",
+            success: () => {
+              return "Redirecting to verification page... ";
+            },
+            error: "Error",
+          });
+        }, 3000);
       }
     } catch (error) {
       console.log(error);
@@ -113,7 +133,7 @@ export const SignInForm = ({
         </form>
         <div className="space-y-4">
           <div className="mt-3 relative text-center text-sm after:absolute after:inset-0 after:top-1/2 after:z-0 after:flex after:items-center after:border-t after:border-border">
-            <span className="relative z-10 bg-white px-2 text-muted-foreground dark:bg-background">
+            <span className="relative z-10 bg-card px-2 text-muted-foreground">
               Or continue with
             </span>
           </div>

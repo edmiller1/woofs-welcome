@@ -42,6 +42,8 @@ export const OtpForm = ({ searchParams }: Props) => {
   const router = useRouter();
   const [otpLoading, setOtpLoading] = useState<boolean>(false);
 
+  console.log(searchParams);
+
   const form = useForm<z.infer<typeof FormSchema>>({
     resolver: zodResolver(FormSchema),
     defaultValues: {
@@ -61,7 +63,7 @@ export const OtpForm = ({ searchParams }: Props) => {
     setOtpLoading(true);
 
     try {
-      const { data, error } = await supabase.auth.verifyOtp({
+      const { error } = await supabase.auth.verifyOtp({
         email: searchParams.email as string,
         token: values.pin,
         type: "email",
@@ -74,7 +76,9 @@ export const OtpForm = ({ searchParams }: Props) => {
         return;
       }
 
-      router.push(`${config.domainName}/auth/callback`);
+      router.push(`${config.domainName}/welcome`);
+      toast.success("Verification successful! Redirecting...");
+      router.refresh();
     } catch (error) {
       console.error("Error during verification:", error);
       toast.error("Something went wrong. Please try again.");

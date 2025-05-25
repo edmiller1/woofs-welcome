@@ -30,7 +30,8 @@ authRouter.post("/create", authMiddleware, async (c) => {
         email: auth.email!,
         fullName: auth.user_metadata.full_name
           ? auth.user_metadata.full_name
-          : auth.user_metadata.firstname + " " + auth.user_metadata.lastname,
+          : auth.user_metadata.firstname + " " + auth.user_metadata.lastname ||
+            "",
         avatarUrl: auth.user_metadata.avatar_url,
         provider: auth.identities?.[0].provider ?? "",
         isAdmin: false,
@@ -43,7 +44,7 @@ authRouter.post("/create", authMiddleware, async (c) => {
 
       // Send welcome email
       const { error } = await resend.emails.send({
-        from: "Christmas Lights App <hello@christmaslightsapp.com>",
+        from: "Woofs Welcome <hello@woofswelcome.app>",
         to: auth.email!,
         subject: "Welcome",
         react: <Welcome />,
