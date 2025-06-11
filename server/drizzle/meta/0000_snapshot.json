@@ -1,5 +1,5 @@
 {
-  "id": "28f6f80b-3cf7-4b17-89de-9b657d8eaf9b",
+  "id": "df1825f1-063d-4840-8ae7-72cb9b3fbdac",
   "prevId": "00000000-0000-0000-0000-000000000000",
   "version": "7",
   "dialect": "postgresql",
@@ -198,8 +198,8 @@
       "checkConstraints": {},
       "isRLSEnabled": false
     },
-    "public.favorites": {
-      "name": "favorites",
+    "public.favourite": {
+      "name": "favourite",
       "schema": "",
       "columns": {
         "id": {
@@ -231,9 +231,9 @@
       },
       "indexes": {},
       "foreignKeys": {
-        "favorites_user_id_user_id_fk": {
-          "name": "favorites_user_id_user_id_fk",
-          "tableFrom": "favorites",
+        "favourite_user_id_user_id_fk": {
+          "name": "favourite_user_id_user_id_fk",
+          "tableFrom": "favourite",
           "tableTo": "user",
           "columnsFrom": [
             "user_id"
@@ -244,9 +244,9 @@
           "onDelete": "cascade",
           "onUpdate": "no action"
         },
-        "favorites_place_id_place_id_fk": {
-          "name": "favorites_place_id_place_id_fk",
-          "tableFrom": "favorites",
+        "favourite_place_id_place_id_fk": {
+          "name": "favourite_place_id_place_id_fk",
+          "tableFrom": "favourite",
           "tableTo": "place",
           "columnsFrom": [
             "place_id"
@@ -260,8 +260,8 @@
       },
       "compositePrimaryKeys": {},
       "uniqueConstraints": {
-        "favorites_user_id_place_id_unique": {
-          "name": "favorites_user_id_place_id_unique",
+        "favourite_user_id_place_id_unique": {
+          "name": "favourite_user_id_place_id_unique",
           "nullsNotDistinct": false,
           "columns": [
             "user_id",
@@ -398,7 +398,7 @@
         },
         "type": {
           "name": "type",
-          "type": "text",
+          "type": "text[]",
           "primaryKey": false,
           "notNull": true
         },
@@ -729,8 +729,8 @@
       "checkConstraints": {},
       "isRLSEnabled": false
     },
-    "public.reviews": {
-      "name": "reviews",
+    "public.review": {
+      "name": "review",
       "schema": "",
       "columns": {
         "id": {
@@ -800,9 +800,9 @@
       },
       "indexes": {},
       "foreignKeys": {
-        "reviews_place_id_place_id_fk": {
-          "name": "reviews_place_id_place_id_fk",
-          "tableFrom": "reviews",
+        "review_place_id_place_id_fk": {
+          "name": "review_place_id_place_id_fk",
+          "tableFrom": "review",
           "tableTo": "place",
           "columnsFrom": [
             "place_id"
@@ -813,9 +813,9 @@
           "onDelete": "cascade",
           "onUpdate": "no action"
         },
-        "reviews_user_id_place_id_fk": {
-          "name": "reviews_user_id_place_id_fk",
-          "tableFrom": "reviews",
+        "review_user_id_place_id_fk": {
+          "name": "review_user_id_place_id_fk",
+          "tableFrom": "review",
           "tableTo": "place",
           "columnsFrom": [
             "user_id"
@@ -829,8 +829,8 @@
       },
       "compositePrimaryKeys": {},
       "uniqueConstraints": {
-        "reviews_user_id_place_id_unique": {
-          "name": "reviews_user_id_place_id_unique",
+        "review_user_id_place_id_unique": {
+          "name": "review_user_id_place_id_unique",
           "nullsNotDistinct": false,
           "columns": [
             "user_id",

@@ -1,6 +1,6 @@
 {
-  "id": "e542a177-6cd5-4709-b4db-78addec08f2c",
-  "prevId": "28f6f80b-3cf7-4b17-89de-9b657d8eaf9b",
+  "id": "f1f8eae9-d372-460a-8ca2-fc672e3f463f",
+  "prevId": "df1825f1-063d-4840-8ae7-72cb9b3fbdac",
   "version": "7",
   "dialect": "postgresql",
   "tables": {
@@ -398,7 +398,7 @@
         },
         "type": {
           "name": "type",
-          "type": "text",
+          "type": "text[]",
           "primaryKey": false,
           "notNull": true
         },
@@ -583,6 +583,59 @@
           ]
         }
       },
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.place_image": {
+      "name": "place_image",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "place_id": {
+          "name": "place_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "url": {
+          "name": "url",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "index": {
+          "name": "index",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 0
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "place_image_place_id_place_id_fk": {
+          "name": "place_image_place_id_place_id_fk",
+          "tableFrom": "place_image",
+          "tableTo": "place",
+          "columnsFrom": [
+            "place_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
       "policies": {},
       "checkConstraints": {},
       "isRLSEnabled": false

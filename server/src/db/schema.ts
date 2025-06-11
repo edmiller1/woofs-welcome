@@ -13,6 +13,7 @@ import {
   unique,
 } from "drizzle-orm/pg-core";
 import { relations } from "drizzle-orm";
+import { index } from "drizzle-orm/gel-core";
 
 export const User = pgTable(
   "user",
@@ -47,7 +48,7 @@ export const Place = pgTable("place", {
   id: uuid("id").primaryKey().defaultRandom(),
   name: text("name").notNull(),
   slug: text("slug").unique().notNull(),
-  type: text("type").notNull(), // park, restaurant, hotel, store, etc.
+  type: text("type").array().notNull(), // park, restaurant, hotel, store, etc.
   description: text("description"),
   // Location references
   localityId: uuid("locality_id").references(() => Locality.id),
@@ -77,6 +78,15 @@ export const Place = pgTable("place", {
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
+
+export const PlaceImages = pgTable("place_image", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  placeId: uuid("place_id")
+    .notNull()
+    .references(() => Place.id, { onDelete: "cascade" }),
+  url: text("url").notNull(),
+  index: integer("index").notNull().default(0), // Order of images
+})
 
 export const Region = pgTable("region", {
   id: uuid("id").primaryKey().defaultRandom(),
@@ -257,6 +267,9 @@ export const placeRelations = relations(Place, ({ one, many }) => ({
   favorites: many(Favourite),
   claims: many(Claim),
   placeTags: many(PlaceTag),
+  images: many(PlaceImages),
+  tags: many(Tag),
+  region: one(Region),
 }));
 
 export const reviewRelations = relations(Review, ({ one }) => ({
@@ -308,6 +321,13 @@ export const placeTagsRelations = relations(PlaceTag, ({ one }) => ({
   tag: one(Tag, {
     fields: [PlaceTag.tagId],
     references: [Tag.id],
+  }),
+}));
+
+export const placeImagesRelations = relations(PlaceImages, ({ one }) => ({
+  place: one(Place, {
+    fields: [PlaceImages.placeId],
+    references: [Place.id],
   }),
 }));
 
