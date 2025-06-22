@@ -1,0 +1,1 @@
+export {default as WelcomeLoader} from './welcome-loader.svelte';

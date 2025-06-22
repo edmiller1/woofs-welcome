@@ -15,6 +15,8 @@ authRouter.post("/create", authMiddleware, async (c) => {
   try {
     const auth = c.get("user");
 
+    console.log(auth);
+
     if (!auth) {
       return c.json({ error: "Unauthorized", isSynced: false }, 401);
     }
@@ -66,7 +68,7 @@ authRouter.post("/create", authMiddleware, async (c) => {
       redirectUrl:
         process.env.NODE_ENV === "production"
           ? `www.woofs-welcome.app${route}`
-          : `http://localhost:3000${route}`,
+          : `http://localhost:5173${route}`,
       isSynced: true,
     };
 

@@ -16,6 +16,8 @@ declare module "hono" {
 export const authMiddleware = async (c: Context, next: Next) => {
   const authHeader = c.req.header("Authorization");
 
+  console.log(authHeader)
+
   if (!authHeader) {
     return c.json({ error: "Unauthorized" }, 401);
   }

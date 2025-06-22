@@ -13,7 +13,7 @@ app.use(
   cors({
     origin:
       process.env.NODE_ENV === "development"
-        ? "http://localhost:3000"
+        ? "http://localhost:5173"
         : "your-production-domain",
     maxAge: 86400, // Cache preflight request results for 24 hours
     allowMethods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
