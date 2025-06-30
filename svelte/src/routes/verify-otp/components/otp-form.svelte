@@ -1,10 +1,10 @@
 <script lang="ts">
 	import { goto } from '$app/navigation';
-	import { Button, buttonVariants } from '$lib/components/ui/button';
-	import { FormControl, FormLabel } from '$lib/components/ui/form';
+	import { auth } from '$lib/auth/stores';
+	import { Button } from '$lib/components/ui/button';
+	import { FormControl } from '$lib/components/ui/form';
 	import FormFieldErrors from '$lib/components/ui/form/form-field-errors.svelte';
 	import FormField from '$lib/components/ui/form/form-field.svelte';
-	import { Input } from '$lib/components/ui/input';
 	import {
 		InputOTP,
 		InputOTPGroup,
@@ -12,22 +12,21 @@
 		InputOTPSlot
 	} from '$lib/components/ui/input-otp';
 	import { Loader2 } from '@lucide/svelte';
-	import type { SupabaseClient } from '@supabase/supabase-js';
 	import { toast } from 'svelte-sonner';
 	import { defaults, superForm } from 'sveltekit-superforms';
 	import { zod4 } from 'sveltekit-superforms/adapters';
-	import { z } from 'zod/v4';
+	import { email, z } from 'zod/v4';
 
 	interface Props {
 		searchParams: {
 			[key: string]: string | string[] | undefined;
 		};
-		supabase: SupabaseClient;
 	}
 
-	let { searchParams, supabase }: Props = $props();
+	let { searchParams }: Props = $props();
 
-	let loading: boolean = $state(false);
+	let loading = $state<boolean>(false);
+	let cooldownSeconds = $state<number>(0);
 
 	const formSchema = z.object({
 		pin: z
@@ -56,47 +55,51 @@
 	});
 
 	const verifyPin = async (pin: string) => {
-		try {
-			const { error } = await supabase.auth.verifyOtp({
-				email: searchParams.email as string,
-				token: pin,
-				type: 'email'
-			});
+		if (loading) return;
 
-			if (error) {
-				loading = false;
-				throw error;
-			} else {
-				toast.success('OTP verified successfully! Redirecting...');
-				setTimeout(() => {
-					goto('/welcome', { keepFocus: true });
-				}, 3000);
+		try {
+			const result = await auth.verifyOtp(searchParams.email as string, pin);
+
+			if (result.error) {
+				toast.error(result.error.message || 'Failed to verify code');
+				formData.set({ pin: '' });
+				return;
 			}
+
+			toast.success('Code verified successfully!');
+			goto('/');
 		} catch (error) {
-			console.error('Error verifying OTP:', error);
-			toast.error('Failed to verify OTP. Please try again.');
+			console.error('OTP verification error: ', error);
+			toast.error('Failed to verify code. Please try again.');
+			formData.set({ pin: '' });
 		} finally {
 			loading = false;
 		}
 	};
 
 	const requestNewCode = async () => {
-		try {
-			const { error } = await supabase.auth.signInWithOtp({
-				email: searchParams.email as string,
-				options: {
-					shouldCreateUser: false
-				}
-			});
+		if (cooldownSeconds > 0) return;
 
-			if (error) {
-				toast.error('Failed to get new code. Please try again.');
-			} else {
-				toast.success('New code sent! Please check your email.');
+		try {
+			const result = await auth.resendOTP(searchParams.email as string, 'sign-in');
+
+			if (result.error) {
+				toast.error('Failed to send new code');
+				return;
 			}
+
+			toast.success('New verification code sent!');
+
+			cooldownSeconds = 60;
+			const interval = setInterval(() => {
+				cooldownSeconds--;
+				if (cooldownSeconds <= 0) {
+					clearInterval(interval);
+				}
+			}, 1000);
 		} catch (error) {
 			console.error('Error requesting new code:', error);
-			toast.error('Failed to request new code. Please try again.');
+			toast.error('Failed to request new code');
 		}
 	};
 </script>
@@ -116,10 +119,12 @@
 			</p>
 			<p>
 				Didn't receive a code?
-				<Button variant="link" onclick={requestNewCode}>Request a new code</Button>
+				<Button variant="link" onclick={requestNewCode} disabled={cooldownSeconds > 0}>
+					{cooldownSeconds > 0 ? `Request new code (${cooldownSeconds}s)` : 'Request a new code'}
+				</Button>
 			</p>
 			<p class="text-muted-foreground mt-5 text-sm">
-				Note: A new code can only be requested every 60 seconds. Codes are only valid for 1 hour.
+				Note: A new code can only be requested every 60 seconds. Codes are only valid for 5 minutes.
 			</p>
 			<div class="mt-10 flex items-center justify-center">
 				<div>
@@ -150,7 +155,7 @@
 							<Button variant="outline" onclick={() => form.reset()} disabled={loading}>
 								Clear
 							</Button>
-							<Button type="submit" disabled={loading}>Verify</Button>
+							<Button type="submit" disabled={loading || $formData.pin.length !== 6}>Verify</Button>
 						</div>
 					</form>
 				</div>

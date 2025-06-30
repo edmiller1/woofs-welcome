@@ -1,44 +1,45 @@
 import { Context, Next } from "hono";
-import { createClient, User as supabaseUser } from "@supabase/supabase-js";
 import { db } from "../db";
 import { eq } from "drizzle-orm";
-import { supabaseClient } from "../supabase";
-import { User } from "../db/schema";
+import { user as User } from "../db/schema";
+import { Session, User as betterAuthUser  } from "better-auth/types";
+import { auth } from "../lib/auth";
 
 declare module "hono" {
   interface ContextVariableMap {
-    user: supabaseUser;
-    userId: string;
+    user: betterAuthUser | null;
+    session: Session | null;
   }
 }
 
 // Authentication middleware
 export const authMiddleware = async (c: Context, next: Next) => {
-  const authHeader = c.req.header("Authorization");
+  const session = await auth.api.getSession({
+    headers: c.req.raw.headers,
+  });
 
-  console.log(authHeader)
-
-  if (!authHeader) {
+   if (!session) {
     return c.json({ error: "Unauthorized" }, 401);
-  }
+  };
 
-  try {
-    const {
-      data: { user },
-      error,
-    } = await supabaseClient.auth.getUser(authHeader.replace("Bearer ", ""));
-
-    if (error || !user) {
-      return c.json({ error: "Invalid token" }, 401);
-    }
-
-    // Add user to context
-    c.set("user", user);
-    await next();
-  } catch (err) {
-    return c.json({ error: "Internal server error" }, 500);
-  }
+  c.set("user", session.user);
+  c.set("session", session.session);
+  await next();
 };
+
+export const optionalAuthMiddleware = async (c: Context, next: Next) => {
+  const session = await auth.api.getSession({ headers: c.req.raw.headers });
+ 
+  	if (!session) {
+    	c.set("user", null);
+    	c.set("session", null);
+    	return next();
+  	}
+ 
+  	c.set("user", session.user);
+  	c.set("session", session.session);
+  	return next();
+}
 
 // Business account middleware - simplified for MVP
 export const businessMiddleware = async (c: Context, next: Next) => {
@@ -48,8 +49,8 @@ export const businessMiddleware = async (c: Context, next: Next) => {
     return c.json({ error: "Unauthorized" }, 401);
   }
 
-  const user = await db.query.User.findFirst({
-    where: eq(User.externalId, auth.id),
+  const user = await db.query.user.findFirst({
+    where: eq(User.id, auth.id),
   });
 
   if (!user) {
@@ -73,30 +74,4 @@ export const businessMiddleware = async (c: Context, next: Next) => {
   }
 
   await next();
-};
-
-export const optionalAuthMiddleware = async (c: Context, next: Next) => {
-  const authHeader = c.req.header("Authorization");
-
-  if (!authHeader) {
-    await next();
-    return;
-  }
-
-  try {
-    const {
-      data: { user },
-      error,
-    } = await supabaseClient.auth.getUser(authHeader.replace("Bearer ", ""));
-
-    if (error || !user) {
-      await next();
-      return;
-    }
-    c.set("user", user);
-    await next();
-  } catch (err) {
-    console.log(err);
-    await next();
-  }
 };

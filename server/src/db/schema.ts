@@ -1,6 +1,5 @@
 import {
   pgTable,
-  serial,
   text,
   uuid,
   varchar,
@@ -13,16 +12,15 @@ import {
   unique,
 } from "drizzle-orm/pg-core";
 import { relations } from "drizzle-orm";
-import { index } from "drizzle-orm/gel-core";
 
-export const User = pgTable(
+export const user = pgTable(
   "user",
   {
-    id: uuid("id").primaryKey().notNull().defaultRandom(),
-    externalId: text("external_id").notNull(),
-    fullName: text("full_name"),
-    email: varchar("email", { length: 255 }).notNull(),
-    avatarUrl: text("avatar_url"),
+    id: text('id').primaryKey(),
+    name: text('name').notNull(),
+    email: text('email').notNull().unique(),
+    emailVerified: boolean('email_verified').$defaultFn(() => false).notNull(),
+    image: text("image"),
     provider: varchar("provider", { length: 255 }),
     isAdmin: boolean("is_admin").default(false),
     isBusinessAccount: boolean("is_business_account").default(false),
@@ -35,8 +33,8 @@ export const User = pgTable(
     verified: boolean("is_verified").default(false),
     subscriptionTier: text("subscription_tier"),
     subscriptionExpiresAt: timestamp("subscription_expires_at"),
-    createdAt: timestamp("created_at").defaultNow().notNull(),
-    updatedAt: timestamp("updated_at").defaultNow().notNull(),
+    createdAt: timestamp('created_at').$defaultFn(() => /* @__PURE__ */ new Date()).notNull(),
+    updatedAt: timestamp('updated_at').$defaultFn(() => /* @__PURE__ */ new Date()).notNull(),
     emailNotifications: boolean("email_notifications").default(true),
   },
   (table) => ({
@@ -44,14 +42,50 @@ export const User = pgTable(
   })
 );
 
-export const Place = pgTable("place", {
+export const session = pgTable("session", {
+  id: text('id').primaryKey(),
+  expiresAt: timestamp('expires_at').notNull(),
+  token: text('token').notNull().unique(),
+  createdAt: timestamp('created_at').notNull(),
+  updatedAt: timestamp('updated_at').notNull(),
+  ipAddress: text('ip_address'),
+  userAgent: text('user_agent'),
+  userId: text('user_id').notNull().references(()=> user.id, { onDelete: 'cascade' })
+});
+
+export const account = pgTable("account", {
+  id: text('id').primaryKey(),
+  accountId: text('account_id').notNull(),
+  providerId: text('provider_id').notNull(),
+  userId: text('user_id').notNull().references(()=> user.id, { onDelete: 'cascade' }),
+  accessToken: text('access_token'),
+  refreshToken: text('refresh_token'),
+  idToken: text('id_token'),
+  accessTokenExpiresAt: timestamp('access_token_expires_at'),
+  refreshTokenExpiresAt: timestamp('refresh_token_expires_at'),
+  scope: text('scope'),
+  password: text('password'),
+  createdAt: timestamp('created_at').notNull(),
+  updatedAt: timestamp('updated_at').notNull()
+});
+
+export const verification = pgTable("verification", {
+	id: text('id').primaryKey(),
+	identifier: text('identifier').notNull(),
+  value: text('value').notNull(),
+  expiresAt: timestamp('expires_at').notNull(),
+  createdAt: timestamp('created_at').$defaultFn(() => /* @__PURE__ */ new Date()),
+  updatedAt: timestamp('updated_at').$defaultFn(() => /* @__PURE__ */ new Date())
+});
+
+export const place = pgTable("place", {
   id: uuid("id").primaryKey().defaultRandom(),
   name: text("name").notNull(),
   slug: text("slug").unique().notNull(),
   type: text("type").array().notNull(), // park, restaurant, hotel, store, etc.
   description: text("description"),
   // Location references
-  localityId: uuid("locality_id").references(() => Locality.id),
+  localityId: uuid("locality_id").references(() => locality.id),
   address: text("address"),
   latitude: numeric("latitude", { precision: 10, scale: 6 }),
   longitude: numeric("longitude", { precision: 10, scale: 6 }),
@@ -79,16 +113,16 @@ export const Place = pgTable("place", {
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
 
-export const PlaceImages = pgTable("place_image", {
+export const placeImages = pgTable("place_image", {
   id: uuid("id").primaryKey().defaultRandom(),
   placeId: uuid("place_id")
     .notNull()
-    .references(() => Place.id, { onDelete: "cascade" }),
+    .references(() => place.id, { onDelete: "cascade" }),
   url: text("url").notNull(),
   index: integer("index").notNull().default(0), // Order of images
 })
 
-export const Region = pgTable("region", {
+export const region = pgTable("region", {
   id: uuid("id").primaryKey().defaultRandom(),
   name: text("name").notNull().unique(),
   slug: text("slug").notNull().unique(),
@@ -97,18 +131,18 @@ export const Region = pgTable("region", {
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
 
-export const District = pgTable("district", {
+export const district = pgTable("district", {
   id: uuid("id").primaryKey().defaultRandom(),
   name: text("name").notNull(),
   slug: text("slug").notNull().unique(),
   regionId: uuid("region_id")
     .notNull()
-    .references(() => Region.id),
+    .references(() => region.id),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
 
-export const Locality = pgTable(
+export const locality = pgTable(
   "locality",
   {
     id: uuid("id").primaryKey().defaultRandom(),
@@ -116,7 +150,7 @@ export const Locality = pgTable(
     slug: text("slug").notNull(),
     districtId: uuid("district_id")
       .notNull()
-      .references(() => District.id),
+      .references(() => district.id),
     postalCode: text("postal_code"),
     latitude: numeric("latitude", { precision: 10, scale: 6 }),
     longitude: numeric("longitude", { precision: 10, scale: 6 }),
@@ -133,16 +167,16 @@ export const Locality = pgTable(
   }
 );
 
-export const Review = pgTable(
+export const review = pgTable(
   "review",
   {
     id: uuid("id").primaryKey().defaultRandom(),
     placeId: uuid("place_id")
       .notNull()
-      .references(() => Place.id, { onDelete: "cascade" }),
-    userId: uuid("user_id")
+      .references(() => place.id, { onDelete: "cascade" }),
+    userId: text("user_id")
       .notNull()
-      .references(() => Place.id, { onDelete: "cascade" }),
+      .references(() => user.id, { onDelete: "cascade" }),
     rating: integer("rating").notNull(),
     content: text("content"),
     visitDate: timestamp("visit_date"),
@@ -159,16 +193,16 @@ export const Review = pgTable(
   }
 );
 
-export const Favourite = pgTable(
+export const favourite = pgTable(
   "favourite",
   {
     id: uuid("id").primaryKey().defaultRandom(),
-    userId: uuid("user_id")
+    userId: text("user_id")
       .notNull()
-      .references(() => User.id, { onDelete: "cascade" }),
+      .references(() => user.id, { onDelete: "cascade" }),
     placeId: uuid("place_id")
       .notNull()
-      .references(() => Place.id, { onDelete: "cascade" }),
+      .references(() => place.id, { onDelete: "cascade" }),
     createdAt: timestamp("created_at").defaultNow().notNull(),
   },
   (table) => {
@@ -179,20 +213,20 @@ export const Favourite = pgTable(
   }
 );
 
-export const Claim = pgTable(
+export const claim = pgTable(
   "claim",
   {
     id: uuid("id").primaryKey().defaultRandom(),
     placeId: uuid("place_id")
       .notNull()
-      .references(() => Place.id, { onDelete: "cascade" }),
-    userId: uuid("user_id")
+      .references(() => place.id, { onDelete: "cascade" }),
+    userId: text("user_id")
       .notNull()
-      .references(() => User.id, { onDelete: "cascade" }),
+      .references(() => user.id, { onDelete: "cascade" }),
     status: text("status").notNull().default("pending"), // pending, approved, rejected
     proof: text("proof"), // Document/evidence for ownership
     approvedAt: timestamp("approved_at"),
-    approvedBy: uuid("approved_by").references(() => User.id),
+    approvedBy: text("approved_by").references(() => user.id),
     createdAt: timestamp("created_at").defaultNow().notNull(),
     updatedAt: timestamp("updated_at").defaultNow().notNull(),
   },
@@ -204,23 +238,23 @@ export const Claim = pgTable(
   }
 );
 
-export const Tag = pgTable("tag", {
+export const tag = pgTable("tag", {
   id: uuid("id").primaryKey().defaultRandom(),
   name: text("name").unique().notNull(),
   category: text("category"), // e.g., amenity, feature, service
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
-export const PlaceTag = pgTable(
+export const placeTag = pgTable(
   "place_tag",
   {
     id: uuid("id").primaryKey().defaultRandom(),
     placeId: uuid("place_id")
       .notNull()
-      .references(() => Place.id, { onDelete: "cascade" }),
+      .references(() => place.id, { onDelete: "cascade" }),
     tagId: uuid("tag_id")
       .notNull()
-      .references(() => Tag.id, { onDelete: "cascade" }),
+      .references(() => tag.id, { onDelete: "cascade" }),
     createdAt: timestamp("created_at").defaultNow().notNull(),
   },
   (table) => {
@@ -232,102 +266,102 @@ export const PlaceTag = pgTable(
 );
 
 // Define relationships
-export const usersRelations = relations(User, ({ many }) => ({
-  reviews: many(Review),
-  favorites: many(Favourite),
-  placeClaims: many(Claim),
+export const usersRelations = relations(user, ({ many }) => ({
+  reviews: many(review),
+  favorites: many(favourite),
+  placeClaims: many(claim),
 }));
 
-export const regionRelations = relations(Region, ({ many }) => ({
-  districts: many(District),
+export const regionRelations = relations(region, ({ many }) => ({
+  districts: many(district),
 }));
 
-export const districtRelations = relations(District, ({ one, many }) => ({
-  region: one(Region, {
-    fields: [District.regionId],
-    references: [Region.id],
+export const districtRelations = relations(district, ({ one, many }) => ({
+  region: one(region, {
+    fields: [district.regionId],
+    references: [region.id],
   }),
-  localities: many(Locality),
+  localities: many(locality),
 }));
 
-export const localityRelations = relations(Locality, ({ one, many }) => ({
-  district: one(District, {
-    fields: [Locality.districtId],
-    references: [District.id],
+export const localityRelations = relations(locality, ({ one, many }) => ({
+  district: one(district, {
+    fields: [locality.districtId],
+    references: [district.id],
   }),
-  places: many(Place),
+  places: many(place),
 }));
 
-export const placeRelations = relations(Place, ({ one, many }) => ({
-  locality: one(Locality, {
-    fields: [Place.localityId],
-    references: [Locality.id],
+export const placeRelations = relations(place, ({ one, many }) => ({
+  locality: one(locality, {
+    fields: [place.localityId],
+    references: [locality.id],
   }),
-  reviews: many(Review),
-  favorites: many(Favourite),
-  claims: many(Claim),
-  placeTags: many(PlaceTag),
-  images: many(PlaceImages),
-  tags: many(Tag),
-  region: one(Region),
+  reviews: many(review),
+  favorites: many(favourite),
+  claims: many(claim),
+  placeTags: many(placeTag),
+  images: many(placeImages),
+  tags: many(tag),
+  region: one(region),
 }));
 
-export const reviewRelations = relations(Review, ({ one }) => ({
-  place: one(Place, {
-    fields: [Review.placeId],
-    references: [Place.id],
+export const reviewRelations = relations(review, ({ one }) => ({
+  place: one(place, {
+    fields: [review.placeId],
+    references: [place.id],
   }),
-  user: one(User, {
-    fields: [Review.userId],
-    references: [User.id],
-  }),
-}));
-
-export const favouriteRelations = relations(Favourite, ({ one }) => ({
-  place: one(Place, {
-    fields: [Favourite.placeId],
-    references: [Place.id],
-  }),
-  user: one(User, {
-    fields: [Favourite.userId],
-    references: [User.id],
+  user: one(user, {
+    fields: [review.userId],
+    references: [user.id],
   }),
 }));
 
-export const claimRelations = relations(Claim, ({ one }) => ({
-  place: one(Place, {
-    fields: [Claim.placeId],
-    references: [Place.id],
+export const favouriteRelations = relations(favourite, ({ one }) => ({
+  place: one(place, {
+    fields: [favourite.placeId],
+    references: [place.id],
   }),
-  user: one(User, {
-    fields: [Claim.userId],
-    references: [User.id],
-  }),
-  approver: one(User, {
-    fields: [Claim.approvedBy],
-    references: [User.id],
+  user: one(user, {
+    fields: [favourite.userId],
+    references: [user.id],
   }),
 }));
 
-export const tagRelations = relations(Tag, ({ many }) => ({
-  placeTags: many(PlaceTag),
+export const claimRelations = relations(claim, ({ one }) => ({
+  place: one(place, {
+    fields: [claim.placeId],
+    references: [place.id],
+  }),
+  user: one(user, {
+    fields: [claim.userId],
+    references: [user.id],
+  }),
+  approver: one(user, {
+    fields: [claim.approvedBy],
+    references: [user.id],
+  }),
 }));
 
-export const placeTagsRelations = relations(PlaceTag, ({ one }) => ({
-  place: one(Place, {
-    fields: [PlaceTag.placeId],
-    references: [Place.id],
+export const tagRelations = relations(tag, ({ many }) => ({
+  placeTags: many(placeTag),
+}));
+
+export const placeTagsRelations = relations(placeTag, ({ one }) => ({
+  place: one(place, {
+    fields: [placeTag.placeId],
+    references: [place.id],
   }),
-  tag: one(Tag, {
-    fields: [PlaceTag.tagId],
-    references: [Tag.id],
+  tag: one(tag, {
+    fields: [placeTag.tagId],
+    references: [tag.id],
   }),
 }));
 
-export const placeImagesRelations = relations(PlaceImages, ({ one }) => ({
-  place: one(Place, {
-    fields: [PlaceImages.placeId],
-    references: [Place.id],
+export const placeImagesRelations = relations(placeImages, ({ one }) => ({
+  place: one(place, {
+    fields: [placeImages.placeId],
+    references: [place.id],
   }),
 }));
 

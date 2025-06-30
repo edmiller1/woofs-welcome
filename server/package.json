@@ -9,6 +9,7 @@
     "@react-email/components": "^0.0.41",
     "@supabase/supabase-js": "^2.49.8",
     "@types/react": "^19.1.2",
+    "better-auth": "^1.2.10",
     "dotenv": "^16.6.0",
     "drizzle-orm": "^0.44.2",
     "hono": "^4.7.8",

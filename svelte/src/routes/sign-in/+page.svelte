@@ -1,11 +1,8 @@
 <script lang="ts">
 	import { buttonVariants } from '$lib/components/ui/button';
-	import { GalleryVerticalEnd } from '@lucide/svelte';
+	import { Dog } from '@lucide/svelte';
 	import fluffs from '$lib/assets/fluffs.jpg';
 	import SignInForm from './components/sign-in-form.svelte';
-
-	let { data } = $props();
-	let { supabase } = $derived(data);
 </script>
 
 <svelte:head>
@@ -18,9 +15,9 @@
 		<div class="flex justify-between gap-2">
 			<a href="/" class="flex items-center gap-2 font-medium">
 				<div
-					class="bg-primary text-primary-foreground flex h-6 w-6 items-center justify-center rounded-md"
+					class="bg-primary text-primary-foreground flex h-6 w-6 items-center justify-center rounded-full"
 				>
-					<GalleryVerticalEnd class="size-4" />
+					<Dog class="size-4" />
 				</div>
 				Woofs Welcome
 			</a>
@@ -30,7 +27,7 @@
 		</div>
 		<div class="flex flex-1 items-center justify-center">
 			<div class="w-full max-w-xs">
-				<SignInForm {supabase} />
+				<SignInForm />
 			</div>
 		</div>
 	</div>

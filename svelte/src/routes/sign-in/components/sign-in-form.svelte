@@ -1,82 +1,50 @@
 <script lang="ts">
 	import { goto } from '$app/navigation';
+	import { auth } from '$lib/auth/stores';
 	import GoogleLogo from '$lib/components/google-logo.svelte';
 	import { Button } from '$lib/components/ui/button';
 	import { Card, CardContent } from '$lib/components/ui/card';
 	import { Input } from '$lib/components/ui/input';
 	import { Label } from '$lib/components/ui/label';
 	import { Loader2 } from '@lucide/svelte';
-	import type { SupabaseClient } from '@supabase/supabase-js';
 	import { toast } from 'svelte-sonner';
 
-	let { supabase }: { supabase: SupabaseClient } = $props();
-
-	let email: string = $state('');
-	let loading: boolean = $state(false);
+	let email = $state<string>('');
+	let loading = $state<boolean>(false);
+	let googleLoading = $state<boolean>(false);
 
 	const handleGoogleLogin = async () => {
+		console.log('Google login initiated');
 		try {
-			console.log('logging in with google');
-			const { error } = await supabase.auth.signInWithOAuth({
-				provider: 'google',
-				options: {
-					redirectTo: `${window.location.origin}/auth/callback`,
-					queryParams: {
-						access_type: 'offline',
-						prompt: 'consent'
-					}
-				}
-			});
-
-			if (error) {
-				throw error;
-			} else {
-				goto('/welcome');
-			}
+			googleLoading = true;
+			await auth.oAuthSignIn('google');
 		} catch (error) {
-			console.error('Error during Google login:', error);
-			toast.error('Failed to sign in with Google. Please try again.');
+			console.error('Google login error:', error);
+			toast.error('Failed to sign in with Google');
+			googleLoading = false;
 		}
 	};
 
 	const handleEmailSignIn = async (e: SubmitEvent) => {
 		e.preventDefault();
+
 		try {
 			loading = true;
 
-			const { error } = await supabase.auth.signInWithOtp({
-				email: email.trim(),
-				options: {
-					shouldCreateUser: true
-				}
-			});
+			//Send OTP
+			const result = await auth.signIn(email.trim());
 
-			if (error) {
-				loading = false;
-				throw error;
-			} else {
-				toast.success(
-					`Success! Please check your email: ${email.trim()} for a one time password code.`,
-					{
-						duration: 10000
-					}
-				);
-				setTimeout(() => {
-					const promise = () =>
-						new Promise((resolve) => setTimeout(() => resolve({ name: 'Sonner' }), 2000));
-					goto(`/verify-otp?email=${encodeURIComponent(email.trim())}`);
-					toast.promise(promise, {
-						loading: 'Loading...',
-						success: () => {
-							return 'Redirecting to verification page...';
-						},
-						error: 'Failed to redirect to verification page.'
-					});
-				}, 3000);
+			if (result.error) {
+				toast.error(result.error.message || 'Failed to send verification code');
+				return;
 			}
+
+			// Success - redirect to verification page
+			toast.success('Verification code sent to your email!');
+			goto(`/verify-otp?email=${encodeURIComponent(email)}&type=sign-in`);
 		} catch (error) {
-			console.error('Error during email sign-in:', error);
-			toast.error('Failed to sign in with email. Please try again.');
+			console.error('Email sign-in error:', error);
+			toast.error('Failed to send verification code');
 		} finally {
 			loading = false;
 		}
@@ -103,7 +71,7 @@
 						required
 					/>
 				</div>
-				<Button type="submit" class="w-full" disabled={loading}>
+				<Button type="submit" class="w-full" disabled={loading || googleLoading}>
 					{#if loading}
 						<Loader2 class="size-3 animate-spin" stroke-width={3} />
 						Signing in...
@@ -119,9 +87,19 @@
 			>
 				<span class="bg-card text-muted-foreground relative z-10 px-2"> Or continue with </span>
 			</div>
-			<Button variant="outline" class="w-full" onclick={handleGoogleLogin} disabled={loading}>
-				<GoogleLogo />
-				Sign in with Google
+			<Button
+				variant="outline"
+				class="w-full"
+				onclick={handleGoogleLogin}
+				disabled={loading || googleLoading}
+			>
+				{#if googleLoading}
+					<Loader2 class="size-3 animate-spin" stroke-width={3} />
+					Connecting to Google...
+				{:else}
+					<GoogleLogo />
+					Sign in with Google
+				{/if}
 			</Button>
 			<div class="text-center text-sm">
 				Don't have an account?
