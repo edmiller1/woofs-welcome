@@ -8,6 +8,20 @@
       "when": 1751074659571,
       "tag": "0000_huge_bloodscream",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1751605492184,
+      "tag": "0001_soft_moira_mactaggert",
+      "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1751625581541,
+      "tag": "0002_cold_sleepwalker",
+      "breakpoints": true
     }
   ]
 }

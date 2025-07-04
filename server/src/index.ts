@@ -7,6 +7,7 @@ import { authRouter } from "./routes/auth";
 import { authMiddleware } from "./middleware/auth";
 import { auth } from "./lib/auth";
 import betterAuthRouter from "./routes/better-auth";
+import { placeRouter } from "./routes/place";
 
 const app = new Hono();
 
@@ -28,6 +29,7 @@ app.on(["POST", "GET"], "/api/auth/*", (c) => {
 app.use("/api/user", authMiddleware);
 app.route("/api/auth", betterAuthRouter);
 app.route("/api/user", authRouter);
+app.route("/api/place", placeRouter);
 
 app.get("/", (c) => {
   return c.text("Hello Hono!");

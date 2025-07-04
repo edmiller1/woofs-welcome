@@ -16,10 +16,12 @@ import { relations } from "drizzle-orm";
 export const user = pgTable(
   "user",
   {
-    id: text('id').primaryKey(),
-    name: text('name').notNull(),
-    email: text('email').notNull().unique(),
-    emailVerified: boolean('email_verified').$defaultFn(() => false).notNull(),
+    id: text("id").primaryKey(),
+    name: text("name").notNull(),
+    email: text("email").notNull().unique(),
+    emailVerified: boolean("email_verified")
+      .$defaultFn(() => false)
+      .notNull(),
     image: text("image"),
     provider: varchar("provider", { length: 255 }),
     isAdmin: boolean("is_admin").default(false),
@@ -33,8 +35,12 @@ export const user = pgTable(
     verified: boolean("is_verified").default(false),
     subscriptionTier: text("subscription_tier"),
     subscriptionExpiresAt: timestamp("subscription_expires_at"),
-    createdAt: timestamp('created_at').$defaultFn(() => /* @__PURE__ */ new Date()).notNull(),
-    updatedAt: timestamp('updated_at').$defaultFn(() => /* @__PURE__ */ new Date()).notNull(),
+    createdAt: timestamp("created_at")
+      .$defaultFn(() => /* @__PURE__ */ new Date())
+      .notNull(),
+    updatedAt: timestamp("updated_at")
+      .$defaultFn(() => /* @__PURE__ */ new Date())
+      .notNull(),
     emailNotifications: boolean("email_notifications").default(true),
   },
   (table) => ({
@@ -43,39 +49,47 @@ export const user = pgTable(
 );
 
 export const session = pgTable("session", {
-  id: text('id').primaryKey(),
-  expiresAt: timestamp('expires_at').notNull(),
-  token: text('token').notNull().unique(),
-  createdAt: timestamp('created_at').notNull(),
-  updatedAt: timestamp('updated_at').notNull(),
-  ipAddress: text('ip_address'),
-  userAgent: text('user_agent'),
-  userId: text('user_id').notNull().references(()=> user.id, { onDelete: 'cascade' })
+  id: text("id").primaryKey(),
+  expiresAt: timestamp("expires_at").notNull(),
+  token: text("token").notNull().unique(),
+  createdAt: timestamp("created_at").notNull(),
+  updatedAt: timestamp("updated_at").notNull(),
+  ipAddress: text("ip_address"),
+  userAgent: text("user_agent"),
+  userId: text("user_id")
+    .notNull()
+    .references(() => user.id, { onDelete: "cascade" }),
 });
 
 export const account = pgTable("account", {
-  id: text('id').primaryKey(),
-  accountId: text('account_id').notNull(),
-  providerId: text('provider_id').notNull(),
-  userId: text('user_id').notNull().references(()=> user.id, { onDelete: 'cascade' }),
-  accessToken: text('access_token'),
-  refreshToken: text('refresh_token'),
-  idToken: text('id_token'),
-  accessTokenExpiresAt: timestamp('access_token_expires_at'),
-  refreshTokenExpiresAt: timestamp('refresh_token_expires_at'),
-  scope: text('scope'),
-  password: text('password'),
-  createdAt: timestamp('created_at').notNull(),
-  updatedAt: timestamp('updated_at').notNull()
+  id: text("id").primaryKey(),
+  accountId: text("account_id").notNull(),
+  providerId: text("provider_id").notNull(),
+  userId: text("user_id")
+    .notNull()
+    .references(() => user.id, { onDelete: "cascade" }),
+  accessToken: text("access_token"),
+  refreshToken: text("refresh_token"),
+  idToken: text("id_token"),
+  accessTokenExpiresAt: timestamp("access_token_expires_at"),
+  refreshTokenExpiresAt: timestamp("refresh_token_expires_at"),
+  scope: text("scope"),
+  password: text("password"),
+  createdAt: timestamp("created_at").notNull(),
+  updatedAt: timestamp("updated_at").notNull(),
 });
 
 export const verification = pgTable("verification", {
-	id: text('id').primaryKey(),
-	identifier: text('identifier').notNull(),
-  value: text('value').notNull(),
-  expiresAt: timestamp('expires_at').notNull(),
-  createdAt: timestamp('created_at').$defaultFn(() => /* @__PURE__ */ new Date()),
-  updatedAt: timestamp('updated_at').$defaultFn(() => /* @__PURE__ */ new Date())
+  id: text("id").primaryKey(),
+  identifier: text("identifier").notNull(),
+  value: text("value").notNull(),
+  expiresAt: timestamp("expires_at").notNull(),
+  createdAt: timestamp("created_at").$defaultFn(
+    () => /* @__PURE__ */ new Date()
+  ),
+  updatedAt: timestamp("updated_at").$defaultFn(
+    () => /* @__PURE__ */ new Date()
+  ),
 });
 
 export const place = pgTable("place", {
@@ -86,6 +100,7 @@ export const place = pgTable("place", {
   description: text("description"),
   // Location references
   localityId: uuid("locality_id").references(() => locality.id),
+  districtId: uuid("district_id").references(() => district.id),
   address: text("address"),
   latitude: numeric("latitude", { precision: 10, scale: 6 }),
   longitude: numeric("longitude", { precision: 10, scale: 6 }),
@@ -120,7 +135,8 @@ export const placeImages = pgTable("place_image", {
     .references(() => place.id, { onDelete: "cascade" }),
   url: text("url").notNull(),
   index: integer("index").notNull().default(0), // Order of images
-})
+  google: boolean("google").default(false), // Whether this image is from Google
+});
 
 export const region = pgTable("region", {
   id: uuid("id").primaryKey().defaultRandom(),
@@ -282,6 +298,7 @@ export const districtRelations = relations(district, ({ one, many }) => ({
     references: [region.id],
   }),
   localities: many(locality),
+  places: many(place),
 }));
 
 export const localityRelations = relations(locality, ({ one, many }) => ({
@@ -296,6 +313,10 @@ export const placeRelations = relations(place, ({ one, many }) => ({
   locality: one(locality, {
     fields: [place.localityId],
     references: [locality.id],
+  }),
+  district: one(district, {
+    fields: [place.districtId],
+    references: [district.id],
   }),
   reviews: many(review),
   favorites: many(favourite),
