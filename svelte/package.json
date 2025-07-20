@@ -50,7 +50,6 @@
 	},
 	"dependencies": {
 		"@internationalized/date": "^3.8.1",
-		"@lottiefiles/dotlottie-svelte": "^0.6.1",
 		"@supabase/ssr": "^0.6.1",
 		"@supabase/supabase-js": "^2.50.0",
 		"@sveltestack/svelte-query": "^1.6.0",
