@@ -1,14 +1,22 @@
 <script lang="ts">
 	import '../app.css';
-	import { invalidate } from '$app/navigation';
 	import { onMount } from 'svelte';
 	import { auth, loading } from '$lib/auth/stores';
-	import { page } from '$app/stores';
-	import { QueryClient, QueryClientProvider } from '@sveltestack/svelte-query';
 	import { Toaster } from '$lib/components/ui/sonner/index.js';
 	import { Loader2 } from '@lucide/svelte';
+	import { QueryClient, QueryClientProvider } from '@tanstack/svelte-query';
+	import { SvelteQueryDevtools } from '@tanstack/svelte-query-devtools';
+	import { browser } from '$app/environment';
 
-	const queryClient = new QueryClient();
+	const queryClient = new QueryClient({
+		defaultOptions: {
+			queries: {
+				enabled: browser,
+				retry: 1,
+				staleTime: 5 * 60 * 1000
+			}
+		}
+	});
 
 	let { children } = $props();
 
@@ -18,12 +26,13 @@
 </script>
 
 <QueryClientProvider client={queryClient}>
-	<Toaster />
 	{#if $loading}
 		<div class="flex min-h-screen items-center justify-center">
-			<Loader2 class="siz-10 text-primary animate-spin" />
+			<Loader2 class="text-primary size-10 animate-spin" />
 		</div>
 	{:else}
 		{@render children()}
 	{/if}
+	<Toaster />
+	<SvelteQueryDevtools />
 </QueryClientProvider>

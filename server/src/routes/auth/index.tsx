@@ -6,7 +6,7 @@ import { Welcome } from "../../emails/welcome";
 import { authMiddleware } from "../../middleware/auth";
 import { CreateProfileInput, createProfileSchema } from "./types";
 import { zValidator } from "@hono/zod-validator";
-import { user as User } from "../../db/schema";
+import { User } from "../../db/schema";
 
 const resend = new Resend(process.env.RESEND_API_KEY);
 
@@ -39,7 +39,7 @@ authRouter.post(
         businessPhone,
       } = validatedData;
 
-      const user = await db.query.user.findFirst({
+      const user = await db.query.User.findFirst({
         where: eq(User.id, auth.id),
       });
 

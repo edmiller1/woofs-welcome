@@ -1,8 +1,8 @@
 import { Context, Next } from "hono";
 import { db } from "../db";
 import { eq } from "drizzle-orm";
-import { user as User } from "../db/schema";
-import { Session, User as betterAuthUser  } from "better-auth/types";
+import { User } from "../db/schema";
+import { Session, User as betterAuthUser } from "better-auth/types";
 import { auth } from "../lib/auth";
 
 declare module "hono" {
@@ -18,9 +18,9 @@ export const authMiddleware = async (c: Context, next: Next) => {
     headers: c.req.raw.headers,
   });
 
-   if (!session) {
+  if (!session) {
     return c.json({ error: "Unauthorized" }, 401);
-  };
+  }
 
   c.set("user", session.user);
   c.set("session", session.session);
@@ -29,17 +29,17 @@ export const authMiddleware = async (c: Context, next: Next) => {
 
 export const optionalAuthMiddleware = async (c: Context, next: Next) => {
   const session = await auth.api.getSession({ headers: c.req.raw.headers });
- 
-  	if (!session) {
-    	c.set("user", null);
-    	c.set("session", null);
-    	return next();
-  	}
- 
-  	c.set("user", session.user);
-  	c.set("session", session.session);
-  	return next();
-}
+
+  if (!session) {
+    c.set("user", null);
+    c.set("session", null);
+    return next();
+  }
+
+  c.set("user", session.user);
+  c.set("session", session.session);
+  return next();
+};
 
 // Business account middleware - simplified for MVP
 export const businessMiddleware = async (c: Context, next: Next) => {
@@ -49,7 +49,7 @@ export const businessMiddleware = async (c: Context, next: Next) => {
     return c.json({ error: "Unauthorized" }, 401);
   }
 
-  const user = await db.query.user.findFirst({
+  const user = await db.query.User.findFirst({
     where: eq(User.id, auth.id),
   });
 

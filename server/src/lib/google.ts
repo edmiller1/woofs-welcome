@@ -46,4 +46,44 @@ export const Google = {
 
     return [];
   },
+  searchRegionOrCity: async (
+    query: string,
+    location: string = "New Zealand"
+  ) => {
+    const searchQuery = location ? `${query} in ${location}` : query;
+
+    console.log(searchQuery);
+
+    const response = await fetch(
+      `https://maps.googleapis.com/maps/api/place/textsearch/json?query=${encodeURIComponent(searchQuery)}&key=${process.env.GOOGLE_PLACES_API_KEY}`
+    );
+
+    const data = await response.json();
+
+    console.log(data);
+
+    if (data.status === "OK") {
+      return data.results.map((place: any) => ({
+        place_id: place.place_id,
+      }));
+    }
+
+    return [];
+  },
+  getRegionOrCityPhoto: async (
+    placeId: string,
+    apiKey: string
+  ): Promise<string | string[]> => {
+    const detailsUrl = `https://maps.googleapis.com/maps/api/place/details/json?place_id=${placeId}&fields=photos&key=${apiKey}`;
+
+    const response = await fetch(detailsUrl);
+    const data = await response.json();
+
+    if (data.status === "OK" && data.result?.photos) {
+      const photo = data.result.photos[1];
+      return `https://maps.googleapis.com/maps/api/place/photo?maxwidth=800&photo_reference=${photo.photo_reference}&key=${apiKey}`;
+    }
+
+    return [];
+  },
 };
