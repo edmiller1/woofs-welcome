@@ -1,15 +1,14 @@
 <script lang="ts">
 	import { api } from '$lib/api/index.js';
-	import { Heart, House, Loader2, MapPin, Mountain, UtensilsCrossed } from '@lucide/svelte';
+	import { House, Loader2, MapPin, Mountain, UtensilsCrossed, Star } from '@lucide/svelte';
 	import { createQuery } from '@tanstack/svelte-query';
 	import MainNavbar from '$lib/components/main-navbar.svelte';
 	import * as Card from '$lib/components/ui/card/index.js';
-	import * as Carousel from '$lib/components/ui/carousel/index.js';
-	import Button from '$lib/components/ui/button/button.svelte';
-	import type { CarouselAPI } from '$lib/components/ui/carousel/context.js';
-	import Badge from '$lib/components/ui/badge/badge.svelte';
+	import Button, { buttonVariants } from '$lib/components/ui/button/button.svelte';
 	import Footer from '$lib/components/footer.svelte';
 	import Breadcrumbs from '$lib/components/breadcrumbs.svelte';
+	import CityCarousel from '$lib/components/city-carousel.svelte';
+	import PlaceCard from '$lib/components/place-card.svelte';
 
 	let { data } = $props();
 	const user = $derived(data.user);
@@ -18,24 +17,6 @@
 		queryKey: ['region', data.slug],
 		queryFn: () => api.region.getRegion(data.slug)
 	});
-
-	//Carousel
-	let carouselApi = $state<CarouselAPI>();
-	let current = $state<number>(0);
-
-	$effect(() => {
-		if (carouselApi) {
-			current = carouselApi.scrollSnapList().length;
-			carouselApi.on('select', () => {
-				current = carouselApi!.selectedScrollSnap();
-			});
-		}
-	});
-
-	const goToImage = (index: number) => {
-		carouselApi!.scrollTo(index);
-		current = index;
-	};
 </script>
 
 {#if $region.isError}
@@ -47,6 +28,7 @@
 		<Loader2 class="text-primary size-10 animate-spin" />
 	</div>
 {/if}
+
 {#if $region.isSuccess}
 	<div class="mx-auto max-w-7xl px-2 sm:px-4 lg:px-8">
 		<MainNavbar {user} currentPlace={$region.data.region.name} />
@@ -109,85 +91,77 @@
 						</div>
 					</Card.Root>
 				</div>
-				{#each $region.data.cities as city}
-					<div class="mt-10">
-						<div class="flex w-full items-center justify-between">
-							<h2 class="my-3 text-xl font-semibold">{city.name}</h2>
-							<a href={`/city/${city.slug}`} class="text-sm hover:underline">View more</a>
-						</div>
-						<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4">
-							{#each city.places as place}
-								<a href="/places/{place.slug}" class="block">
-									<div
-										class="m-0 flex h-full w-64 max-w-sm cursor-pointer flex-col overflow-hidden rounded-lg p-0 shadow-lg"
-									>
-										<div class="relative">
-											<Carousel.Root
-												setApi={(emblaApi) => (carouselApi = emblaApi)}
-												class="size-64"
-											>
-												<Carousel.Content class="-ml-0">
-													{#each place.images as image}
-														<Carousel.Item class="pl-0">
-															<div class="relative aspect-[4/3]">
-																<img
-																	src={image.url}
-																	alt={image.altText}
-																	class="size-64 object-cover object-center"
-																/>
-															</div>
-														</Carousel.Item>
-													{/each}
-												</Carousel.Content>
-												<!-- Indicators -->
-												<div
-													class="absolute bottom-4 left-1/2 flex -translate-x-1/2 transform space-x-2"
-												>
-													{#each place.images as _, index}
-														{@const isActive = current === index}
-														<button
-															class="h-2 w-2 cursor-pointer rounded-full bg-white {isActive
-																? 'opacity-100'
-																: 'opacity-60'}"
-															onclick={(e) => {
-																e.preventDefault();
-																e.stopPropagation();
-																goToImage(index);
-															}}
-															aria-label="image-indicator"
-														></button>
-													{/each}
-												</div>
-											</Carousel.Root>
-											<Button
-												variant="secondary"
-												size="icon"
-												class="absolute right-4 top-4 rounded-full bg-white/90 shadow-md transition-transform hover:scale-105 hover:bg-white"
-												onclick={(e) => {
-													e.preventDefault();
-													e.stopPropagation();
-													console.log('Heart clicked for place:', place.name);
-												}}
-											>
-												<Heart class="size-4" />
-											</Button>
-										</div>
-										<div class="space-y-3 p-2">
-											<h3 class="text-sm leading-tight">
-												{place.name}
-											</h3>
-											<div class="flex items-center gap-1">
-												{#each place.types as type}
-													<Badge class="rounded-full">{type}</Badge>
-												{/each}
-											</div>
-										</div>
-									</div>
-								</a>
-							{/each}
-						</div>
+
+				<!-- Food -->
+				<div class="mt-10">
+					<div class="flex w-full items-center justify-between">
+						<h2 class="my-3 text-xl font-semibold">Food and Drink</h2>
+						<a
+							href={`/explore?type=${$region.data.foodSpots.map((spot) => spot.types)[0]}&type=bar&type=restaurant&region=${$region.data.region.name}`}
+							class={buttonVariants({ variant: 'link' })}>View more</a
+						>
 					</div>
-				{/each}
+					<div class="grid grid-cols-1 gap-4 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-3">
+						{#each $region.data.foodSpots as place}
+							<PlaceCard {place} />
+						{/each}
+					</div>
+				</div>
+
+				<!-- Stays -->
+				<div class="mt-10">
+					<div class="flex w-full items-center justify-between">
+						<h2 class="my-3 text-xl font-semibold">Places to Stay</h2>
+						<a
+							href={`/explore?type=${$region.data.stays.map((spot) => spot.types)[0]}&type=hotel&type=motel&type=airbnb&region=${$region.data.region.name}`}
+							class={buttonVariants({ variant: 'link' })}>View more</a
+						>
+					</div>
+					<div class="grid grid-cols-1 gap-4 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-3">
+						{#each $region.data.stays as place}
+							<PlaceCard {place} />
+						{/each}
+					</div>
+				</div>
+
+				<!-- Adventures -->
+				<div class="mt-10">
+					<div class="flex w-full items-center justify-between">
+						<h2 class="my-3 text-xl font-semibold">Outdoor Adventures</h2>
+						<a
+							href={`/explore?type=${$region.data.adventures.map((spot) => spot.types)[0]}&type=trail&type=hike&type=walk&type=lake&type=river&region=${$region.data.region.name}`}
+							class={buttonVariants({ variant: 'link' })}>View more</a
+						>
+					</div>
+					<div class="grid grid-cols-1 gap-4 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-3">
+						{#each $region.data.adventures as place}
+							<PlaceCard {place} />
+						{/each}
+					</div>
+				</div>
+
+				<!-- Retail Places -->
+				<div class="mt-10">
+					<div class="flex w-full items-center justify-between">
+						<h2 class="my-3 text-xl font-semibold">Exceptional Shopping</h2>
+						<a
+							href={`/explore?type=${$region.data.retailPlaces.map((spot) => spot.types)[0]}&type=trail&type=hike&type=walk&type=lake&type=river&region=${$region.data.region.name}`}
+							class={buttonVariants({ variant: 'link' })}>View more</a
+						>
+					</div>
+					<div class="grid grid-cols-1 gap-4 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-3">
+						{#each $region.data.retailPlaces as place}
+							<PlaceCard {place} />
+						{/each}
+					</div>
+				</div>
+
+				<div class="my-10">
+					<CityCarousel
+						heading="Popular Cities to visit in the {$region.data.region.name} region"
+						cities={$region.data.cities}
+					/>
+				</div>
 			</div>
 		</div>
 	</div>

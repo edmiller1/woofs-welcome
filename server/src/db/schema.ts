@@ -22,11 +22,16 @@ export const placeTypeEnum = pgEnum("place_type", [
   "AirBnb",
   "Store",
   "Café",
+  "Bar",
+  "Dog Park",
   "Beach",
   "Walk",
   "Hike",
   "Service",
   "Activity",
+  "Lake",
+  "River",
+  "Trail",
 ]);
 
 export const User = pgTable(

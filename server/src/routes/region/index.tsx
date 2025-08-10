@@ -1,8 +1,19 @@
 import { Hono } from "hono";
 import { Resend } from "resend";
 import { db } from "../../db";
-import { and, asc, count, desc, eq, inArray, sql } from "drizzle-orm";
+import {
+  and,
+  arrayContains,
+  asc,
+  count,
+  desc,
+  eq,
+  inArray,
+  or,
+  sql,
+} from "drizzle-orm";
 import { City, Place, PlaceImage, Region } from "../../db/schema";
+import { extractPublicId, getResponsiveImageUrls } from "../../lib/helpers";
 
 const resend = new Resend(process.env.RESEND_API_KEY);
 
@@ -16,7 +27,6 @@ regionRouter.get("/:slug", async (c) => {
       return c.json({ error: "Slug is required" }, 400);
     }
 
-    // 1. Get the region first
     const region = await db.query.Region.findFirst({
       where: eq(Region.slug, slug),
       with: {
@@ -28,7 +38,6 @@ regionRouter.get("/:slug", async (c) => {
       return c.json({ error: "Region not found" }, 404);
     }
 
-    // 2. Get region statistics with proper casting
     const [regionStats] = await db
       .select({
         totalPlaces: count(),
@@ -49,8 +58,7 @@ regionRouter.get("/:slug", async (c) => {
       .innerJoin(City, eq(Place.cityId, City.id))
       .where(eq(City.regionId, region.id));
 
-    // 3. Get top 6 cities by place count
-    const topCities = await db
+    const cities = await db
       .select({
         city: City,
         placeCount: count(Place.id),
@@ -60,48 +68,341 @@ regionRouter.get("/:slug", async (c) => {
       .where(eq(City.regionId, region.id))
       .groupBy(City.id)
       .orderBy(desc(count(Place.id)))
-      .limit(6);
+      .limit(8);
 
-    // 4. Get places with all their images
-    const cityIds = topCities.map((c) => c.city.id);
+    // Fetch food spots (Bars, Restaurants, Cafés)
+    const foodSpots = await db
+      .select({
+        id: Place.id,
+        name: Place.name,
+        slug: Place.slug,
+        types: Place.types,
+        description: Place.description,
+        address: Place.address,
+        latitude: Place.latitude,
+        longitude: Place.longitude,
+        phone: Place.phone,
+        website: Place.website,
+        hours: Place.hours,
+        dogPolicy: Place.dogPolicy,
+        indoorAllowed: Place.indoorAllowed,
+        outdoorAllowed: Place.outdoorAllowed,
+        rating: Place.rating,
+        reviewsCount: Place.reviewsCount,
+        isVerified: Place.isVerified,
+        isFeatured: Place.isFeatured,
+        cityName: City.name,
+        citySlug: City.slug,
+        regionName: Region.name,
+        regionSlug: Region.slug,
+      })
+      .from(Place)
+      .innerJoin(City, eq(Place.cityId, City.id))
+      .innerJoin(Region, eq(City.regionId, Region.id))
+      .where(
+        and(
+          eq(City.regionId, region.id),
+          or(
+            arrayContains(Place.types, ["Café"]),
+            arrayContains(Place.types, ["Restaurant"]),
+            arrayContains(Place.types, ["Bar"])
+          )
+        )
+      )
+      .limit(12);
 
-    const placesWithAllImages = await db.query.Place.findMany({
-      where: inArray(Place.cityId, cityIds),
-      with: {
-        images: {
-          orderBy: [desc(PlaceImage.isPrimary), asc(PlaceImage.displayOrder)],
-        },
-      },
+    const foodSpotPlaceIds = foodSpots.map((place) => place.id);
+
+    const foodSpotplaceImages = await db.query.PlaceImage.findMany({
+      where: inArray(PlaceImage.placeId, foodSpotPlaceIds),
       orderBy: [
-        desc(Place.isVerified),
-        desc(Place.isFeatured),
-        desc(Place.rating),
-        desc(Place.createdAt),
+        PlaceImage.placeId,
+        PlaceImage.displayOrder,
+        PlaceImage.isPrimary,
       ],
     });
 
-    // 5. Group and limit places per city
-    const citiesWithPlaces = topCities.map(({ city, placeCount }) => {
-      const cityPlaces = placesWithAllImages
-        .filter((p) => p.cityId === city.id)
-        .slice(0, 9)
-        .map((p) => ({
-          ...p,
-          primaryImage:
-            p.images.find((img) => img.isPrimary) || p.images[0] || null,
-        }));
+    const imagesByFoodSpotPlaceId = foodSpotplaceImages.reduce(
+      (acc, image) => {
+        if (!acc[image.placeId]) {
+          acc[image.placeId] = [];
+        }
+        acc[image.placeId].push({
+          id: image.id,
+          url: image.url,
+          caption: image.caption,
+          altText: image.altText,
+          isPrimary: image.isPrimary,
+          source: image.source,
+          isApproved: image.isApproved,
+          displayOrder: image.displayOrder,
+        });
+        return acc;
+      },
+      {} as Record<string, any[]>
+    );
 
-      return {
-        ...city,
-        placeCount,
-        places: cityPlaces,
-      };
+    const foodSpotsWithImages = foodSpots.map((place) => ({
+      ...place,
+      // Convert numeric fields
+      rating: place.rating ? Number(place.rating) : 0,
+      latitude: place.latitude ? Number(place.latitude) : null,
+      longitude: place.longitude ? Number(place.longitude) : null,
+      // Add images
+      images: imagesByFoodSpotPlaceId[place.id] || [],
+    }));
+
+    // Hotels, Motels, Airbnbs
+    const stays = await db
+      .select({
+        id: Place.id,
+        name: Place.name,
+        slug: Place.slug,
+        types: Place.types,
+        description: Place.description,
+        address: Place.address,
+        latitude: Place.latitude,
+        longitude: Place.longitude,
+        phone: Place.phone,
+        website: Place.website,
+        hours: Place.hours,
+        dogPolicy: Place.dogPolicy,
+        indoorAllowed: Place.indoorAllowed,
+        outdoorAllowed: Place.outdoorAllowed,
+        rating: Place.rating,
+        reviewsCount: Place.reviewsCount,
+        isVerified: Place.isVerified,
+        isFeatured: Place.isFeatured,
+        cityName: City.name,
+        citySlug: City.slug,
+        regionName: Region.name,
+        regionSlug: Region.slug,
+      })
+      .from(Place)
+      .innerJoin(City, eq(Place.cityId, City.id))
+      .innerJoin(Region, eq(City.regionId, Region.id))
+      .where(
+        and(
+          eq(City.regionId, region.id),
+          or(
+            arrayContains(Place.types, ["Hotel"]),
+            arrayContains(Place.types, ["Motel"]),
+            arrayContains(Place.types, ["AirBnb"])
+          )
+        )
+      )
+      .limit(12);
+
+    const stayPlaceIds = stays.map((place) => place.id);
+
+    const stayPlaceImages = await db.query.PlaceImage.findMany({
+      where: inArray(PlaceImage.placeId, stayPlaceIds),
+      orderBy: [
+        PlaceImage.placeId,
+        PlaceImage.displayOrder,
+        PlaceImage.isPrimary,
+      ],
     });
+
+    const imagesByStayPlaceId = stayPlaceImages.reduce(
+      (acc, image) => {
+        if (!acc[image.placeId]) {
+          acc[image.placeId] = [];
+        }
+        acc[image.placeId].push({
+          id: image.id,
+          url: image.url,
+          caption: image.caption,
+          altText: image.altText,
+          isPrimary: image.isPrimary,
+          source: image.source,
+          isApproved: image.isApproved,
+          displayOrder: image.displayOrder,
+        });
+        return acc;
+      },
+      {} as Record<string, any[]>
+    );
+
+    const staysWithImages = stays.map((place) => ({
+      ...place,
+      // Convert numeric fields
+      rating: place.rating ? Number(place.rating) : 0,
+      latitude: place.latitude ? Number(place.latitude) : null,
+      longitude: place.longitude ? Number(place.longitude) : null,
+      // Add images
+      images: imagesByStayPlaceId[place.id] || [],
+    }));
+
+    // Adventures
+    const adventures = await db
+      .select({
+        id: Place.id,
+        name: Place.name,
+        slug: Place.slug,
+        types: Place.types,
+        description: Place.description,
+        address: Place.address,
+        latitude: Place.latitude,
+        longitude: Place.longitude,
+        phone: Place.phone,
+        website: Place.website,
+        hours: Place.hours,
+        dogPolicy: Place.dogPolicy,
+        indoorAllowed: Place.indoorAllowed,
+        outdoorAllowed: Place.outdoorAllowed,
+        rating: Place.rating,
+        reviewsCount: Place.reviewsCount,
+        isVerified: Place.isVerified,
+        isFeatured: Place.isFeatured,
+        cityName: City.name,
+        citySlug: City.slug,
+        regionName: Region.name,
+        regionSlug: Region.slug,
+      })
+      .from(Place)
+      .innerJoin(City, eq(Place.cityId, City.id))
+      .innerJoin(Region, eq(City.regionId, Region.id))
+      .where(
+        and(
+          eq(City.regionId, region.id),
+          or(
+            arrayContains(Place.types, ["Hike"]),
+            arrayContains(Place.types, ["Walk"]),
+            arrayContains(Place.types, ["Lake"]),
+            arrayContains(Place.types, ["Trail"]),
+            arrayContains(Place.types, ["River"])
+          )
+        )
+      )
+      .limit(12);
+
+    const adventurePlaceIds = adventures.map((place) => place.id);
+
+    const adventurePlaceImages = await db.query.PlaceImage.findMany({
+      where: inArray(PlaceImage.placeId, adventurePlaceIds),
+      orderBy: [
+        PlaceImage.placeId,
+        PlaceImage.displayOrder,
+        PlaceImage.isPrimary,
+      ],
+    });
+
+    const imagesByAdventurePlaceId = adventurePlaceImages.reduce(
+      (acc, image) => {
+        if (!acc[image.placeId]) {
+          acc[image.placeId] = [];
+        }
+        acc[image.placeId].push({
+          id: image.id,
+          url: image.url,
+          caption: image.caption,
+          altText: image.altText,
+          isPrimary: image.isPrimary,
+          source: image.source,
+          isApproved: image.isApproved,
+          displayOrder: image.displayOrder,
+        });
+        return acc;
+      },
+      {} as Record<string, any[]>
+    );
+
+    const adventuresWithImages = adventures.map((place) => ({
+      ...place,
+      // Convert numeric fields
+      rating: place.rating ? Number(place.rating) : 0,
+      latitude: place.latitude ? Number(place.latitude) : null,
+      longitude: place.longitude ? Number(place.longitude) : null,
+      // Add images
+      images: imagesByAdventurePlaceId[place.id] || [],
+    }));
+
+    const retailPlaces = await db
+      .select({
+        id: Place.id,
+        name: Place.name,
+        slug: Place.slug,
+        types: Place.types,
+        description: Place.description,
+        address: Place.address,
+        latitude: Place.latitude,
+        longitude: Place.longitude,
+        phone: Place.phone,
+        website: Place.website,
+        hours: Place.hours,
+        dogPolicy: Place.dogPolicy,
+        indoorAllowed: Place.indoorAllowed,
+        outdoorAllowed: Place.outdoorAllowed,
+        rating: Place.rating,
+        reviewsCount: Place.reviewsCount,
+        isVerified: Place.isVerified,
+        isFeatured: Place.isFeatured,
+        cityName: City.name,
+        citySlug: City.slug,
+        regionName: Region.name,
+        regionSlug: Region.slug,
+      })
+      .from(Place)
+      .innerJoin(City, eq(Place.cityId, City.id))
+      .innerJoin(Region, eq(City.regionId, Region.id))
+      .where(
+        and(eq(City.regionId, region.id), arrayContains(Place.types, ["Store"]))
+      )
+      .limit(12);
+
+    const retailPlaceIds = retailPlaces.map((place) => place.id);
+
+    const retailPlaceImages = await db.query.PlaceImage.findMany({
+      where: inArray(PlaceImage.placeId, retailPlaceIds),
+      orderBy: [
+        PlaceImage.placeId,
+        PlaceImage.displayOrder,
+        PlaceImage.isPrimary,
+      ],
+    });
+
+    const imagesByRetailPlaceId = retailPlaceImages.reduce(
+      (acc, image) => {
+        if (!acc[image.placeId]) {
+          acc[image.placeId] = [];
+        }
+        acc[image.placeId].push({
+          id: image.id,
+          url: image.url,
+          caption: image.caption,
+          altText: image.altText,
+          isPrimary: image.isPrimary,
+          source: image.source,
+          isApproved: image.isApproved,
+          displayOrder: image.displayOrder,
+        });
+        return acc;
+      },
+      {} as Record<string, any[]>
+    );
+
+    const retailPlacesWithImages = retailPlaces.map((place) => ({
+      ...place,
+      // Convert numeric fields
+      rating: place.rating ? Number(place.rating) : 0,
+      latitude: place.latitude ? Number(place.latitude) : null,
+      longitude: place.longitude ? Number(place.longitude) : null,
+      // Add images
+      images: imagesByRetailPlaceId[place.id] || [],
+    }));
 
     const result = {
       region,
       stats: regionStats,
-      cities: citiesWithPlaces,
+      cities: cities.map((c) => ({
+        ...c.city,
+        optimizedImage: getResponsiveImageUrls(c.city.image!),
+      })),
+      foodSpots: foodSpotsWithImages,
+      stays: staysWithImages,
+      adventures: adventuresWithImages,
+      retailPlaces: retailPlacesWithImages,
     };
 
     return c.json(result);

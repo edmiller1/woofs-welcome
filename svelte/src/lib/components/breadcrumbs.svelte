@@ -6,6 +6,7 @@
 		islandName: string;
 		regionName?: string;
 		placeName?: string;
+		cityName?: string;
 	}
 
 	let { type, islandName, regionName, placeName }: Props = $props();

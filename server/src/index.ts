@@ -21,7 +21,7 @@ app.use(
     origin:
       process.env.NODE_ENV === "development"
         ? "http://localhost:5173"
-        : "your-production-domain",
+        : "https://www.woofswelcome.app",
     maxAge: 86400,
     allowMethods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
     exposeHeaders: ["Content-Length"],

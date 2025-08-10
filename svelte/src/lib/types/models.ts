@@ -25,6 +25,7 @@ export interface Region {
 	image: string;
 	createdAt: string;
 	updatedAt: string;
+	optimizedImage: OptimizedImage;
 }
 
 export interface City {
@@ -38,13 +39,14 @@ export interface City {
 	createdAt: string;
 	updatedAt: string;
 	regionId: string;
+	optimizedImage: OptimizedImage;
 }
 
 export interface Place {
 	id: string;
 	name: string;
 	slug: string;
-	types: string;
+	types: string[];
 	images: PlaceImage[];
 	description: string;
 	address: string;
@@ -52,7 +54,7 @@ export interface Place {
 	longitude: string;
 	phone: string;
 	website: string;
-	hours: string | null;
+	hours: any;
 	dogPolicy: string | null;
 	indoorAllowed: boolean;
 	outdoorAllowed: boolean;
@@ -63,6 +65,10 @@ export interface Place {
 	createdAt: string;
 	updatedAt: string;
 	cityId: string;
+	regionName?: string;
+	regionSlug?: string;
+	cityName?: string;
+	citySlug?: string;
 }
 
 export interface PlaceImage {
@@ -80,8 +86,48 @@ export interface PlaceImage {
 	placeId: string;
 }
 
+export interface IslandPlace extends Place {
+	cityName: string;
+	citySlug: string;
+	regionName: string;
+	regionSlug: string;
+}
+
+export interface OptimizedImage {
+	responsive: {
+		'2xl': string;
+		lg: string;
+		md: string;
+		sm: string;
+		xs: string;
+	};
+	sizes: string;
+	src: string;
+	srcset: string;
+	webp: {
+		src: string;
+		srcset: string;
+	};
+}
+
+export interface PopularCity {
+	id: string;
+	name: string;
+	image: OptimizedImage;
+	placeCount: number;
+	regionName: string;
+	regionSlug: string;
+	slug: string;
+}
+
 export interface IslandWithRegions extends Island {
+	optimizedImage: OptimizedImage;
 	regions: Region[];
+	popularCities: City[];
+	foodSpots: IslandPlace[];
+	retailSpots: IslandPlace[];
+	adventures: IslandPlace[];
+	verifiedPlaces: IslandPlace[];
 }
 
 export interface RegionWithIsland extends Region {
