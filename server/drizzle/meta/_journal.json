@@ -15,6 +15,20 @@
       "when": 1752709214308,
       "tag": "0001_damp_tyrannus",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1755641503886,
+      "tag": "0002_colorful_harpoon",
+      "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1756257977264,
+      "tag": "0003_glorious_patriot",
+      "breakpoints": true
     }
   ]
 }

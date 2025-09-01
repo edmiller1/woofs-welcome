@@ -1,7 +1,7 @@
 import { Context, Next } from "hono";
 import { db } from "../db";
 import { eq } from "drizzle-orm";
-import { User } from "../db/schema";
+import { user } from "../db/schema";
 import { Session, User as betterAuthUser } from "better-auth/types";
 import { auth } from "../lib/auth";
 
@@ -49,11 +49,11 @@ export const businessMiddleware = async (c: Context, next: Next) => {
     return c.json({ error: "Unauthorized" }, 401);
   }
 
-  const user = await db.query.User.findFirst({
-    where: eq(User.id, auth.id),
+  const dbUser = await db.query.user.findFirst({
+    where: eq(user.id, auth.id),
   });
 
-  if (!user) {
+  if (!dbUser) {
     return c.json(
       {
         error: "User not found",

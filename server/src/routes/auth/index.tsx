@@ -6,7 +6,7 @@ import { Welcome } from "../../emails/welcome";
 import { authMiddleware } from "../../middleware/auth";
 import { CreateProfileInput, createProfileSchema } from "./types";
 import { zValidator } from "@hono/zod-validator";
-import { User } from "../../db/schema";
+import { user } from "../../db/schema";
 
 const resend = new Resend(process.env.RESEND_API_KEY);
 
@@ -39,13 +39,13 @@ authRouter.post(
         businessPhone,
       } = validatedData;
 
-      const user = await db.query.User.findFirst({
-        where: eq(User.id, auth.id),
+      const dbUser = await db.query.user.findFirst({
+        where: eq(user.id, auth.id),
       });
 
-      if (!user) {
+      if (!dbUser) {
         //Create new user
-        await db.insert(User).values({
+        await db.insert(user).values({
           id: auth.id,
           email: auth.email,
           name: auth.name ?? `${firstName} ${lastName}`,
@@ -93,3 +93,26 @@ authRouter.post(
     }
   }
 );
+
+authRouter.get("/check-emails/:email", async (c) => {
+  try {
+    const email = c.req.param("email");
+
+    if (!email) {
+      return c.json({ error: "Email parameter is required" }, 400);
+    }
+
+    const emailExists = await db.query.user.findFirst({
+      where: eq(user.email, email),
+    });
+
+    if (emailExists) {
+      return c.json({ exists: true }, 200);
+    } else {
+      return c.json({ exists: false }, 200);
+    }
+  } catch (error) {
+    console.error("Error checking emails:", error);
+    return c.json({ error: "Failed to check emails" }, 500);
+  }
+});

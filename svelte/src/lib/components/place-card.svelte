@@ -32,20 +32,18 @@
 	};
 </script>
 
-<a href={`/place/$place.slug`} class="justofy-center m-0 flex w-full p-0">
-	<div class="m-0 flex h-full max-w-sm cursor-pointer flex-col overflow-hidden rounded-xl p-0">
-		<div class="relative">
-			<Carousel.Root setApi={(emblaApi) => (carouselApi = emblaApi)}>
+<a href={`/place/${place.slug}`} class="m-0 flex w-full justify-center p-0">
+	<div class="m-0 flex h-full max-w-sm cursor-pointer flex-col overflow-hidden p-0">
+		<div class="relative w-full overflow-hidden rounded-xl">
+			<Carousel.Root setApi={(emblaApi) => (carouselApi = emblaApi)} class="rounded-xl">
 				<div class="group relative cursor-pointer">
 					<Carousel.Content class="basis-[280px] md:basis-[320px]">
 						{#each place.images as image}
-							<Carousel.Item class="pl-0">
-								<div class="relative aspect-[4/3] overflow-hidden rounded-xl">
-									<img
-										src={image.url}
-										alt={image.altText}
-										class="h-full w-full object-cover transition-transform duration-200 group-hover:scale-105"
-									/>
+							<Carousel.Item class="pl-3">
+								<div
+									class="relative aspect-[4/3] transition-transform duration-200 group-hover:scale-105"
+								>
+									<img src={image.url} alt={image.altText} class="h-full w-full object-cover" />
 								</div>
 							</Carousel.Item>
 						{/each}
@@ -84,12 +82,12 @@
 				</Button>
 			</div>
 		</div>
-		<div class="space-y-3 p-2">
+		<div class="space-y-3 py-2">
 			<div class="m-0 flex items-center justify-between">
 				<h3 class="truncate font-medium">{place.name}</h3>
 				<div class="flex items-center gap-1">
-					<Star class="size-4" fill="#000000" />
-					<span>{place.rating.toFixed(1)}</span>
+					<Star class="size-3" fill="#000000" />
+					<span class="text-sm">{Number(place.rating).toFixed(1)}</span>
 				</div>
 			</div>
 			<div class="text-muted-foreground m-0 text-sm">

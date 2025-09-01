@@ -62,7 +62,7 @@
 						{$region.data.stats.totalEats} Restaurants & Cafes
 					</div>
 				</div>
-				<div class="min-width-full relative my-5 flex justify-center">
+				<div class="relative my-5 flex min-w-full justify-center">
 					<img
 						src={$region.data.region.image}
 						alt={$region.data.region.name}

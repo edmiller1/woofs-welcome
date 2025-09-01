@@ -20,8 +20,17 @@ placeRouter.get("/:slug", async (c) => {
     const place = await db.query.Place.findFirst({
       where: eq(Place.slug, slug),
       with: {
-        city: true,
+        city: {
+          with: {
+            region: {
+              with: {
+                island: true,
+              },
+            },
+          },
+        },
         images: true,
+        claim: true,
       },
     });
 

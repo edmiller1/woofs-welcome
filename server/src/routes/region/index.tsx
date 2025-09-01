@@ -45,7 +45,7 @@ regionRouter.get("/:slug", async (c) => {
           sql`CASE WHEN ${Place.types}::text[] && ARRAY['Store'] THEN 1 END`
         ),
         totalAdventures: count(
-          sql`CASE WHEN ${Place.types}::text[] && ARRAY['Walk', 'Hike', 'Park'] THEN 1 END`
+          sql`CASE WHEN ${Place.types}::text[] && ARRAY['Walk', 'Hike', 'Trail'] THEN 1 END`
         ),
         totalStays: count(
           sql`CASE WHEN ${Place.types}::text[] && ARRAY['Hotel', 'Motel', 'AirBnb'] THEN 1 END`

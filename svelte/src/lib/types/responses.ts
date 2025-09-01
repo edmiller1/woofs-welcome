@@ -1,10 +1,12 @@
 import type {
 	City,
 	CityWithPlaces,
+	CityWithRegion,
+	Claim,
 	IslandWithRegions,
 	Place,
-	RegionStats,
-	RegionWithIsland
+	RegionWithIsland,
+	Stats
 } from './models';
 
 export interface CreateUserResponse {
@@ -16,7 +18,7 @@ export interface CreateUserResponse {
 export interface GetRegionResponse {
 	cities: CityWithPlaces[];
 	region: RegionWithIsland;
-	stats: RegionStats;
+	stats: Stats;
 	foodSpots: Place[];
 	stays: Place[];
 	adventures: Place[];
@@ -29,6 +31,22 @@ export interface GetIslandResponse extends IslandWithRegions {
 }
 
 export interface getCityResponse {
-	city: City;
+	city: CityWithRegion;
+	stats: Stats;
+	foodSpots: Place[];
+	stays: Place[];
+	adventures: Place[];
+	retail: Place[];
+	error?: string;
+}
+
+export interface GetPlaceResponse extends Place {
+	city: CityWithRegion;
+	claim: Claim;
+	error?: string;
+}
+
+export interface CheckEmailsResponse {
+	exists: boolean;
 	error?: string;
 }

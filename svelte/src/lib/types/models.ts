@@ -42,6 +42,27 @@ export interface City {
 	optimizedImage: OptimizedImage;
 }
 
+export interface Hours {
+	Monday?: string;
+	Tuesday?: string;
+	Wednesday?: string;
+	Thursday?: string;
+	Friday?: string;
+	Saturday?: string;
+	Sunday?: string;
+}
+
+export type DayOfWeek =
+	| 'Monday'
+	| 'Tuesday'
+	| 'Wednesday'
+	| 'Thursday'
+	| 'Friday'
+	| 'Saturday'
+	| 'Sunday';
+
+export type DayOfWeekHours = Partial<Record<DayOfWeek, string>>;
+
 export interface Place {
 	id: string;
 	name: string;
@@ -54,7 +75,8 @@ export interface Place {
 	longitude: string;
 	phone: string;
 	website: string;
-	hours: any;
+	email: string | null;
+	hours: Hours | null;
 	dogPolicy: string | null;
 	indoorAllowed: boolean;
 	outdoorAllowed: boolean;
@@ -142,10 +164,51 @@ export interface CityWithPlaces extends City {
 	places: Place[];
 }
 
-export interface RegionStats {
+export interface CityWithRegion extends City {
+	region: RegionWithIsland;
+}
+
+export interface Stats {
 	totalAdventures: number;
 	totalEats: number;
 	totalPlaces: number;
 	totalStays: number;
 	totalStores: number;
+}
+
+export interface Claim {
+	id: string;
+	placeId: string;
+	userId: string;
+	status: string;
+	proof: string;
+	approvedAt: string;
+	approvedBy: string;
+	createdAt: string;
+	updatedAt: string;
+}
+
+export interface Review {
+	id: string;
+	user: {
+		name: string;
+		image: string | null | undefined;
+	};
+	userId: string;
+	rating: number;
+	content: string;
+	visitDate: string;
+	photos: string[];
+	staffFriendlinessRating: number;
+	hadWaterBowls: boolean;
+	hadDogTreats: boolean;
+	hadDogArea: boolean;
+	hadDogMenu: boolean;
+	numDogs: number;
+	dogBreeds: string[];
+	timeOfVisit: string;
+	wouldRecommendForDogs: boolean;
+	isFirstVisit: boolean;
+	createdAt: string;
+	updatedAt: string;
 }

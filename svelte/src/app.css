@@ -160,6 +160,15 @@
   }
 }
 
+html {
+    scroll-behavior: smooth;
+}
+
+body {
+  margin: 0;
+  padding: 0;
+}
+
 .business-hero-background {
   position: absolute;
   inset: 0;
@@ -169,3 +178,13 @@
   background-image: url('./lib/assets/fluffs.jpg');
   clip-path: polygon(60% 0%, 100% 0%, 100% 100%, 40% 100%);
 }
+
+	:global(.embla__container) {
+		border-radius: 0.75rem !important;
+		overflow: hidden !important;
+	}
+	
+	:global(.embla__slide) {
+		border-radius: 0.75rem !important;
+		overflow: hidden !important;
+	}

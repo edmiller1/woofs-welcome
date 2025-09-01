@@ -34,7 +34,7 @@ export const placeTypeEnum = pgEnum("place_type", [
   "Trail",
 ]);
 
-export const User = pgTable(
+export const user = pgTable(
   "user",
   {
     id: text("id").primaryKey(),
@@ -79,7 +79,7 @@ export const session = pgTable("session", {
   userAgent: text("user_agent"),
   userId: text("user_id")
     .notNull()
-    .references(() => User.id, { onDelete: "cascade" }),
+    .references(() => user.id, { onDelete: "cascade" }),
 });
 
 export const account = pgTable("account", {
@@ -88,7 +88,7 @@ export const account = pgTable("account", {
   providerId: text("provider_id").notNull(),
   userId: text("user_id")
     .notNull()
-    .references(() => User.id, { onDelete: "cascade" }),
+    .references(() => user.id, { onDelete: "cascade" }),
   accessToken: text("access_token"),
   refreshToken: text("refresh_token"),
   idToken: text("id_token"),
@@ -162,12 +162,15 @@ export const Place = pgTable("place", {
   longitude: numeric("longitude", { precision: 10, scale: 6 }),
   // Contact info
   phone: text("phone"),
+  email: text("email"),
   website: text("website"),
   hours: jsonb("hours"), // Store opening hours as JSON
   // Dog-specific info
   dogPolicy: text("dog_policy"),
   indoorAllowed: boolean("indoor_allowed").default(false),
   outdoorAllowed: boolean("outdoor_allowed").default(false),
+  hasDogMenu: boolean("has_dog_menu").default(false), // for restaurants
+
   // Metrics and flags
   rating: numeric("rating", { precision: 3, scale: 2 }).default("0"),
   reviewsCount: integer("reviews_count").default(0),
@@ -187,7 +190,7 @@ export const PlaceImage = pgTable("place_image", {
   altText: text("alt_text"),
   isPrimary: boolean("is_primary").default(false),
   source: text("source").notNull(), // 'google', 'user_upload', 'admin', 'scraper', etc.
-  uploadedBy: text("uploaded_by").references(() => User.id), // null for google/scraped images
+  uploadedBy: text("uploaded_by").references(() => user.id), // null for google/scraped images
   isApproved: boolean("is_approved").default(true), // for moderation
   displayOrder: integer("display_order").default(0),
   createdAt: timestamp("created_at").defaultNow().notNull(),
@@ -203,12 +206,27 @@ export const Review = pgTable(
       .references(() => Place.id, { onDelete: "cascade" }),
     userId: text("user_id")
       .notNull()
-      .references(() => User.id, { onDelete: "cascade" }),
+      .references(() => user.id, { onDelete: "cascade" }),
     rating: integer("rating").notNull(),
     content: text("content"),
     visitDate: timestamp("visit_date"),
     photos: text("photos").array(),
-    helpfulCount: integer("helpful_count").default(0),
+    staffFriendlinessRating: integer("staff_friendliness_rating"), // 1-5
+
+    // Dog amenities (boolean flags)
+    hadWaterBowls: boolean("had_water_bowls"),
+    hadDogTreats: boolean("had_dog_treats"),
+    hadDogArea: boolean("had_dog_area"),
+    hadDogMenu: boolean("had_dog_menu"), // for restaurants
+
+    // Experience details
+    numDogs: integer("num_dogs"), // Number of dogs with the reviewer
+    dogBreeds: text("dog_breeds").array(), // Array of dog breed
+    timeOfVisit: text("time_of_visit"), // "morning", "afternoon", "evening"
+
+    // Helpful flags
+    wouldRecommendForDogs: boolean("would_recommend_for_dogs").default(true),
+    isFirstVisit: boolean("is_first_visit").default(true),
     createdAt: timestamp("created_at").defaultNow().notNull(),
     updatedAt: timestamp("updated_at").defaultNow().notNull(),
   },
@@ -226,7 +244,7 @@ export const Favourite = pgTable(
     id: uuid("id").primaryKey().defaultRandom(),
     userId: text("user_id")
       .notNull()
-      .references(() => User.id, { onDelete: "cascade" }),
+      .references(() => user.id, { onDelete: "cascade" }),
     placeId: uuid("place_id")
       .notNull()
       .references(() => Place.id, { onDelete: "cascade" }),
@@ -249,11 +267,11 @@ export const Claim = pgTable(
       .references(() => Place.id, { onDelete: "cascade" }),
     userId: text("user_id")
       .notNull()
-      .references(() => User.id, { onDelete: "cascade" }),
+      .references(() => user.id, { onDelete: "cascade" }),
     status: text("status").notNull().default("pending"), // pending, approved, rejected
     proof: text("proof"), // Document/evidence for ownership
     approvedAt: timestamp("approved_at"),
-    approvedBy: text("approved_by").references(() => User.id),
+    approvedBy: text("approved_by").references(() => user.id),
     createdAt: timestamp("created_at").defaultNow().notNull(),
     updatedAt: timestamp("updated_at").defaultNow().notNull(),
   },
@@ -293,7 +311,7 @@ export const PlaceTag = pgTable(
 );
 
 // Define relationships
-export const usersRelations = relations(User, ({ many }) => ({
+export const usersRelations = relations(user, ({ many }) => ({
   reviews: many(Review),
   favorites: many(Favourite),
   placeClaims: many(Claim),
@@ -327,7 +345,7 @@ export const placeRelations = relations(Place, ({ one, many }) => ({
   images: many(PlaceImage),
   reviews: many(Review),
   favorites: many(Favourite),
-  claims: many(Claim),
+  claim: one(Claim),
   placeTags: many(PlaceTag),
 }));
 
@@ -336,9 +354,9 @@ export const placeImageRelations = relations(PlaceImage, ({ one }) => ({
     fields: [PlaceImage.placeId],
     references: [Place.id],
   }),
-  uploadedByUser: one(User, {
+  uploadedByUser: one(user, {
     fields: [PlaceImage.uploadedBy],
-    references: [User.id],
+    references: [user.id],
   }),
 }));
 
@@ -347,9 +365,9 @@ export const reviewRelations = relations(Review, ({ one }) => ({
     fields: [Review.placeId],
     references: [Place.id],
   }),
-  user: one(User, {
+  user: one(user, {
     fields: [Review.userId],
-    references: [User.id],
+    references: [user.id],
   }),
 }));
 
@@ -358,9 +376,9 @@ export const favouriteRelations = relations(Favourite, ({ one }) => ({
     fields: [Favourite.placeId],
     references: [Place.id],
   }),
-  user: one(User, {
+  user: one(user, {
     fields: [Favourite.userId],
-    references: [User.id],
+    references: [user.id],
   }),
 }));
 
@@ -369,13 +387,13 @@ export const claimRelations = relations(Claim, ({ one }) => ({
     fields: [Claim.placeId],
     references: [Place.id],
   }),
-  user: one(User, {
+  user: one(user, {
     fields: [Claim.userId],
-    references: [User.id],
+    references: [user.id],
   }),
-  approver: one(User, {
+  approver: one(user, {
     fields: [Claim.approvedBy],
-    references: [User.id],
+    references: [user.id],
   }),
 }));
 

@@ -4,10 +4,10 @@ import { emailOTP, oneTap } from "better-auth/plugins";
 import { db } from "../db";
 import { resend } from "./resend";
 import { createOtpEmailHtml } from "../emails/create-otp-email";
-import * as schema from "../db/schema";
-import { user as User } from "../db/schema";
-import { Welcome } from "../emails/welcome";
 import { createWelcomeEmail } from "../emails/create-welcome-email";
+import { eq } from "drizzle-orm";
+import { user } from "../db/schema";
+import * as schema from "../db/schema";
 
 export const auth = betterAuth({
   database: drizzleAdapter(db, {
@@ -62,6 +62,45 @@ export const auth = betterAuth({
   secret: process.env.BETTER_AUTH_SECRET!,
   databaseHooks: {
     user: {
+      additionalFields: {
+        firstName: {
+          type: "string",
+          required: false,
+        },
+        lastName: {
+          type: "string",
+          required: false,
+        },
+        provider: {
+          type: "string",
+          required: false,
+          default: "google", // Default to google if not provided
+        },
+        businessName: {
+          type: "string",
+          required: false,
+        },
+        businessEmail: {
+          type: "string",
+          required: false,
+        },
+        businessPhone: {
+          type: "string",
+          required: false,
+        },
+        website: {
+          type: "string",
+          required: false,
+        },
+        businessDescription: {
+          type: "string",
+          required: false,
+        },
+        logoUrl: {
+          type: "string",
+          required: false,
+        },
+      },
       create: {
         after: async (user) => {
           console.log("User created:", user);
@@ -72,11 +111,45 @@ export const auth = betterAuth({
             subject: "Welcome",
             html: createWelcomeEmail(),
           });
-          if( error) {
+          if (error) {
             console.error("Failed to send welcome email:", error);
           }
         },
       },
+    },
+    hooks: {
+      after: [
+        {
+          matcher(context: any) {
+            return (
+              context.type === "credential.signIn" ||
+              context.type === "credential.signUp"
+            );
+          },
+          handler: async (ctx: any) => {
+            // Update provider to "email" for email/OTP auth
+            await db
+              .update(user)
+              .set({ provider: "email" })
+              .where(eq(user.id, ctx.user.id));
+          },
+        },
+        {
+          matcher(context: any) {
+            return (
+              context.type === "oauth.signIn" || context.type === "oauth.signUp"
+            );
+          },
+          handler: async (ctx: any) => {
+            // Update provider to the OAuth provider (google, etc.)
+            const provider = ctx.account?.providerId || "google";
+            await db
+              .update(user)
+              .set({ provider })
+              .where(eq(user.id, ctx.user.id));
+          },
+        },
+      ],
     },
   },
 });

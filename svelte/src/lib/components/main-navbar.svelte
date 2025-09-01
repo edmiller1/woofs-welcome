@@ -19,6 +19,7 @@
 	import { DropdownMenu, DropdownMenuTrigger } from './ui/dropdown-menu';
 	import { Avatar, AvatarFallback, AvatarImage } from './ui/avatar';
 	import type { BAUser } from '$lib/types/models';
+	import UserNav from './user-nav.svelte';
 
 	interface Props {
 		user: BAUser | null;
@@ -174,14 +175,7 @@
 				</div>
 				<div class="relative ml-4 shrink-0">
 					{#if user}
-						<DropdownMenu>
-							<DropdownMenuTrigger>
-								<Avatar>
-									<AvatarImage src={user.image} />
-									<AvatarFallback>{user.name[0]}</AvatarFallback>
-								</Avatar>
-							</DropdownMenuTrigger>
-						</DropdownMenu>
+						<UserNav {user} />
 					{:else}
 						<Button>Sign in</Button>
 					{/if}

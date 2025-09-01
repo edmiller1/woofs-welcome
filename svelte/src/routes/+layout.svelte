@@ -7,6 +7,8 @@
 	import { QueryClient, QueryClientProvider } from '@tanstack/svelte-query';
 	import { SvelteQueryDevtools } from '@tanstack/svelte-query-devtools';
 	import { browser } from '$app/environment';
+	import AuthModal from '$lib/components/auth-modal.svelte';
+	import 'mapbox-gl/dist/mapbox-gl.css';
 
 	const queryClient = new QueryClient({
 		defaultOptions: {
@@ -33,6 +35,7 @@
 	{:else}
 		{@render children()}
 	{/if}
+	<AuthModal />
 	<Toaster />
-	<SvelteQueryDevtools />
+	<!-- <SvelteQueryDevtools /> -->
 </QueryClientProvider>
