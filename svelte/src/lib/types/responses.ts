@@ -1,4 +1,5 @@
 import type {
+	Breed,
 	City,
 	CityWithPlaces,
 	CityWithRegion,
@@ -42,11 +43,23 @@ export interface getCityResponse {
 
 export interface GetPlaceResponse extends Place {
 	city: CityWithRegion;
-	claim: Claim;
+	claim: Claim | null;
+	isFavourited: boolean;
 	error?: string;
 }
 
 export interface CheckEmailsResponse {
 	exists: boolean;
+	error?: string;
+}
+
+export interface FavouritePlaceResponse {
+	success: boolean;
+	action: 'added' | 'removed';
+	error?: string;
+}
+
+export interface GetBreedsResponse {
+	breeds: Breed[];
 	error?: string;
 }

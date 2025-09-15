@@ -17,7 +17,7 @@
 	<!-- Large main image - spans 2 columns and 2 rows  -->
 	<div class="group relative col-span-2 row-span-2 cursor-pointer">
 		{#if images[0]}
-			{#if images[0].source === 'Google'}
+			{#if images[0].source === 'google'}
 				<GoogleBadge className="size-10" />
 			{/if}
 			<img
@@ -31,7 +31,7 @@
 	<!-- Top right image - explicitly spans 1 row -->
 	{#if images[1]}
 		<div class="group relative row-span-1 cursor-pointer">
-			{#if images[1].source === 'Google'}
+			{#if images[1].source === 'google'}
 				<GoogleBadge className="size-10" />
 			{/if}
 			<img
@@ -45,7 +45,7 @@
 	<!-- Bottom right image with overlay button - explicitly spans 1 row -->
 	{#if images[2]}
 		<div class="group relative row-span-1 cursor-pointer">
-			{#if images[2].source === 'Google'}
+			{#if images[2].source === 'google'}
 				<GoogleBadge className="size-5" />
 			{/if}
 			<img

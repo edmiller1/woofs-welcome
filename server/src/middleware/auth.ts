@@ -1,7 +1,7 @@
 import { Context, Next } from "hono";
 import { db } from "../db";
 import { eq } from "drizzle-orm";
-import { user } from "../db/schema";
+import { session, user } from "../db/schema";
 import { Session, User as betterAuthUser } from "better-auth/types";
 import { auth } from "../lib/auth";
 
@@ -14,30 +14,64 @@ declare module "hono" {
 
 // Authentication middleware
 export const authMiddleware = async (c: Context, next: Next) => {
-  const session = await auth.api.getSession({
-    headers: c.req.raw.headers,
-  });
+  try {
+    const authHeader = c.req.header("Authorization");
+    const token = authHeader?.split(" ")[1] || "";
 
-  if (!session) {
-    return c.json({ error: "Unauthorized" }, 401);
+    if (!token) {
+      console.log("No token provided");
+      return c.json({ error: "Unauthorized - No token" }, 401);
+    }
+
+    const userSession = await db.query.session.findFirst({
+      where: eq(session.token, token),
+      with: {
+        user: true,
+      },
+    });
+
+    if (!userSession) {
+      return c.json({ error: "Unauthorized - Invalid session" }, 401);
+    }
+
+    // Check if session is expired
+    if (userSession.expiresAt < new Date()) {
+      return c.json({ error: "Unauthorized - Session expired" }, 401);
+    }
+
+    c.set("user", userSession.user);
+    c.set("session", userSession);
+
+    await next();
+  } catch (error) {
+    console.error("Auth middleware error:", error);
+    return c.json({ error: "Unauthorized - Server error" }, 401);
   }
-
-  c.set("user", session.user);
-  c.set("session", session.session);
-  await next();
 };
 
 export const optionalAuthMiddleware = async (c: Context, next: Next) => {
-  const session = await auth.api.getSession({ headers: c.req.raw.headers });
+  const authHeader = c.req.header("Authorization");
+  const token = authHeader?.split(" ")[1] || "";
 
-  if (!session) {
+  if (!token) {
+    return next();
+  }
+
+  const userSession = await db.query.session.findFirst({
+    where: eq(session.token, token),
+    with: {
+      user: true,
+    },
+  });
+
+  if (!userSession) {
     c.set("user", null);
     c.set("session", null);
     return next();
   }
 
-  c.set("user", session.user);
-  c.set("session", session.session);
+  c.set("user", userSession.user);
+  c.set("session", userSession);
   return next();
 };
 

@@ -53,6 +53,7 @@
 		"@internationalized/date": "^3.8.1",
 		"@supabase/ssr": "^0.6.1",
 		"@supabase/supabase-js": "^2.50.0",
+		"@tanstack/svelte-form": "^1.19.4",
 		"@tanstack/svelte-query": "^5.81.5",
 		"@tanstack/svelte-query-devtools": "^5.81.5",
 		"@types/mapbox-gl": "^3.4.1",

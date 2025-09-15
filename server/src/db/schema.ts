@@ -185,6 +185,7 @@ export const PlaceImage = pgTable("place_image", {
   placeId: uuid("place_id")
     .notNull()
     .references(() => Place.id, { onDelete: "cascade" }),
+  publicId: text("public_id").notNull(),
   url: text("url").notNull(),
   caption: text("caption"),
   altText: text("alt_text"),
@@ -208,6 +209,7 @@ export const Review = pgTable(
       .notNull()
       .references(() => user.id, { onDelete: "cascade" }),
     rating: integer("rating").notNull(),
+    title: text("title").notNull(),
     content: text("content"),
     visitDate: timestamp("visit_date"),
     photos: text("photos").array(),
@@ -310,11 +312,25 @@ export const PlaceTag = pgTable(
   }
 );
 
+export const DogBreed = pgTable("dog_breed", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  name: text("name").notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
 // Define relationships
 export const usersRelations = relations(user, ({ many }) => ({
   reviews: many(Review),
   favorites: many(Favourite),
   placeClaims: many(Claim),
+  session: many(session),
+}));
+
+export const sessionRelations = relations(session, ({ one }) => ({
+  user: one(user, {
+    fields: [session.userId],
+    references: [user.id],
+  }),
 }));
 
 export const islandRelations = relations(Island, ({ many }) => ({
@@ -345,7 +361,10 @@ export const placeRelations = relations(Place, ({ one, many }) => ({
   images: many(PlaceImage),
   reviews: many(Review),
   favorites: many(Favourite),
-  claim: one(Claim),
+  activeClaim: one(Claim, {
+    fields: [Place.id],
+    references: [Claim.placeId],
+  }),
   placeTags: many(PlaceTag),
 }));
 

@@ -1,3 +1,7 @@
+import { and, eq } from "drizzle-orm";
+import { db } from "../db";
+import { Favourite } from "../db/schema";
+
 export const getResponsiveImageUrls = (publicIdOrUrl: string) => {
   const baseUrl = "https://res.cloudinary.com/dmkxl9apk/image/upload";
   const publicId = extractPublicId(publicIdOrUrl);
@@ -72,4 +76,14 @@ export const extractPublicId = (urlOrPublicId: string): string => {
   const publicId = publicIdPart.replace(/\.[^.]+$/, "");
 
   return publicId;
+};
+
+export const checkIsFavourited = async (userId: string, placeId: string) => {
+  const [favourite] = await db
+    .select()
+    .from(Favourite)
+    .where(and(eq(Favourite.userId, userId), eq(Favourite.placeId, placeId)))
+    .limit(1);
+
+  return !!favourite;
 };

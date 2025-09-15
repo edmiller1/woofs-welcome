@@ -212,3 +212,14 @@ export interface Review {
 	createdAt: string;
 	updatedAt: string;
 }
+
+export interface Tab {
+	name: string;
+	href: string;
+}
+
+export interface Breed {
+	id: string;
+	name: string;
+	createdAt: string;
+}

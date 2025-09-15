@@ -25,4 +25,27 @@ export const Cloudinary = {
       largeUrl: res.eager[2].secure_url as string,
     };
   },
+  uploadGoogleImage: async (
+    googleImage: string,
+    placeSlug: string,
+    index: number
+  ) => {
+    try {
+      const result = await cloudinary.uploader.upload(googleImage, {
+        folder: `ww-places-assets/${placeSlug}`,
+      });
+
+      return {
+        publicId: result.public_id,
+        url: result.secure_url,
+        displayOrder: index,
+      };
+    } catch (error) {
+      console.error(
+        `❌ Failed to upload image ${index} for place ${placeSlug}:`,
+        error
+      );
+      return null;
+    }
+  },
 };

@@ -6,10 +6,6 @@ export const Google = {
       `https://maps.googleapis.com/maps/api/place/textsearch/json?query=${encodeURIComponent(searchQuery)}&key=${process.env.GOOGLE_PLACES_API_KEY}`
     );
 
-    console.log(
-      `https://maps.googleapis.com/maps/api/place/textsearch/json?query=${encodeURIComponent(searchQuery)}&key=${process.env.GOOGLE_PLACES_API_KEY}`
-    );
-
     const data = await response.json();
 
     if (data.status === "OK") {
@@ -34,8 +30,6 @@ export const Google = {
     const response = await fetch(detailsUrl);
     const data = await response.json();
 
-    console.log("Place details response:", data);
-
     if (data.status === "OK" && data.result?.photos) {
       const photos = data.result.photos.slice(0, 20); // Limit to 20 photos
       // Convert photo references to actual image URLs
@@ -52,15 +46,11 @@ export const Google = {
   ) => {
     const searchQuery = location ? `${query} in ${location}` : query;
 
-    console.log(searchQuery);
-
     const response = await fetch(
       `https://maps.googleapis.com/maps/api/place/textsearch/json?query=${encodeURIComponent(searchQuery)}&key=${process.env.GOOGLE_PLACES_API_KEY}`
     );
 
     const data = await response.json();
-
-    console.log(data);
 
     if (data.status === "OK") {
       return data.results.map((place: any) => ({

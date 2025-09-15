@@ -11,6 +11,7 @@ import { placeRouter } from "./routes/place";
 import { regionRouter } from "./routes/region";
 import { cityRouter } from "./routes/city";
 import { islandRouter } from "./routes/island";
+import { reviewRouter } from "./routes/review";
 
 const app = new Hono();
 
@@ -42,6 +43,7 @@ app.route("/api/place", placeRouter);
 app.route("/api/region", regionRouter);
 app.route("/api/city", cityRouter);
 app.route("/api/island", islandRouter);
+app.route("/api/review", reviewRouter);
 
 app.get("/", (c) => {
   return c.text("Hello Hono!");

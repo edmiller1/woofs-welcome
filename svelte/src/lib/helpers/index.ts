@@ -130,3 +130,7 @@ export const getTimeOfVisitEmoji = (time: string) => {
 			return '';
 	}
 };
+
+export function classNames(...classes: any) {
+	return classes.filter(Boolean).join(' ');
+}

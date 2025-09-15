@@ -1,7 +1,7 @@
 <script lang="ts">
 	import PlaceImageGrid from './../../../lib/components/place-image-grid.svelte';
 	import { api } from '$lib/api/index.js';
-	import { BadgeCheck, Heart, Loader2, Share } from '@lucide/svelte';
+	import { BadgeCheck, Loader2 } from '@lucide/svelte';
 	import { createQuery } from '@tanstack/svelte-query';
 	import MainNavbar from '$lib/components/main-navbar.svelte';
 	import Footer from '$lib/components/footer.svelte';
@@ -17,21 +17,18 @@
 	import PlaceReviews from './components/place-reviews.svelte';
 	import PlaceDetails from './components/place-details.svelte';
 	import PlaceDescription from './components/place-description.svelte';
-
-	interface Tab {
-		name: string;
-		href: string;
-	}
+	import ShareButton from '$lib/components/share-button.svelte';
+	import { page } from '$app/state';
+	import SaveButton from '$lib/components/save-button.svelte';
+	import type { Tab } from '$lib/types/models';
+	import { classNames } from '$lib/helpers';
+	import StickyHeader from './components/sticky-header.svelte';
 
 	const tabs: Tab[] = [
 		{ name: 'About', href: '#about' },
 		{ name: 'Dog Policy', href: '#dog-policy' },
 		{ name: 'Reviews', href: '#reviews' }
 	];
-
-	function classNames(...classes: any) {
-		return classes.filter(Boolean).join(' ');
-	}
 
 	let { data } = $props();
 	const user = $derived(data.user);
@@ -44,6 +41,9 @@
 	let imagesOpen = $state<boolean>(false);
 	let currentTab = $state<string>('About');
 	let mapComponent = $state<any>();
+	let scrollY = $state(0);
+	let headerElement = $state<HTMLElement>();
+	let showStickyHeader = $state(false);
 
 	const coordinates = $derived(() => {
 		if ($place.isSuccess && $place.data.latitude && $place.data.longitude) {
@@ -71,7 +71,16 @@
 		console.log('Map is ready!', map);
 		// You can add any map initialization logic here
 	};
+
+	$effect(() => {
+		if (headerElement && scrollY > 0) {
+			const headerBottom = headerElement.offsetTop + headerElement.offsetHeight;
+			showStickyHeader = scrollY > headerBottom;
+		}
+	});
 </script>
+
+<svelte:window bind:scrollY />
 
 {#if $place.isError}
 	<div>Error</div>
@@ -84,8 +93,25 @@
 {/if}
 
 {#if $place.isSuccess}
+	<!-- Sticky Header -->
+	<StickyHeader
+		placeName={$place.data.name}
+		placeClaim={$place.data.claim}
+		placeId={$place.data.id}
+		{user}
+		{openAuthModal}
+		{changeTab}
+		{tabs}
+		{currentTab}
+		isFavourited={$place.data.isFavourited}
+		{headerElement}
+		{scrollY}
+		{showStickyHeader}
+	/>
+
 	<div class="mx-auto max-w-7xl px-2 sm:px-4 lg:px-8">
 		<MainNavbar {user} currentPlace={$place.data.name} />
+
 		<div class="py-2 lg:flex lg:items-center lg:justify-between">
 			<div class="min-w-0 flex-1">
 				<Breadcrumbs
@@ -95,9 +121,9 @@
 					cityName={$place.data.city.name}
 					placeName={$place.data.name}
 				/>
-				<div class="my-4 flex items-center justify-between">
+				<div bind:this={headerElement} class="my-4 flex items-center justify-between">
 					<div class="flex items-center gap-4">
-						<h2 class="text-2xl/7 font-bold sm:truncate sm:text-3xl sm:tracking-tight">
+						<h2 class="text-2xl/7 font-bold sm:truncate sm:text-4xl sm:tracking-tight">
 							{$place.data.name}
 						</h2>
 						{#if $place.data.claim}
@@ -108,7 +134,7 @@
 						{/if}
 					</div>
 					<div class="flex items-center gap-4">
-						<Button variant="link" class="underline">Share <Share class="size-4" /></Button>
+						<ShareButton link={page.url.href} name={$place.data.name} />
 						{#if !$place.data.claim}
 							<Button
 								class="rounded-full"
@@ -120,15 +146,12 @@
 							>
 						{/if}
 
-						<Button
-							variant="outline"
-							class="rounded-full"
-							onclick={user
-								? () => {
-										console.log('Saving place');
-									}
-								: openAuthModal}>Save <Heart class="size-4" /></Button
-						>
+						<SaveButton
+							{user}
+							{openAuthModal}
+							placeId={$place.data.id}
+							isFavourited={$place.data.isFavourited}
+						/>
 					</div>
 				</div>
 
@@ -237,7 +260,14 @@
 					</div>
 				</div>
 				<!-- Reviews -->
-				<PlaceReviews reviews={dummyReviews} />
+				<PlaceReviews
+					reviews={dummyReviews}
+					{openAuthModal}
+					{user}
+					placeId={$place.data.id}
+					placeName={$place.data.name}
+					placeTypes={$place.data.types}
+				/>
 			</div>
 		</div>
 		<Footer />

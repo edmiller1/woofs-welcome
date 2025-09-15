@@ -3,15 +3,22 @@
 	import { Badge } from '$lib/components/ui/badge';
 	import { Button } from '$lib/components/ui/button';
 	import { calculateRatingStats, formatDate, getTimeOfVisitEmoji } from '$lib/helpers';
-	import type { Review } from '$lib/types/models';
+	import type { BAUser, Review } from '$lib/types/models';
 	import { Flag, Star, ThumbsUp } from '@lucide/svelte';
 	import * as Pagination from '$lib/components/ui/pagination/index.js';
+	import * as Tooltip from '$lib/components/ui/tooltip/index.js';
+	import ReviewForm from './review-form.svelte';
 
 	interface Props {
+		placeId: string;
+		placeName: string;
+		placeTypes: string[];
 		reviews: Review[];
+		openAuthModal: () => void;
+		user: BAUser | null;
 	}
 
-	const { reviews }: Props = $props();
+	const { reviews, openAuthModal, user, placeId, placeName, placeTypes }: Props = $props();
 
 	const ratingStats = calculateRatingStats(reviews.map((review) => review.rating));
 </script>
@@ -31,7 +38,7 @@
 				>
 			</div>
 		</div>
-		<Button variant="ghost"><Star class="size-4" /> Write a Review</Button>
+		<ReviewForm {openAuthModal} {user} {placeId} {placeName} {placeTypes} />
 	</div>
 
 	<div class="bg-muted mb-8 rounded-lg p-6">
@@ -82,12 +89,30 @@
 								</div>
 							</div>
 							<div class="flex items-center gap-2">
-								<Button variant="outline" class="rounded-full p-1">
-									<ThumbsUp className="w-4 h-4 text-muted-foreground" />
-								</Button>
-								<Button variant="outline" class="rounded-full p-1">
-									<Flag className="w-4 h-4 text-muted-foreground" />
-								</Button>
+								<Tooltip.Provider>
+									<Tooltip.Root>
+										<Tooltip.Trigger>
+											<Button variant="outline" class="rounded-full p-1">
+												<ThumbsUp className="w-4 h-4 text-muted-foreground" />
+											</Button>
+										</Tooltip.Trigger>
+										<Tooltip.Content>
+											<p>This review is helpful</p>
+										</Tooltip.Content>
+									</Tooltip.Root>
+								</Tooltip.Provider>
+								<Tooltip.Provider>
+									<Tooltip.Root>
+										<Tooltip.Trigger>
+											<Button variant="outline" class="rounded-full p-1">
+												<Flag className="w-4 h-4 text-muted-foreground" />
+											</Button>
+										</Tooltip.Trigger>
+										<Tooltip.Content>
+											<p>Report this review</p>
+										</Tooltip.Content>
+									</Tooltip.Root>
+								</Tooltip.Provider>
 							</div>
 						</div>
 						<div class="mt-2 flex gap-1">

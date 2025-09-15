@@ -72,9 +72,9 @@ export const auth = {
 			if (data) {
 				session.set(data);
 
-				// const redirectPath = localStorage.getItem('auth_redirect') || '/';
-				// localStorage.removeItem('auth_redirect');
-				// goto(redirectPath);
+				const redirectPath = localStorage.getItem('auth_redirect') || '/';
+				localStorage.removeItem('auth_redirect');
+				goto(redirectPath);
 
 				return true;
 			}

@@ -1,5 +1,7 @@
 import axios from 'axios';
 import { PUBLIC_BASE_URL, PUBLIC_NODE_ENV } from '$env/static/public';
+import { browser } from '$app/environment';
+import { authClient } from './auth/auth-client';
 
 const baseConfig = {
 	baseURL: PUBLIC_NODE_ENV === 'development' ? `${PUBLIC_BASE_URL}` : '',
@@ -11,14 +13,18 @@ const baseConfig = {
 export const publicProcedure = axios.create(baseConfig);
 export const protectedProcedure = axios.create(baseConfig);
 
-// Helper function to make authenticated requests
-export const makeAuthenticatedRequest = async (
-	method: 'get' | 'post' | 'put' | 'delete',
-	url: string,
-	data?: any,
-	accessToken?: string
-) => {
-	const config = accessToken ? { headers: { Authorization: `Bearer ${accessToken}` } } : {};
-
-	return protectedProcedure[method](url, data, config);
-};
+protectedProcedure.interceptors.request.use(
+	async (config) => {
+		if (browser) {
+			// Get token from auth store/session
+			const { data } = await authClient.getSession();
+			if (data?.session) {
+				config.headers.Authorization = `Bearer ${data.session.token}`;
+			}
+		}
+		return config;
+	},
+	(error) => {
+		return Promise.reject(error);
+	}
+);
