@@ -32,7 +32,7 @@
 <header class="bg-background">
 	<div class="mx-auto border-b">
 		<div class="relative flex h-16 justify-between gap-2">
-			<div class="relative z-10 flex px-2 lg:px-0">
+			<a href="/" class="relative z-10 flex px-2 lg:px-0">
 				<div class="flex shrink-0 items-center gap-2">
 					<img
 						class="h-8 w-auto"
@@ -41,7 +41,7 @@
 					/>
 					<h1 class="hidden text-lg font-semibold md:block">Woofs Welcome</h1>
 				</div>
-			</div>
+			</a>
 			<div class="relative z-0 flex flex-1 items-center justify-center px-2 sm:absolute sm:inset-0">
 				<!-- Search Input -->
 				<div class="grid w-full grid-cols-1 sm:max-w-xs">

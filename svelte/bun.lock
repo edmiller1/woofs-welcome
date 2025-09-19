@@ -7,12 +7,14 @@
         "@internationalized/date": "^3.8.1",
         "@supabase/ssr": "^0.6.1",
         "@supabase/supabase-js": "^2.50.0",
+        "@tailwindplus/elements": "^1.0.13",
         "@tanstack/svelte-form": "^1.19.4",
         "@tanstack/svelte-query": "^5.81.5",
         "@tanstack/svelte-query-devtools": "^5.81.5",
         "@types/mapbox-gl": "^3.4.1",
         "axios": "^1.10.0",
         "better-auth": "^1.2.10",
+        "embla-carousel-autoplay": "^8.6.0",
         "mapbox-gl": "^3.14.0",
         "svelte-canvas": "^2.0.2",
         "svelte-motion": "^0.12.2",
@@ -404,6 +406,8 @@
 
     "@tailwindcss/vite": ["@tailwindcss/vite@4.1.8", "", { "dependencies": { "@tailwindcss/node": "4.1.8", "@tailwindcss/oxide": "4.1.8", "tailwindcss": "4.1.8" }, "peerDependencies": { "vite": "^5.2.0 || ^6" } }, "sha512-CQ+I8yxNV5/6uGaJjiuymgw0kEQiNKRinYbZXPdx1fk5WgiyReG0VaUx/Xq6aVNSUNJFzxm6o8FNKS5aMaim5A=="],
 
+    "@tailwindplus/elements": ["@tailwindplus/elements@1.0.13", "", {}, "sha512-Y0K4D47rf/+Bnj2NLPl+AJykujDsEtcF+CL1DiVnE/qjmxA50+FSACNKmoyAPURq6RF/IrS0YIb8xUjtvstCSw=="],
+
     "@tanstack/form-core": ["@tanstack/form-core@1.19.4", "", { "dependencies": { "@tanstack/store": "^0.7.4" } }, "sha512-Yq5FixTTf75DFyvulLRCbgxZ3T+1jSAmJ7GVnX/KRLnCJI0zMcoroPlDPdtVODMuyjaRwGq8OWQRwanDdDmLyA=="],
 
     "@tanstack/query-core": ["@tanstack/query-core@5.81.5", "", {}, "sha512-ZJOgCy/z2qpZXWaj/oxvodDx07XcQa9BF92c0oINjHkoqUPsmm3uG08HpTaviviZ/N9eP1f9CM7mKSEkIo7O1Q=="],
@@ -679,6 +683,8 @@
     "effect": ["effect@3.16.5", "", { "dependencies": { "@standard-schema/spec": "^1.0.0", "fast-check": "^3.23.1" } }, "sha512-7nA+ZPMLoHItabNRV95RpMtwVw2k3BDNhILP4ffo8dG7zGR04XGjarP1JbO+jdBbTRET3eGx1Nz+hWB9kSOajw=="],
 
     "embla-carousel": ["embla-carousel@8.6.0", "", {}, "sha512-SjWyZBHJPbqxHOzckOfo8lHisEaJWmwd23XppYFYVh10bU66/Pn5tkVkbkCMZVdbUE5eTCI2nD8OyIP4Z+uwkA=="],
+
+    "embla-carousel-autoplay": ["embla-carousel-autoplay@8.6.0", "", { "peerDependencies": { "embla-carousel": "8.6.0" } }, "sha512-OBu5G3nwaSXkZCo1A6LTaFMZ8EpkYbwIaH+bPqdBnDGQ2fh4+NbzjXjs2SktoPNKCtflfVMc75njaDHOYXcrsA=="],
 
     "embla-carousel-reactive-utils": ["embla-carousel-reactive-utils@8.6.0", "", { "peerDependencies": { "embla-carousel": "8.6.0" } }, "sha512-fMVUDUEx0/uIEDM0Mz3dHznDhfX+znCCDCeIophYb1QGVM7YThSWX+wz11zlYwWFOr74b4QLGg0hrGPJeG2s4A=="],
 

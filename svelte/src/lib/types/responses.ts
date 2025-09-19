@@ -6,6 +6,7 @@ import type {
 	Claim,
 	IslandWithRegions,
 	Place,
+	PlaceWithOptimizedImages,
 	RegionWithIsland,
 	Stats
 } from './models';
@@ -62,4 +63,8 @@ export interface FavouritePlaceResponse {
 export interface GetBreedsResponse {
 	breeds: Breed[];
 	error?: string;
+}
+
+export interface GetRandomPlacesResponse {
+	places: PlaceWithOptimizedImages[];
 }

@@ -1,6 +1,10 @@
 import { and, eq } from "drizzle-orm";
 import { db } from "../db";
-import { Favourite } from "../db/schema";
+import {
+  Favourite,
+  PlaceImageSelect,
+  PlaceWithImagesSelect,
+} from "../db/schema";
 
 export const getResponsiveImageUrls = (publicIdOrUrl: string) => {
   const baseUrl = "https://res.cloudinary.com/dmkxl9apk/image/upload";
@@ -86,4 +90,14 @@ export const checkIsFavourited = async (userId: string, placeId: string) => {
     .limit(1);
 
   return !!favourite;
+};
+
+export const optimizePlaceImages = async (places: PlaceWithImagesSelect[]) => {
+  return places.map((place) => ({
+    ...place,
+    images: place.images.map((image: PlaceImageSelect) => ({
+      ...image,
+      ...getResponsiveImageUrls(image.url),
+    })),
+  }));
 };

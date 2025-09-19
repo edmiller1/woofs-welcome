@@ -1,11 +1,11 @@
 import { Hono } from "hono";
 import { db } from "../../db";
-import { and, eq } from "drizzle-orm";
-import { Favourite, Place, PlaceImage } from "../../db/schema";
+import { and, eq, inArray, sql } from "drizzle-orm";
+import { Favourite, Place, PlaceImage, placeTypeEnum } from "../../db/schema";
 import { Resend } from "resend";
 import { Google } from "../../lib/google";
 import { authMiddleware, optionalAuthMiddleware } from "../../middleware/auth";
-import { checkIsFavourited } from "../../lib/helpers";
+import { checkIsFavourited, optimizePlaceImages } from "../../lib/helpers";
 import { Cloudinary } from "../../lib/cloudinary";
 
 const resend = new Resend(process.env.RESEND_API_KEY);
@@ -142,7 +142,7 @@ placeRouter.get("/", async (c) => {
     },
   });
 
-  return c.json(places);
+  return c.json(places, 200);
 });
 
 // Favorite a place
@@ -190,5 +190,40 @@ placeRouter.post("/:placeId/favourite", authMiddleware, async (c) => {
       { error: "Failed adding or removing place to/from favourites" },
       500
     );
+  }
+});
+
+placeRouter.get("/list/types", async (c) => {
+  try {
+    const types = placeTypeEnum.enumValues;
+
+    return c.json(types, 200);
+  } catch (error) {
+    console.error("Error fetching place types:", error);
+    return c.json({ error: "Failed to fetch place types" }, 500);
+  }
+});
+
+placeRouter.get("/list/random", async (c) => {
+  try {
+    const places = await db.query.Place.findMany({
+      orderBy: [sql`RANDOM()`],
+      limit: 20,
+      with: {
+        images: true,
+        city: {
+          with: {
+            region: true,
+          },
+        },
+      },
+    });
+
+    const optimizedPlaces = await optimizePlaceImages(places);
+
+    return c.json({ places: optimizedPlaces }, 200);
+  } catch (error) {
+    console.error("Error fetching random places:", error);
+    return c.json({ error: "Failed to fetch random places" }, 500);
   }
 });

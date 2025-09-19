@@ -12,7 +12,7 @@ import {
   unique,
   pgEnum,
 } from "drizzle-orm/pg-core";
-import { relations } from "drizzle-orm";
+import { InferSelectModel, relations } from "drizzle-orm";
 
 export const placeTypeEnum = pgEnum("place_type", [
   "Park",
@@ -437,3 +437,19 @@ export function generateSlug(name: string): string {
     .replace(/[^a-z0-9]+/g, "-")
     .replace(/^-|-$/g, "");
 }
+
+export type UserSelect = InferSelectModel<typeof user>;
+export type PlaceSelect = InferSelectModel<typeof Place>;
+export type PlaceImageSelect = InferSelectModel<typeof PlaceImage>;
+export type ReviewSelect = InferSelectModel<typeof Review>;
+export type CitySelect = InferSelectModel<typeof City>;
+export type RegionSelect = InferSelectModel<typeof Region>;
+export type IslandSelect = InferSelectModel<typeof Island>;
+export type FavouriteSelect = InferSelectModel<typeof Favourite>;
+export type ClaimSelect = InferSelectModel<typeof Claim>;
+export type TagSelect = InferSelectModel<typeof Tag>;
+export type PlaceTagSelect = InferSelectModel<typeof PlaceTag>;
+
+export type PlaceWithImagesSelect = PlaceSelect & {
+  images: PlaceImageSelect[];
+};

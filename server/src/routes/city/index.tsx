@@ -1,6 +1,15 @@
 import { Hono } from "hono";
 import { db } from "../../db";
-import { and, arrayContains, count, eq, inArray, or, sql } from "drizzle-orm";
+import {
+  and,
+  arrayContains,
+  asc,
+  count,
+  eq,
+  inArray,
+  or,
+  sql,
+} from "drizzle-orm";
 import { City, Place, PlaceImage, Region } from "../../db/schema";
 
 export const cityRouter = new Hono();
@@ -354,7 +363,20 @@ cityRouter.get("/:slug", async (c) => {
       retail: retailSpotsWithImages,
     });
   } catch (error) {
-    console.error("Error fetching place:", error);
-    return c.json({ error: "Failed to fetch place" }, 500);
+    console.error("Error fetching city:", error);
+    return c.json({ error: "Failed to fetch city" }, 500);
+  }
+});
+
+cityRouter.get("/list/cities", async (c) => {
+  try {
+    const cities = await db.query.City.findMany({
+      orderBy: [asc(City.name)],
+    });
+
+    return c.json(cities, 200);
+  } catch (error) {
+    console.error("Error fetching cities:", error);
+    return c.json({ error: "Failed to fetch cities" }, 500);
   }
 });

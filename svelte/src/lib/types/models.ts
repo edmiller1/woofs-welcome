@@ -106,6 +106,7 @@ export interface PlaceImage {
 	createdAt: string;
 	updatedAt: string;
 	placeId: string;
+	publicId: string;
 }
 
 export interface IslandPlace extends Place {
@@ -115,7 +116,7 @@ export interface IslandPlace extends Place {
 	regionSlug: string;
 }
 
-export interface OptimizedImage {
+export interface OptimizedImage extends PlaceImage {
 	responsive: {
 		'2xl': string;
 		lg: string;
@@ -222,4 +223,35 @@ export interface Breed {
 	id: string;
 	name: string;
 	createdAt: string;
+}
+
+export interface PlaceWithOptimizedImages extends Place {
+	city: CityWithRegion;
+	images: {
+		id: string;
+		altText: string;
+		caption: string;
+		createdAt: string;
+		displayOrder: number;
+		isApproved: boolean;
+		isPrimary: boolean;
+		source: string;
+		url: string;
+		placeId: string;
+		publicId: string;
+		sizes: string;
+		updatedAt: string;
+		uploadedBy: string;
+		responsive: {
+			'2xl': string;
+			lg: string;
+			md: string;
+			sm: string;
+			xs: string;
+		};
+		webp: {
+			src: string;
+			srcset: string;
+		};
+	}[];
 }
