@@ -4,7 +4,9 @@ import {
   Favourite,
   PlaceImageSelect,
   PlaceWithImagesSelect,
+  ReviewImage,
 } from "../db/schema";
+import { Cloudinary } from "./cloudinary";
 
 export const getResponsiveImageUrls = (publicIdOrUrl: string) => {
   const baseUrl = "https://res.cloudinary.com/dmkxl9apk/image/upload";
@@ -100,4 +102,54 @@ export const optimizePlaceImages = async (places: PlaceWithImagesSelect[]) => {
       ...getResponsiveImageUrls(image.url),
     })),
   }));
+};
+
+export const processReviewImagesInBackground = async (
+  images: string[],
+  placeSlug: string,
+  reviewId: string
+) => {
+  const startTime = Date.now();
+  console.log(`[BACKGROUND] Starting image processing for review ${reviewId}`);
+
+  try {
+    const imageUploadPromises = images.map((image, index) => {
+      return Cloudinary.uploadReviewImage(image, placeSlug).then((result) => {
+        if (result) {
+          console.log(`[BACKGROUND] Image ${index + 1} uploaded successfully`);
+        }
+        return result;
+      });
+    });
+
+    const uploadedImages = (await Promise.all(imageUploadPromises)).filter(
+      Boolean
+    ) as { publicId: string; url: string }[];
+
+    if (uploadedImages.length > 0) {
+      const insertImages = uploadedImages.map((img) => ({
+        publicId: img.publicId,
+        url: img.url,
+        reviewId: reviewId,
+        altText: "Review image",
+      }));
+
+      await db.insert(ReviewImage).values(insertImages);
+      console.log(
+        `[BACKGROUND] ${uploadedImages.length} images saved to database`
+      );
+    }
+
+    console.log(
+      `[BACKGROUND] Complete processing took: ${Date.now() - startTime}ms`
+    );
+
+    // Optionally: Send a websocket message or push notification when complete
+    // notifyImageProcessingComplete(reviewId);
+  } catch (error) {
+    console.error(
+      `[BACKGROUND] Error processing images for review ${reviewId}:`,
+      error
+    );
+  }
 };

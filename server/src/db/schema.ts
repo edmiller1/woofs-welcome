@@ -44,6 +44,7 @@ export const user = pgTable(
       .$defaultFn(() => false)
       .notNull(),
     image: text("image"),
+    imagePublicId: text("image_public_id"),
     provider: varchar("provider", { length: 255 }),
     isAdmin: boolean("is_admin").default(false),
     isBusinessAccount: boolean("is_business_account").default(false),
@@ -212,23 +213,14 @@ export const Review = pgTable(
     title: text("title").notNull(),
     content: text("content"),
     visitDate: timestamp("visit_date"),
-    photos: text("photos").array(),
-    staffFriendlinessRating: integer("staff_friendliness_rating"), // 1-5
-
-    // Dog amenities (boolean flags)
-    hadWaterBowls: boolean("had_water_bowls"),
-    hadDogTreats: boolean("had_dog_treats"),
-    hadDogArea: boolean("had_dog_area"),
-    hadDogMenu: boolean("had_dog_menu"), // for restaurants
 
     // Experience details
     numDogs: integer("num_dogs"), // Number of dogs with the reviewer
     dogBreeds: text("dog_breeds").array(), // Array of dog breed
     timeOfVisit: text("time_of_visit"), // "morning", "afternoon", "evening"
 
-    // Helpful flags
-    wouldRecommendForDogs: boolean("would_recommend_for_dogs").default(true),
     isFirstVisit: boolean("is_first_visit").default(true),
+    likesCount: integer("likes_count").default(0),
     createdAt: timestamp("created_at").defaultNow().notNull(),
     updatedAt: timestamp("updated_at").defaultNow().notNull(),
   },
@@ -239,6 +231,53 @@ export const Review = pgTable(
     };
   }
 );
+
+export const ReviewImage = pgTable("review_image", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  reviewId: uuid("review_id")
+    .notNull()
+    .references(() => Review.id, { onDelete: "cascade" }),
+  publicId: text("public_id").notNull(),
+  url: text("url").notNull(),
+  altText: text("alt_text"), // 'google', 'user_upload', 'admin', 'scraper', etc.
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
+export const ReviewLike = pgTable(
+  "review_like",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    reviewId: uuid("review_id")
+      .notNull()
+      .references(() => Review.id, { onDelete: "cascade" }),
+    userId: text("user_id")
+      .notNull()
+      .references(() => user.id, { onDelete: "cascade" }),
+    createdAt: timestamp("created_at").defaultNow().notNull(),
+  },
+  (table) => ({
+    // A user can only like a review once
+    userReviewUnique: unique().on(table.userId, table.reviewId),
+  })
+);
+
+export const ReviewReport = pgTable("review_report", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  reviewId: uuid("review_id")
+    .notNull()
+    .references(() => Review.id, { onDelete: "cascade" }),
+  userId: text("user_id")
+    .notNull()
+    .references(() => user.id, { onDelete: "cascade" }),
+  reason: text("reason").notNull(), // e.g., "spam", "inappropriate", "fake", "offensive"
+  details: text("details"), // Optional explanation from user
+  status: text("status").notNull().default("pending"), // pending, reviewed, dismissed, action_taken
+  reviewedAt: timestamp("reviewed_at"),
+  reviewedBy: text("reviewed_by").references(() => user.id),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
 
 export const Favourite = pgTable(
   "favourite",
@@ -379,13 +418,49 @@ export const placeImageRelations = relations(PlaceImage, ({ one }) => ({
   }),
 }));
 
-export const reviewRelations = relations(Review, ({ one }) => ({
+export const reviewRelations = relations(Review, ({ one, many }) => ({
   place: one(Place, {
     fields: [Review.placeId],
     references: [Place.id],
   }),
   user: one(user, {
     fields: [Review.userId],
+    references: [user.id],
+  }),
+  images: many(ReviewImage),
+  likes: many(ReviewLike),
+  reports: many(ReviewReport),
+}));
+
+export const reviewImageRelations = relations(ReviewImage, ({ one }) => ({
+  review: one(Review, {
+    fields: [ReviewImage.reviewId],
+    references: [Review.id],
+  }),
+}));
+
+export const reviewLikeRelations = relations(ReviewLike, ({ one }) => ({
+  review: one(Review, {
+    fields: [ReviewLike.reviewId],
+    references: [Review.id],
+  }),
+  user: one(user, {
+    fields: [ReviewLike.userId],
+    references: [user.id],
+  }),
+}));
+
+export const reviewReportRelations = relations(ReviewReport, ({ one }) => ({
+  review: one(Review, {
+    fields: [ReviewReport.reviewId],
+    references: [Review.id],
+  }),
+  reporter: one(user, {
+    fields: [ReviewReport.userId],
+    references: [user.id],
+  }),
+  reviewer: one(user, {
+    fields: [ReviewReport.reviewedBy],
     references: [user.id],
   }),
 }));
@@ -449,6 +524,8 @@ export type FavouriteSelect = InferSelectModel<typeof Favourite>;
 export type ClaimSelect = InferSelectModel<typeof Claim>;
 export type TagSelect = InferSelectModel<typeof Tag>;
 export type PlaceTagSelect = InferSelectModel<typeof PlaceTag>;
+export type ReviewLikeSelect = InferSelectModel<typeof ReviewLike>;
+export type ReviewReportSelect = InferSelectModel<typeof ReviewReport>;
 
 export type PlaceWithImagesSelect = PlaceSelect & {
   images: PlaceImageSelect[];

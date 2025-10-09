@@ -20,9 +20,6 @@ export const Cloudinary = {
     return {
       id: res.public_id,
       url: res.secure_url,
-      thumbnailUrl: res.eager[0].secure_url as string,
-      mediumUrl: res.eager[1].secure_url as string,
-      largeUrl: res.eager[2].secure_url as string,
     };
   },
   uploadGoogleImage: async (
@@ -43,6 +40,29 @@ export const Cloudinary = {
     } catch (error) {
       console.error(
         `❌ Failed to upload image ${index} for place ${placeSlug}:`,
+        error
+      );
+      return null;
+    }
+  },
+  uploadReviewImage: async (image: string, placeSlug: string) => {
+    const uploadStart = Date.now();
+    try {
+      const result = await cloudinary.uploader.upload(image, {
+        folder: `ww-review-assets/${placeSlug}`,
+      });
+
+      console.log(
+        `[CLOUDINARY] Upload completed in: ${Date.now() - uploadStart}ms`
+      );
+
+      return {
+        publicId: result.public_id,
+        url: result.secure_url,
+      };
+    } catch (error) {
+      console.error(
+        `❌ Failed to upload review image for place ${placeSlug}:`,
         error
       );
       return null;

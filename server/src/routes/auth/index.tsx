@@ -7,6 +7,7 @@ import { authMiddleware } from "../../middleware/auth";
 import { CreateProfileInput, createProfileSchema } from "./types";
 import { zValidator } from "@hono/zod-validator";
 import { user } from "../../db/schema";
+import { Cloudinary } from "../../lib/cloudinary";
 
 const resend = new Resend(process.env.RESEND_API_KEY);
 
@@ -114,5 +115,41 @@ authRouter.get("/check-emails/:email", async (c) => {
   } catch (error) {
     console.error("Error checking emails:", error);
     return c.json({ error: "Failed to check emails" }, 500);
+  }
+});
+
+authRouter.post("/welcome", authMiddleware, async (c) => {
+  try {
+    const auth = c.get("user");
+
+    if (!auth) {
+      return c.json({ error: "Unauthorized" }, 401);
+    }
+
+    const { name, image }: { name: string; image?: string } =
+      await c.req.json();
+
+    if (!name) {
+      return c.json({ error: "Name is required" }, 400);
+    }
+
+    let userImage = { id: "", url: "" };
+
+    if (image) {
+      userImage = await Cloudinary.upload(image, "ww-profile-images");
+    }
+
+    if (userImage.id) {
+      await db
+        .update(user)
+        .set({ name: name, image: userImage.url })
+        .where(eq(user.id, auth.id));
+    } else {
+      await db.update(user).set({ name }).where(eq(user.id, auth.id));
+    }
+
+    return c.json({ success: true }, 200);
+  } catch (error) {
+    return c.json({ error: "Failed to update profile" }, 500);
   }
 });

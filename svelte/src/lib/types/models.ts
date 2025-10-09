@@ -5,7 +5,7 @@ export interface BAUser {
 	email: string;
 	createdAt: Date;
 	updatedAt: Date;
-	image?: string | null | undefined | undefined;
+	image?: string | null;
 }
 
 export interface Island {
@@ -189,31 +189,6 @@ export interface Claim {
 	updatedAt: string;
 }
 
-export interface Review {
-	id: string;
-	user: {
-		name: string;
-		image: string | null | undefined;
-	};
-	userId: string;
-	rating: number;
-	content: string;
-	visitDate: string;
-	photos: string[];
-	staffFriendlinessRating: number;
-	hadWaterBowls: boolean;
-	hadDogTreats: boolean;
-	hadDogArea: boolean;
-	hadDogMenu: boolean;
-	numDogs: number;
-	dogBreeds: string[];
-	timeOfVisit: string;
-	wouldRecommendForDogs: boolean;
-	isFirstVisit: boolean;
-	createdAt: string;
-	updatedAt: string;
-}
-
 export interface Tab {
 	name: string;
 	href: string;
@@ -254,4 +229,51 @@ export interface PlaceWithOptimizedImages extends Place {
 			srcset: string;
 		};
 	}[];
+}
+
+export interface Review {
+	id: string;
+	placeId: string;
+	userId: string;
+	rating: number;
+	title: string;
+	content: string;
+	visitDate: string;
+	numDogs: number;
+	dogBreeds: string[];
+	timeOfVisit: string;
+	isFirstVisit: boolean;
+	likesCount: number;
+	createdAt: string;
+	updatedAt: string;
+}
+
+export interface ReviewImage {
+	id: string;
+	reviewId: string;
+	publicId: string;
+	url: string;
+	altText: string;
+	createdAt: string;
+	updatedAt: string;
+}
+
+export interface ReviewWithUserAndImages extends Review {
+	user: BAUser;
+	images: ReviewImage[];
+	likes: Like[];
+	hasLiked?: boolean;
+	hasReported?: boolean;
+}
+
+export interface ErrorResponse {
+	error: string;
+}
+
+export interface Like {
+	id: string;
+	createdAt: string;
+	updatedAt: string;
+	reviewId: string;
+	userId: string;
 }

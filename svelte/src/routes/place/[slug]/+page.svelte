@@ -2,7 +2,7 @@
 	import PlaceImageGrid from './../../../lib/components/place-image-grid.svelte';
 	import { api } from '$lib/api/index.js';
 	import { BadgeCheck, Loader2 } from '@lucide/svelte';
-	import { createQuery } from '@tanstack/svelte-query';
+	import { createQuery, useQueryClient } from '@tanstack/svelte-query';
 	import MainNavbar from '$lib/components/main-navbar.svelte';
 	import Footer from '$lib/components/footer.svelte';
 	import Breadcrumbs from '$lib/components/breadcrumbs.svelte';
@@ -12,7 +12,6 @@
 	import { PUBLIC_MAPBOX_API_KEY } from '$env/static/public';
 	import 'mapbox-gl/dist/mapbox-gl.css';
 	import PlaceMap from './components/place-map.svelte';
-	import { dummyReviews } from '$lib/data/dummy';
 	import PlaceHours from './components/place-hours.svelte';
 	import PlaceReviews from './components/place-reviews.svelte';
 	import PlaceDetails from './components/place-details.svelte';
@@ -20,9 +19,22 @@
 	import ShareButton from '$lib/components/share-button.svelte';
 	import { page } from '$app/state';
 	import SaveButton from '$lib/components/save-button.svelte';
-	import type { Tab } from '$lib/types/models';
+	import type { BAUser, Tab } from '$lib/types/models';
 	import { classNames } from '$lib/helpers';
 	import StickyHeader from './components/sticky-header.svelte';
+	import { onMount } from 'svelte';
+	import { toast } from 'svelte-sonner';
+	import { goto } from '$app/navigation';
+
+	interface Props {
+		data: {
+			searchParams: {
+				[key: string]: string | string[] | undefined;
+			};
+			user: BAUser | null;
+			slug: string;
+		};
+	}
 
 	const tabs: Tab[] = [
 		{ name: 'About', href: '#about' },
@@ -30,13 +42,11 @@
 		{ name: 'Reviews', href: '#reviews' }
 	];
 
-	let { data } = $props();
-	const user = $derived(data.user);
+	let { data }: Props = $props();
 
-	const place = createQuery({
-		queryKey: ['place', data.slug],
-		queryFn: () => api.place.getPlace(data.slug)
-	});
+	const { searchParams, user, slug } = data;
+
+	const queryClient = useQueryClient();
 
 	let imagesOpen = $state<boolean>(false);
 	let currentTab = $state<string>('About');
@@ -44,6 +54,17 @@
 	let scrollY = $state(0);
 	let headerElement = $state<HTMLElement>();
 	let showStickyHeader = $state(false);
+
+	const currentPage = $derived(() => {
+		const pageParam = searchParams.page;
+		const page = Array.isArray(pageParam) ? pageParam[0] : pageParam;
+		return page ? parseInt(page) : 1;
+	});
+
+	const place = createQuery({
+		queryKey: ['place', slug],
+		queryFn: () => api.place.getPlace(slug)
+	});
 
 	const coordinates = $derived(() => {
 		if ($place.isSuccess && $place.data.latitude && $place.data.longitude) {
@@ -54,6 +75,58 @@
 		}
 		return null;
 	});
+
+	onMount(() => {
+		const handleMessage = (event: any) => {
+			if (event.origin !== window.location.origin) return;
+
+			if (event.data.type === 'REVIEW_CREATED') {
+				// Invalidate relevant queries
+				queryClient.invalidateQueries({
+					queryKey: ['place', event.data.placeSlug]
+				});
+				queryClient.invalidateQueries({
+					queryKey: ['reviews', event.data.placeId]
+				});
+
+				toast.success('Review added successfully!');
+			}
+		};
+
+		window.addEventListener('message', handleMessage);
+
+		const sections = document.querySelectorAll('section[data-tab], div[data-tab]');
+
+		const observer = new IntersectionObserver(
+			(entries) => {
+				entries.forEach((entry) => {
+					if (entry.isIntersecting) {
+						const tabName = entry.target.getAttribute('data-tab');
+						if (tabName) {
+							currentTab = tabName;
+						}
+					}
+				});
+			},
+			{
+				rootMargin: '-100px 0px -10% 0px', // Adjust based on your sticky header height
+				threshold: 0.1
+			}
+		);
+
+		sections.forEach((section) => observer.observe(section));
+
+		return () => {
+			window.removeEventListener('message', handleMessage);
+			sections.forEach((section) => observer.unobserve(section));
+		};
+	});
+
+	const changePage = (newPage: number) => {
+		const url = new URL(window.location.href);
+		url.searchParams.set('page', newPage.toString());
+		goto(url.toString(), { replaceState: false, keepFocus: true });
+	};
 
 	const changeTab = (tab: string) => {
 		currentTab = tab;
@@ -184,7 +257,7 @@
 								</nav>
 							</div>
 						</div>
-						<div id="about" class="py-4">
+						<div id="about" data-tab="About" class="py-4">
 							<!-- Main details -->
 							<PlaceDetails
 								address={$place.data.address}
@@ -201,7 +274,7 @@
 							/>
 						</div>
 						<!-- Dog Policy -->
-						<div id="dog-policy" class="py-4">
+						<div id="dog-policy" data-tab="Dog Policy" class="py-4">
 							<h3 class="text-2xl font-semibold">Dog Policy</h3>
 							{#if $place.data.dogPolicy}
 								<div
@@ -259,15 +332,17 @@
 						{/if}
 					</div>
 				</div>
-				<!-- Reviews -->
-				<PlaceReviews
-					reviews={dummyReviews}
-					{openAuthModal}
-					{user}
-					placeId={$place.data.id}
-					placeName={$place.data.name}
-					placeTypes={$place.data.types}
-				/>
+				<div id="reviews" data-tab="Reviews" class="py-4">
+					<!-- Reviews -->
+					<PlaceReviews
+						{openAuthModal}
+						{user}
+						placeName={$place.data.name}
+						placeSlug={$place.data.slug}
+						currentPage={currentPage()}
+						onPageChange={changePage}
+					/>
+				</div>
 			</div>
 		</div>
 		<Footer />

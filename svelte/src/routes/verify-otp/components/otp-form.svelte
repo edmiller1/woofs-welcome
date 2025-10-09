@@ -67,7 +67,11 @@
 			}
 
 			toast.success('Code verified successfully!');
-			goto('/');
+			if (result.data.user.name) {
+				goto('/');
+			} else {
+				goto('/welcome?email=' + encodeURIComponent(result.data.user.email), { keepFocus: true });
+			}
 		} catch (error) {
 			console.error('OTP verification error: ', error);
 			toast.error('Failed to verify code. Please try again.');

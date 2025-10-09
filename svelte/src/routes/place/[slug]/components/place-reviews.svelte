@@ -1,190 +1,325 @@
 <script lang="ts">
 	import StarRating from '$lib/components/star-rating.svelte';
 	import { Badge } from '$lib/components/ui/badge';
-	import { Button } from '$lib/components/ui/button';
-	import { calculateRatingStats, formatDate, getTimeOfVisitEmoji } from '$lib/helpers';
-	import type { BAUser, Review } from '$lib/types/models';
-	import { Flag, Star, ThumbsUp } from '@lucide/svelte';
+	import { Button, buttonVariants } from '$lib/components/ui/button';
+	import { formatDate, getTimeOfVisitEmoji, getUserInitials } from '$lib/helpers';
+	import type { BAUser, ErrorResponse } from '$lib/types/models';
+	import { Flag, Loader2, Star, ThumbsUp } from '@lucide/svelte';
 	import * as Pagination from '$lib/components/ui/pagination/index.js';
 	import * as Tooltip from '$lib/components/ui/tooltip/index.js';
-	import ReviewForm from './review-form.svelte';
+	import { cn } from '$lib/utils';
+	import { createMutation, createQuery, useQueryClient } from '@tanstack/svelte-query';
+	import { api } from '$lib/api';
+	import * as Avatar from '$lib/components/ui/avatar/index.js';
+	import { toast } from 'svelte-sonner';
+	import type { AxiosError } from 'axios';
+	import ReviewImageDialog from './review-image-dialog.svelte';
+	import ReportReviewDialog from './report-review-dialog.svelte';
+	import { goto } from '$app/navigation';
 
 	interface Props {
-		placeId: string;
 		placeName: string;
-		placeTypes: string[];
-		reviews: Review[];
+		placeSlug: string;
 		openAuthModal: () => void;
 		user: BAUser | null;
+		currentPage: number;
+		onPageChange: (page: number) => void;
 	}
 
-	const { reviews, openAuthModal, user, placeId, placeName, placeTypes }: Props = $props();
+	const { openAuthModal, user, placeName, placeSlug, currentPage, onPageChange }: Props = $props();
 
-	const ratingStats = calculateRatingStats(reviews.map((review) => review.rating));
+	const queryClient = useQueryClient();
+
+	let open = $state(false);
+
+	const reviews = createQuery({
+		queryKey: ['reviews', placeSlug, currentPage],
+		queryFn: () => api.review.getPlaceReviews(placeSlug, 0),
+		enabled: !!placeSlug
+	});
+
+	const reviewStats = createQuery({
+		queryKey: ['review-stats', placeSlug],
+		queryFn: () => api.review.getReviewStats(placeSlug),
+		enabled: !!placeSlug
+	});
+
+	const likeReview = createMutation({
+		mutationFn: () => api.review.likeReview(placeSlug),
+		onSuccess: () => {
+			toast.success('Review liked!');
+			queryClient.invalidateQueries({ queryKey: ['reviews', placeSlug] });
+		},
+		onError: (error: AxiosError<ErrorResponse>) => {
+			if (error.response?.data.error) {
+				toast.error(error.response.data.error);
+			} else {
+				toast.error('Failed to like review. Please try again.');
+			}
+		}
+	});
+
+	const reportReview = createMutation({
+		mutationFn: (reportData: { reason: string; details: string }) =>
+			api.review.reportReview(placeSlug, reportData),
+		onSuccess: () => {
+			toast.success('Review reported. Thank you for your feedback.');
+			open = false;
+			queryClient.invalidateQueries({ queryKey: ['reviews', placeSlug] });
+		},
+		onError: (error: AxiosError<ErrorResponse>) => {
+			if (error.response?.data.error) {
+				toast.error(error.response.data.error);
+			} else {
+				toast.error('Failed to report review. Please try again.');
+			}
+		}
+	});
+
+	const handleLikeReview = () => {
+		if (!user) {
+			openAuthModal();
+			return;
+		}
+		$likeReview.mutate();
+	};
+
+	const handleReportReview = (reportData: { reason: string; details: string }) => {
+		$reportReview.mutate(reportData);
+	};
+
+	const openReportDialog = (hasReported: boolean) => {
+		if (!user) {
+			openAuthModal();
+			return;
+		} else if (hasReported) {
+			goto('/profile/reviews');
+			return;
+		}
+		open = true;
+	};
+
+	const nextPage = () => onPageChange(currentPage + 1);
+	const prevPage = () => onPageChange(currentPage - 1);
 </script>
 
-<div id="reviews" class="py-4">
-	<div class="mb-6 flex items-center justify-between">
+{#if $reviewStats.isError || $reviews.isError}
+	<div>Error</div>
+{/if}
+
+{#if $reviewStats.isLoading || $reviews.isLoading}
+	<div class="flex min-h-screen items-center justify-center">
+		<Loader2 class="text-primary size-10 animate-spin" />
+	</div>
+{/if}
+
+{#if $reviewStats.isSuccess && $reviews.isSuccess}
+	{#if $reviews.data.reviews.length > 0}
 		<div>
-			<h3 class="text-2xl font-semibold">Reviews ({reviews.length})</h3>
-			<div class="mt-2 flex items-center gap-2">
-				<div class="flex items-center gap-2">
-					<StarRating rating={Math.floor(ratingStats.averageRating)} />
-					<span class="text-muted-foreground text-sm">{ratingStats.averageRating} out of 5</span>
+			<div class="mb-6 flex items-center justify-between">
+				<div>
+					<h3 class="text-2xl font-semibold">Reviews ({$reviewStats.data.totalReviews})</h3>
+					<div class="mt-2 flex items-center gap-2">
+						<div class="flex items-center gap-2">
+							<StarRating rating={$reviewStats.data.averageRating} />
+							<span class="text-muted-foreground text-sm"
+								>{$reviewStats.data.averageRating} out of 5</span
+							>
+						</div>
+						&middot;
+						<span class="text-muted-foreground text-sm"
+							>Based on {$reviewStats.data.totalReviews} dog owner reviews</span
+						>
+					</div>
 				</div>
-				&middot;
-				<span class="text-muted-foreground text-sm"
-					>Based on {ratingStats.totalReviews} dog owner reviews</span
+				<a
+					target="_blank"
+					href="/review/{placeSlug}"
+					class={cn(buttonVariants({ variant: 'outline' }))}
+					><Star class="size-4" /> Write a Review</a
 				>
 			</div>
-		</div>
-		<ReviewForm {openAuthModal} {user} {placeId} {placeName} {placeTypes} />
-	</div>
 
-	<div class="bg-muted mb-8 rounded-lg p-6">
-		<div class="space-y-3">
-			{#each ratingStats.distribution as { stars, count, percentage }}
-				<div class="flex items-center gap-3">
-					<div class="flex w-16 items-center gap-1">
-						<span class="text-sm">{stars}</span>
-						<Star class="h-4 w-4 fill-yellow-400 text-yellow-400" />
-					</div>
-					<div class="h-2 flex-1 rounded-full bg-gray-200">
-						<div
-							class="h-2 rounded-full bg-yellow-400 transition-all duration-300"
-							style={`width: ${percentage}%`}
-						></div>
-					</div>
-					<div class="text-muted-foreground w-12 text-right text-sm">
-						{count > 0 ? `${percentage}%` : '0%'}
-					</div>
+			<div class="bg-muted mb-8 rounded-lg p-6">
+				<div class="space-y-3">
+					{#each $reviewStats.data.reviewBreakdown as { rating, count, percentage }}
+						<div class="flex items-center gap-3">
+							<div class="flex w-16 items-center gap-1">
+								<span class="text-sm">{rating}</span>
+								<Star class="h-4 w-4 fill-yellow-400 text-yellow-400" />
+							</div>
+							<div class="h-2 flex-1 rounded-full bg-gray-200">
+								<div
+									class="h-2 rounded-full bg-yellow-400 transition-all duration-300"
+									style={`width: ${percentage}%`}
+								></div>
+							</div>
+							<div class="text-muted-foreground w-12 text-right text-sm">
+								{count > 0 ? `${percentage}%` : '0%'}
+							</div>
+						</div>
+					{/each}
 				</div>
-			{/each}
-		</div>
-	</div>
+			</div>
 
-	<div class="space-y-6">
-		{#each reviews as review}
-			<div class="rounded-lg border p-6 shadow-sm">
-				<div class="mb-4 flex items-start gap-4">
-					<img
-						src={review.user.image}
-						alt="review user avatar"
-						class="size-12 rounded-full object-cover"
-					/>
-					<div class="flex-1">
-						<div class="flex items-center justify-between">
-							<div>
-								<h4 class="font-semibold">{review.user.name}</h4>
-								<div class="mt-1 flex items-center gap-2">
-									<StarRating rating={review.rating} />
-									<span class="text-muted-foreground text-sm">
-										{formatDate(review.visitDate)} &middot; {review.numDogs}
-										{review.numDogs === 1 ? 'dog' : 'dogs'}
-									</span>
-									<span class="text-sm">
-										{getTimeOfVisitEmoji(review.timeOfVisit)}
-										{review.timeOfVisit}
-									</span>
+			<div class="space-y-6">
+				{#each $reviews.data.reviews as review}
+					<div class="rounded-lg border p-6 shadow-sm">
+						<div class="mb-4 flex items-start gap-4">
+							<Avatar.Root class="size-12">
+								<Avatar.Image
+									src={review.user.image}
+									alt="review user avatar"
+									referrerpolicy="no-referrer"
+								/>
+								<Avatar.Fallback>{getUserInitials(review.user.name)}</Avatar.Fallback>
+							</Avatar.Root>
+							<div class="flex-1">
+								<div class="flex items-center justify-between">
+									<div>
+										<h4 class="font-semibold">{review.user.name}</h4>
+										<div class="mt-1 flex items-center gap-2">
+											<StarRating rating={review.rating} />
+											<span class="text-muted-foreground text-sm">
+												{formatDate(review.visitDate)} &middot; {review.numDogs}
+												{review.numDogs === 1 ? 'dog' : 'dogs'}
+											</span>
+											<span class="text-sm">
+												{getTimeOfVisitEmoji(review.timeOfVisit)}
+												{review.timeOfVisit}
+											</span>
+										</div>
+									</div>
+									{#if review.userId !== user?.id}
+										<div class="flex items-center gap-2">
+											<Tooltip.Provider>
+												<Tooltip.Root>
+													<Tooltip.Trigger>
+														<Button
+															variant="outline"
+															class="rounded-full p-1"
+															onclick={handleLikeReview}
+															disabled={$likeReview.isPending}
+														>
+															<ThumbsUp
+																class={cn(
+																	'h-4 w-4',
+																	review.hasLiked
+																		? 'fill-primary text-primary'
+																		: 'text-muted-foreground'
+																)}
+															/>
+															{#if review.likesCount > 0}
+																<span class="text-xs">{review.likesCount}</span>
+															{/if}
+														</Button>
+													</Tooltip.Trigger>
+													<Tooltip.Content>
+														<p>
+															{review.hasLiked ? 'Unlike this review' : 'This review is helpful'}
+														</p>
+													</Tooltip.Content>
+												</Tooltip.Root>
+											</Tooltip.Provider>
+											<Tooltip.Provider>
+												<Tooltip.Root>
+													<Tooltip.Trigger>
+														<Button
+															variant="outline"
+															class="rounded-full p-1"
+															onclick={() => openReportDialog(review.hasReported!)}
+														>
+															<Flag
+																class={cn(
+																	'size-4',
+																	review.hasReported
+																		? 'fill-primary text-primary'
+																		: 'text-muted-foreground'
+																)}
+															/>
+														</Button>
+													</Tooltip.Trigger>
+													<Tooltip.Content>
+														<p>
+															{review.hasReported ? 'Update your report' : 'Report this review'}
+														</p>
+													</Tooltip.Content>
+												</Tooltip.Root>
+											</Tooltip.Provider>
+											<ReportReviewDialog
+												{handleReportReview}
+												hasReported={review.hasReported ?? false}
+												{openReportDialog}
+												reportLoading={$reportReview.isPending}
+												{open}
+											/>
+										</div>
+									{/if}
+								</div>
+								<div class="mt-2 flex gap-1">
+									{#each review.dogBreeds as breed}
+										<Badge variant="secondary" class="rounded-full px-2 py-1 text-xs">
+											{breed}
+										</Badge>
+									{/each}
 								</div>
 							</div>
-							<div class="flex items-center gap-2">
-								<Tooltip.Provider>
-									<Tooltip.Root>
-										<Tooltip.Trigger>
-											<Button variant="outline" class="rounded-full p-1">
-												<ThumbsUp className="w-4 h-4 text-muted-foreground" />
-											</Button>
-										</Tooltip.Trigger>
-										<Tooltip.Content>
-											<p>This review is helpful</p>
-										</Tooltip.Content>
-									</Tooltip.Root>
-								</Tooltip.Provider>
-								<Tooltip.Provider>
-									<Tooltip.Root>
-										<Tooltip.Trigger>
-											<Button variant="outline" class="rounded-full p-1">
-												<Flag className="w-4 h-4 text-muted-foreground" />
-											</Button>
-										</Tooltip.Trigger>
-										<Tooltip.Content>
-											<p>Report this review</p>
-										</Tooltip.Content>
-									</Tooltip.Root>
-								</Tooltip.Provider>
-							</div>
 						</div>
-						<div class="mt-2 flex gap-1">
-							{#each review.dogBreeds as breed}
-								<Badge variant="secondary" class="rounded-full px-2 py-1 text-xs">
-									{breed}
-								</Badge>
+						<p class="mb-1 font-semibold leading-relaxed">{review.title}</p>
+						<p class="mb-4 leading-relaxed">{review.content}</p>
+						<div class="my-2 flex items-center gap-2 p-2">
+							{#each review.images as image}
+								<ReviewImageDialog {image} images={review.images} />
 							{/each}
 						</div>
 					</div>
-				</div>
-				<p class="mb-4 leading-relaxed">{review.content}</p>
-
-				{#if review.staffFriendlinessRating}
-					<div class="mb-4">
-						<div class="flex items-center gap-2 text-sm">
-							<span class="text-muted-foreground">Staff Friendliness:</span>
-							<StarRating rating={review.staffFriendlinessRating} />
-							<span class="text-muted-foreground">({review.staffFriendlinessRating}/5)</span>
-						</div>
-					</div>
-				{/if}
-
-				{#if review.hadWaterBowls || review.hadDogTreats || review.hadDogArea || review.hadDogMenu}
-					<div class="mb-4">
-						<p class="mb-2 text-sm font-medium text-gray-700">Dog amenities found:</p>
-						<div class="flex flex-wrap gap-2">
-							{#if review.hadWaterBowls}
-								<Badge class="rounded-full px-2 py-1 text-xs">💧 Water bowls</Badge>
-							{/if}
-							{#if review.hadDogTreats}
-								<Badge class="rounded-full px-2 py-1 text-xs">🦴 Dog treats</Badge>
-							{/if}
-							{#if review.hadDogArea}
-								<Badge class="rounded-full px-2 py-1 text-xs">🐕 Dog area</Badge>
-							{/if}
-							{#if review.hadDogMenu}
-								<Badge class="rounded-full px-2 py-1 text-xs">🍽️ Dog menu</Badge>
-							{/if}
-						</div>
-					</div>
-				{/if}
+				{/each}
 			</div>
-		{/each}
-	</div>
 
-	<div class="py-8">
-		<Pagination.Root count={reviews.length} perPage={6}>
-			{#snippet children({ pages, currentPage })}
-				<Pagination.Content>
-					<Pagination.Item>
-						<Pagination.PrevButton>
-							{#each pages as page (page.key)}
-								{#if page.type === 'ellipsis'}
+			{#if $reviews.data.reviews.length > 10}
+				<div class="py-8">
+					<Pagination.Root count={$reviewStats.data.totalReviews} perPage={10}>
+						{#snippet children({ pages, currentPage })}
+							<Pagination.Content>
+								<Pagination.Item>
+									<Pagination.PrevButton onclick={prevPage} />
+								</Pagination.Item>
+								<Pagination.Item>
+									{#each pages as page (page.key)}
+										{#if page.type === 'ellipsis'}
+											<Pagination.Item>
+												<Pagination.Ellipsis />
+											</Pagination.Item>
+										{:else}
+											<Pagination.Item>
+												<Pagination.Link {page} isActive={currentPage === page.value}>
+													{page.value}
+												</Pagination.Link>
+											</Pagination.Item>
+										{/if}
+									{/each}
+
 									<Pagination.Item>
-										<Pagination.Ellipsis />
+										<Pagination.NextButton onclick={nextPage} />
 									</Pagination.Item>
-								{:else}
-									<Pagination.Item>
-										<Pagination.Link {page} isActive={currentPage === page.value}>
-											{page.value}
-										</Pagination.Link>
-									</Pagination.Item>
-								{/if}
-							{/each}
-							<Pagination.Item>
-								<Pagination.NextButton />
-							</Pagination.Item>
-						</Pagination.PrevButton>
-					</Pagination.Item>
-				</Pagination.Content>
-			{/snippet}
-		</Pagination.Root>
-	</div>
-</div>
+								</Pagination.Item>
+							</Pagination.Content>
+						{/snippet}
+					</Pagination.Root>
+				</div>
+			{/if}
+		</div>
+	{:else}
+		<div class="flex items-center justify-between">
+			<div>
+				<h3 class="mb-4 text-2xl font-semibold">Reviews (0)</h3>
+				<p class="text-muted-foreground mb-6">Be the first to review {placeName}!</p>
+			</div>
+			<a
+				target="_blank"
+				href="/review/{placeSlug}"
+				class={cn(buttonVariants({ variant: 'outline' }))}><Star class="size-4" /> Write a Review</a
+			>
+		</div>
+	{/if}
+{/if}

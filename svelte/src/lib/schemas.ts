@@ -20,7 +20,10 @@ export const reviewFormSchema = z.object({
 		required_error: 'Please select time of visit'
 	}),
 
-	isFirstVisit: z.boolean().default(true)
+	isFirstVisit: z.boolean().default(true),
+	images: z.array(z.string()).max(6, 'Maximum 6 images allowed'),
+	placeId: z.string({ required_error: 'Place ID is required' }),
+	placeSlug: z.string({ required_error: 'Place slug is required' })
 });
 
 export type ReviewFormData = z.infer<typeof reviewFormSchema>;

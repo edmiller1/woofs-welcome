@@ -8,6 +8,7 @@ import type {
 	Place,
 	PlaceWithOptimizedImages,
 	RegionWithIsland,
+	ReviewWithUserAndImages,
 	Stats
 } from './models';
 
@@ -67,4 +68,41 @@ export interface GetBreedsResponse {
 
 export interface GetRandomPlacesResponse {
 	places: PlaceWithOptimizedImages[];
+}
+
+export interface CreateReviewResponse {
+	success: boolean;
+	placeId: string;
+	placeSlug: string;
+	reviewId: string;
+	message: string;
+	error?: string;
+}
+
+export interface GetPlaceReviewsResponse {
+	reviews: ReviewWithUserAndImages[];
+	error?: string;
+}
+
+export interface GetPlaceReviewStatsResponse {
+	totalReviews: number;
+	averageRating: number;
+	reviewBreakdown: Array<{
+		rating: number;
+		count: number;
+		percentage: number;
+	}>;
+	error?: string;
+}
+
+export interface LikeReviewResponse {
+	success: boolean;
+	action: 'added' | 'removed';
+	error?: string;
+}
+
+export interface ReportReviewResponse {
+	success: boolean;
+	action: 'added';
+	error?: string;
 }
