@@ -277,3 +277,9 @@ export interface Like {
 	reviewId: string;
 	userId: string;
 }
+
+export interface PlaceWithDistance extends Place {
+	distance: number;
+	isFavourited: boolean;
+	activeClaim: Claim | null;
+}

@@ -188,3 +188,39 @@ body {
 		border-radius: 0.75rem !important;
 		overflow: hidden !important;
 	}
+
+  	.map-container {
+		height: 350px;
+		width: 100%;
+		border-radius: 0.75rem;
+	}
+
+	:global(.custom-marker) {
+		cursor: pointer;
+		transition: transform 0.2s ease;
+	}
+
+	:global(.custom-marker:hover) {
+		transform: scale(1.1);
+	}
+
+	:global(.custom-popup .mapboxgl-popup-content) {
+		padding: 0;
+		border-radius: 8px;
+		box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+	}
+
+	:global(.custom-popup .mapboxgl-popup-tip) {
+		border-top-color: white;
+	}
+
+  :global(.pop-card-image) {
+    flex: 0 0 100%;
+  }
+
+  :global(.map-dialog .dialog-content) {
+	max-width: 95vw !important;
+	width: 95vw !important;
+	height: 95vh !important;
+	max-height: 95vh !important;
+}

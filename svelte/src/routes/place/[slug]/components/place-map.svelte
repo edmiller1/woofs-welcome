@@ -21,7 +21,7 @@
 		lat,
 		zoom = 12,
 		style = 'mapbox://styles/woofs-welcome/cmelw4hbe008r01rke62c99p2',
-		markerLabel = '',
+		markerLabel = 'hello',
 		className = '',
 		interactive = true,
 		onMapReady
@@ -73,7 +73,7 @@
 		// Add popup if label provided
 		if (markerLabel) {
 			const popup = new mapboxgl.Popup({
-				offset: [0, -40],
+				offset: [0, 0],
 				className: 'custom-popup'
 			}).setHTML(`<div class="p-2 font-medium">${markerLabel}</div>`);
 			marker.setPopup(popup);

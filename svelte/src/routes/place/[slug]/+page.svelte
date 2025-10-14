@@ -1,7 +1,7 @@
 <script lang="ts">
 	import PlaceImageGrid from './../../../lib/components/place-image-grid.svelte';
 	import { api } from '$lib/api/index.js';
-	import { BadgeCheck, Loader2 } from '@lucide/svelte';
+	import { BadgeCheck, LoaderCircle } from '@lucide/svelte';
 	import { createQuery, useQueryClient } from '@tanstack/svelte-query';
 	import MainNavbar from '$lib/components/main-navbar.svelte';
 	import Footer from '$lib/components/footer.svelte';
@@ -25,6 +25,7 @@
 	import { onMount } from 'svelte';
 	import { toast } from 'svelte-sonner';
 	import { goto } from '$app/navigation';
+	import PlaceMapDialog from './components/place-map-dialog.svelte';
 
 	interface Props {
 		data: {
@@ -54,6 +55,7 @@
 	let scrollY = $state(0);
 	let headerElement = $state<HTMLElement>();
 	let showStickyHeader = $state(false);
+	let mapOpen = $state<boolean>(false);
 
 	const currentPage = $derived(() => {
 		const pageParam = searchParams.page;
@@ -145,6 +147,10 @@
 		// You can add any map initialization logic here
 	};
 
+	const handleMapOpen = () => {
+		mapOpen = true;
+	};
+
 	$effect(() => {
 		if (headerElement && scrollY > 0) {
 			const headerBottom = headerElement.offsetTop + headerElement.offsetHeight;
@@ -161,7 +167,7 @@
 
 {#if $place.isLoading}
 	<div class="flex min-h-screen items-center justify-center">
-		<Loader2 class="text-primary size-10 animate-spin" />
+		<LoaderCircle class="text-primary size-10 animate-spin" />
 	</div>
 {/if}
 
@@ -314,7 +320,9 @@
 							<div class="rounded-xl border p-4 shadow">
 								<div class="flex items-center justify-between">
 									<h4 class="text-lg font-semibold">Location</h4>
-									<Button variant="link" class="rounded-full px-0">View larger map</Button>
+									<Button variant="link" class="rounded-full px-0" onclick={handleMapOpen}
+										>View larger map</Button
+									>
 								</div>
 								<PlaceMap
 									bind:this={mapComponent}
@@ -346,5 +354,17 @@
 			</div>
 		</div>
 		<Footer />
+		{#if coordinates() !== null}
+			{@const coords = coordinates()}
+			<PlaceMapDialog
+				bind:open={mapOpen}
+				placeName={$place.data.name}
+				lng={coords!.lng}
+				lat={coords!.lat}
+				accessToken={PUBLIC_MAPBOX_API_KEY}
+				onMapReady={handleMapReady}
+				place={$place.data}
+			/>
+		{/if}
 	</div>
 {/if}

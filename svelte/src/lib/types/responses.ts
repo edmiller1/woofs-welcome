@@ -6,6 +6,7 @@ import type {
 	Claim,
 	IslandWithRegions,
 	Place,
+	PlaceWithDistance,
 	PlaceWithOptimizedImages,
 	RegionWithIsland,
 	ReviewWithUserAndImages,
@@ -104,5 +105,15 @@ export interface LikeReviewResponse {
 export interface ReportReviewResponse {
 	success: boolean;
 	action: 'added';
+	error?: string;
+}
+
+export interface GetNearbyPlacesResponse {
+	places: PlaceWithDistance[];
+	center: {
+		lat: number;
+		lng: number;
+	};
+	radius: number;
 	error?: string;
 }

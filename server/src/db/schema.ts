@@ -34,6 +34,14 @@ export const placeTypeEnum = pgEnum("place_type", [
   "Trail",
 ]);
 
+export const reportStatusEnum = pgEnum("report_status", [
+  "pending",
+  "in_review",
+  "resolved",
+  "dismissed",
+  "closed",
+]);
+
 export const user = pgTable(
   "user",
   {
@@ -272,7 +280,7 @@ export const ReviewReport = pgTable("review_report", {
     .references(() => user.id, { onDelete: "cascade" }),
   reason: text("reason").notNull(), // e.g., "spam", "inappropriate", "fake", "offensive"
   details: text("details"), // Optional explanation from user
-  status: text("status").notNull().default("pending"), // pending, reviewed, dismissed, action_taken
+  status: reportStatusEnum("status").notNull().default("pending"), // pending, reviewed, dismissed, action_taken
   reviewedAt: timestamp("reviewed_at"),
   reviewedBy: text("reviewed_by").references(() => user.id),
   createdAt: timestamp("created_at").defaultNow().notNull(),

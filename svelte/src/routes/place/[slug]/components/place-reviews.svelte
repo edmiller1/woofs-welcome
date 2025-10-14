@@ -4,7 +4,7 @@
 	import { Button, buttonVariants } from '$lib/components/ui/button';
 	import { formatDate, getTimeOfVisitEmoji, getUserInitials } from '$lib/helpers';
 	import type { BAUser, ErrorResponse } from '$lib/types/models';
-	import { Flag, Loader2, Star, ThumbsUp } from '@lucide/svelte';
+	import { Flag, LoaderCircle, Star, ThumbsUp } from '@lucide/svelte';
 	import * as Pagination from '$lib/components/ui/pagination/index.js';
 	import * as Tooltip from '$lib/components/ui/tooltip/index.js';
 	import { cn } from '$lib/utils';
@@ -109,7 +109,7 @@
 
 {#if $reviewStats.isLoading || $reviews.isLoading}
 	<div class="flex min-h-screen items-center justify-center">
-		<Loader2 class="text-primary size-10 animate-spin" />
+		<LoaderCircle class="text-primary size-10 animate-spin" />
 	</div>
 {/if}
 

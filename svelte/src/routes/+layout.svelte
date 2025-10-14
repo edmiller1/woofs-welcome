@@ -3,7 +3,7 @@
 	import { onMount } from 'svelte';
 	import { auth, loading } from '$lib/auth/stores';
 	import { Toaster } from '$lib/components/ui/sonner/index.js';
-	import { Loader2 } from '@lucide/svelte';
+	import { LoaderCircle } from '@lucide/svelte';
 	import { QueryClient, QueryClientProvider } from '@tanstack/svelte-query';
 	import { SvelteQueryDevtools } from '@tanstack/svelte-query-devtools';
 	import { browser } from '$app/environment';
@@ -30,7 +30,7 @@
 <QueryClientProvider client={queryClient}>
 	{#if $loading}
 		<div class="flex min-h-screen items-center justify-center">
-			<Loader2 class="text-primary size-10 animate-spin" />
+			<LoaderCircle class="text-primary size-10 animate-spin" />
 		</div>
 	{:else}
 		{@render children()}

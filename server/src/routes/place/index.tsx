@@ -1,11 +1,16 @@
 import { Hono } from "hono";
 import { db } from "../../db";
-import { and, eq, inArray, sql } from "drizzle-orm";
+import { and, between, eq, inArray, ne, sql } from "drizzle-orm";
 import { Favourite, Place, PlaceImage, placeTypeEnum } from "../../db/schema";
 import { Resend } from "resend";
 import { Google } from "../../lib/google";
 import { authMiddleware, optionalAuthMiddleware } from "../../middleware/auth";
-import { checkIsFavourited, optimizePlaceImages } from "../../lib/helpers";
+import {
+  calculateDistance,
+  checkIsFavourited,
+  getBoundingBox,
+  optimizePlaceImages,
+} from "../../lib/helpers";
 import { Cloudinary } from "../../lib/cloudinary";
 
 const resend = new Resend(process.env.RESEND_API_KEY);
@@ -225,5 +230,102 @@ placeRouter.get("/list/random", async (c) => {
   } catch (error) {
     console.error("Error fetching random places:", error);
     return c.json({ error: "Failed to fetch random places" }, 500);
+  }
+});
+
+placeRouter.get("/nearby/:slug", optionalAuthMiddleware, async (c) => {
+  try {
+    const { slug } = c.req.param();
+
+    if (!slug) {
+      return c.json({ error: "Slug is required" }, 400);
+    }
+
+    const place = await db.query.Place.findFirst({
+      where: eq(Place.slug, slug),
+    });
+
+    if (!place) {
+      return c.json({ error: "Place not found" }, 404);
+    }
+
+    const lat = parseFloat(c.req.query("lat") || "0");
+    const lng = parseFloat(c.req.query("lng") || "0");
+    const radius = parseFloat(c.req.query("radius") || "5"); // Default 5km
+    const excludeId = place.id; // Exclude current place
+    const limit = parseInt("10"); // Default 10 places
+
+    if (!lat || !lng) {
+      return c.json({ error: "Latitude and longitude are required" }, 400);
+    }
+
+    const bbox = getBoundingBox(lat, lng, radius);
+
+    const conditions = [
+      between(
+        sql`CAST(${Place.latitude} AS DECIMAL)`,
+        bbox.minLat.toString(),
+        bbox.maxLat.toString()
+      ),
+      between(
+        sql`CAST(${Place.longitude} AS DECIMAL)`,
+        bbox.minLng.toString(),
+        bbox.maxLng.toString()
+      ),
+    ];
+
+    // Exclude current place
+    if (excludeId) {
+      conditions.push(ne(Place.id, excludeId));
+    }
+
+    const places = await db.query.Place.findMany({
+      where: and(...conditions),
+      limit: limit * 2,
+      with: {
+        city: {
+          with: {
+            region: {
+              with: {
+                island: true,
+              },
+            },
+          },
+        },
+        images: true,
+        activeClaim: true,
+      },
+    });
+
+    // Calculate actual distances and filter by radius
+    const placesWithDistance = places
+      .map((place) => {
+        const distance = calculateDistance(
+          lat,
+          lng,
+          parseFloat(place.latitude || "0"),
+          parseFloat(place.longitude || "0")
+        );
+        return { ...place, distance };
+      })
+      .filter((place) => place.distance <= radius)
+      .sort((a, b) => a.distance - b.distance)
+      .slice(0, limit);
+
+    let isFavourited = false;
+    const auth = c.get("user");
+
+    if (auth) {
+      isFavourited = await checkIsFavourited(auth.id, place.id);
+    }
+
+    return c.json({
+      places: placesWithDistance.map((p) => ({ ...p, isFavourited })),
+      center: { lat, lng },
+      radius,
+    });
+  } catch (error) {
+    console.error("Error fetching nearby places:", error);
+    return c.json({ error: "Failed to fetch nearby places" }, 500);
   }
 });

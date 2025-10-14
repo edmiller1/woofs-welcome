@@ -13,7 +13,7 @@
 
 <div
 	class={clsx(
-		'absolute bottom-3 left-3 z-[50] flex cursor-pointer items-center overflow-hidden rounded-full bg-neutral-700 transition-all duration-300 ease-out',
+		'absolute bottom-3 left-3 z-[45] flex cursor-pointer items-center overflow-hidden rounded-full bg-neutral-700 transition-all duration-300 ease-out',
 		className
 	)}
 	style="width: {open ? '200px' : '40px'}; height: 40px;"
