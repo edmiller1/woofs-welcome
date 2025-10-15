@@ -16,8 +16,6 @@
 		Waves
 	} from '@lucide/svelte';
 	import { Button, buttonVariants } from './ui/button';
-	import { DropdownMenu, DropdownMenuTrigger } from './ui/dropdown-menu';
-	import { Avatar, AvatarFallback, AvatarImage } from './ui/avatar';
 	import type { BAUser } from '$lib/types/models';
 	import UserNav from './user-nav.svelte';
 

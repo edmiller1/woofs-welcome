@@ -20,12 +20,14 @@ import {
   DatabaseError,
   NotFoundError,
 } from "../../lib/errors";
+import { validateParams } from "../../middleware/validate";
+import { RegionSlugParam, regionSlugParamSchema } from "./schemas";
 
 export const regionRouter = new Hono();
 
-regionRouter.get("/:slug", async (c) => {
+regionRouter.get("/:slug", validateParams(regionSlugParamSchema), async (c) => {
   try {
-    const { slug } = c.req.param();
+    const { slug } = c.get("validatedParams") as RegionSlugParam;
 
     if (!slug) {
       throw new BadRequestError("Slug is required");

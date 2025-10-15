@@ -14,7 +14,11 @@ import {
   BadRequestError,
   DatabaseError,
   UnauthorizedError,
+  ValidationError,
 } from "../../lib/errors";
+import { sanitizePlainText } from "../../lib/sanitize";
+import { validateBody } from "../../middleware/validate";
+import { UpdateProfileInput, updateProfileSchema } from "./schemas";
 
 const resend = new Resend(env.RESEND_API_KEY);
 
@@ -132,43 +136,56 @@ authRouter.get("/check-emails/:email", async (c) => {
   }
 });
 
-authRouter.post("/welcome", authMiddleware, async (c) => {
-  try {
-    const auth = c.get("user");
+authRouter.post(
+  "/welcome",
+  authMiddleware,
+  validateBody(updateProfileSchema),
+  async (c) => {
+    try {
+      const auth = c.get("user");
 
-    if (!auth) {
-      throw new UnauthorizedError("No auth token");
+      if (!auth) {
+        throw new UnauthorizedError("No auth token");
+      }
+
+      const { name, image } = c.get("validatedBody") as UpdateProfileInput;
+
+      if (!name) {
+        throw new BadRequestError("Name is required");
+      }
+
+      const sanitizedName = sanitizePlainText(name);
+
+      if (!sanitizedName || sanitizedName.length < 2) {
+        throw new ValidationError("Name must be at least 2 characters");
+      }
+
+      let userImage = { id: "", url: "" };
+
+      if (image) {
+        userImage = await Cloudinary.upload(image, "ww-profile-images");
+      }
+
+      if (userImage.id) {
+        await db
+          .update(user)
+          .set({ name: sanitizedName, image: userImage.url })
+          .where(eq(user.id, auth.id));
+      } else {
+        await db
+          .update(user)
+          .set({ name: sanitizedName })
+          .where(eq(user.id, auth.id));
+      }
+
+      return c.json({ success: true }, 200);
+    } catch (error) {
+      if (error instanceof AppError) {
+        throw error;
+      }
+      throw new DatabaseError("Failed to update profile", {
+        originalError: error,
+      });
     }
-
-    const { name, image }: { name: string; image?: string } =
-      await c.req.json();
-
-    if (!name) {
-      throw new BadRequestError("Name is required");
-    }
-
-    let userImage = { id: "", url: "" };
-
-    if (image) {
-      userImage = await Cloudinary.upload(image, "ww-profile-images");
-    }
-
-    if (userImage.id) {
-      await db
-        .update(user)
-        .set({ name: name, image: userImage.url })
-        .where(eq(user.id, auth.id));
-    } else {
-      await db.update(user).set({ name }).where(eq(user.id, auth.id));
-    }
-
-    return c.json({ success: true }, 200);
-  } catch (error) {
-    if (error instanceof AppError) {
-      throw error;
-    }
-    throw new DatabaseError("Failed to update profile", {
-      originalError: error,
-    });
   }
-});
+);

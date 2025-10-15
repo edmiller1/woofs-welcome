@@ -164,7 +164,7 @@ placeRouter.get("/", readRateLimiter, async (c) => {
   return c.json(places, 200);
 });
 
-// Favorite a place
+// Favourite a place
 placeRouter.post(
   "/:placeId/favourite",
   authMiddleware,

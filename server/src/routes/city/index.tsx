@@ -17,12 +17,14 @@ import {
   DatabaseError,
   NotFoundError,
 } from "../../lib/errors";
+import { validateParams } from "../../middleware/validate";
+import { CitySlugParam, citySlugParamSchema } from "./schemas";
 
 export const cityRouter = new Hono();
 
-cityRouter.get("/:slug", async (c) => {
+cityRouter.get("/:slug", validateParams(citySlugParamSchema), async (c) => {
   try {
-    const { slug } = c.req.param();
+    const { slug } = c.get("validatedParams") as CitySlugParam;
 
     if (!slug) {
       throw new BadRequestError("No slug provided");

@@ -2,7 +2,6 @@ import { Hono } from "hono";
 import { db } from "../../db";
 import { and, desc, eq, sql } from "drizzle-orm";
 import { authMiddleware, optionalAuthMiddleware } from "../../middleware/auth";
-import { reviewFormSchema, reviewReportSchema } from "../../lib/schemas";
 import { Place, Review, ReviewLike, ReviewReport } from "../../db/schema";
 import { processReviewImagesInBackground } from "../../lib/helpers";
 import {
@@ -13,10 +12,20 @@ import {
 import {
   AppError,
   BadRequestError,
+  ConflictError,
   DatabaseError,
   NotFoundError,
   UnauthorizedError,
 } from "../../lib/errors";
+import { sanitizePlainText, sanitizeRichText } from "../../lib/sanitize";
+import { validateBody, validateQuery } from "../../middleware/validate";
+import {
+  createReviewSchema,
+  getReviewsQuerySchema,
+  type CreateReviewInput,
+  type ReportReviewInput,
+  type GetReviewsQuery,
+} from "./schemas";
 
 export const reviewRouter = new Hono();
 
@@ -45,146 +54,172 @@ reviewRouter.get("/breeds", readRateLimiter, async (c) => {
 });
 
 // (5 reviews/hour per user)
-reviewRouter.post("/create", authMiddleware, reviewRateLimiter, async (c) => {
-  try {
+// Create review
+reviewRouter.post(
+  "/create",
+  authMiddleware,
+  reviewRateLimiter,
+  validateBody(createReviewSchema), // ← Add validation
+  async (c) => {
     const user = c.get("user");
+
     if (!user) {
-      throw new UnauthorizedError("No auth token");
+      throw new UnauthorizedError();
     }
 
-    const body = await c.req.json();
-    const validatedData = reviewFormSchema.parse(body);
+    try {
+      // Get validated body data
+      const validatedData = c.get("validatedBody") as CreateReviewInput;
 
-    const existingReview = await db
-      .select({ id: Review.id })
-      .from(Review)
-      .where(
-        and(
-          eq(Review.userId, user.id),
-          eq(Review.placeId, validatedData.placeId)
+      // ✅ SANITIZE USER INPUT
+      const sanitizedData = {
+        ...validatedData,
+        title: sanitizePlainText(validatedData.title),
+        content: sanitizeRichText(validatedData.content),
+        dogBreeds: validatedData.dogBreeds.map((breed) =>
+          sanitizePlainText(breed)
+        ),
+      };
+
+      // Check for existing review
+      const existingReview = await db
+        .select({ id: Review.id })
+        .from(Review)
+        .where(
+          and(
+            eq(Review.userId, user.id),
+            eq(Review.placeId, sanitizedData.placeId)
+          )
         )
-      )
-      .limit(1);
+        .limit(1);
 
-    if (existingReview.length > 0) {
-      return c.json({ error: "You have already reviewed this place" }, 409);
-    }
+      if (existingReview.length > 0) {
+        throw new ConflictError("You have already reviewed this place");
+      }
 
-    const reviewData = {
-      rating: validatedData.rating,
-      title: validatedData.title,
-      content: validatedData.content,
-      visitDate: new Date(validatedData.visitDate),
-      numDogs: validatedData.numDogs,
-      dogBreeds: validatedData.dogBreeds,
-      timeOfVisit: validatedData.timeOfVisit,
-      isFirstVisit: validatedData.isFirstVisit,
-      placeId: validatedData.placeId,
-      userId: user.id,
-    };
+      const reviewData = {
+        rating: sanitizedData.rating,
+        title: sanitizedData.title,
+        content: sanitizedData.content,
+        visitDate: new Date(sanitizedData.visitDate),
+        numDogs: sanitizedData.numDogs,
+        dogBreeds: sanitizedData.dogBreeds,
+        timeOfVisit: sanitizedData.timeOfVisit,
+        isFirstVisit: sanitizedData.isFirstVisit,
+        placeId: sanitizedData.placeId,
+        userId: user.id,
+      };
 
-    const result = await db
-      .insert(Review)
-      .values(reviewData)
-      .returning({ reviewId: Review.id });
+      const result = await db
+        .insert(Review)
+        .values(reviewData)
+        .returning({ reviewId: Review.id });
 
-    const reviewId = result[0].reviewId;
+      const reviewId = result[0].reviewId;
 
-    if (validatedData.images.length > 0) {
-      setImmediate(() => {
-        processReviewImagesInBackground(
-          validatedData.images,
-          validatedData.placeSlug,
-          reviewId
-        );
+      // Background image processing
+      if (sanitizedData.images.length > 0) {
+        setImmediate(() => {
+          processReviewImagesInBackground(
+            sanitizedData.images,
+            sanitizedData.placeSlug,
+            reviewId
+          );
+        });
+      }
+
+      return c.json(
+        {
+          success: true,
+          placeId: sanitizedData.placeId,
+          placeSlug: sanitizedData.placeSlug,
+          reviewId: reviewId,
+          message: "Review created! Images are being processed.",
+        },
+        201
+      );
+    } catch (error) {
+      if (error instanceof AppError) {
+        throw error;
+      }
+      throw new DatabaseError("Failed to create review", {
+        originalError: error,
       });
     }
-
-    return c.json(
-      {
-        success: true,
-        placeId: validatedData.placeId,
-        placeSlug: validatedData.placeSlug,
-        reviewId: reviewId,
-        message: "Review created! Images are being processed.",
-      },
-      201
-    );
-  } catch (error) {
-    if (error instanceof AppError) {
-      throw error;
-    }
-    throw new DatabaseError("Failed to create review", {
-      originalError: error,
-    });
   }
-});
+);
 
-reviewRouter.get("/:slug", optionalAuthMiddleware, async (c) => {
-  try {
-    const user = c.get("user");
+reviewRouter.get(
+  "/:slug",
+  optionalAuthMiddleware,
+  readRateLimiter,
+  validateQuery(getReviewsQuerySchema),
+  async (c) => {
+    try {
+      const user = c.get("user");
 
-    const { slug } = c.req.param();
+      const { slug } = c.req.param();
 
-    if (!slug) {
-      throw new BadRequestError("Place slug is required");
-    }
+      const query = c.get("validatedQuery") as GetReviewsQuery;
 
-    const page = Number(c.req.query("page")) || 0;
+      if (!slug) {
+        throw new BadRequestError("Place slug is required");
+      }
 
-    const place = await db.query.Place.findFirst({
-      where: eq(Place.slug, slug),
-    });
+      const place = await db.query.Place.findFirst({
+        where: eq(Place.slug, slug),
+      });
 
-    if (!place) {
-      throw new NotFoundError("Place");
-    }
+      if (!place) {
+        throw new NotFoundError("Place");
+      }
 
-    const reviews = await db.query.Review.findMany({
-      where: eq(Review.placeId, place.id),
-      orderBy: desc(Review.createdAt),
-      limit: 10,
-      offset: page * 10,
-      with: {
-        user: {
-          columns: {
-            id: true,
-            name: true,
-            emailVerified: true,
-            image: true,
-            createdAt: true,
-            updatedAt: true,
+      const reviews = await db.query.Review.findMany({
+        where: eq(Review.placeId, place.id),
+        orderBy: desc(Review.createdAt),
+        limit: query.limit,
+        offset: query.page * query.limit,
+        with: {
+          user: {
+            columns: {
+              id: true,
+              name: true,
+              emailVerified: true,
+              image: true,
+              createdAt: true,
+              updatedAt: true,
+            },
           },
+          images: true,
+          likes: true,
+          reports: true,
         },
-        images: true,
-        likes: true,
-        reports: true,
-      },
-    });
+      });
 
-    if (user) {
-      const reviewsWithLikeStatus = reviews.map((review) => ({
-        ...review,
-        hasLiked: review.likes.some((like) => like.userId === user?.id),
-        hasReported: review.reports.some(
-          (report) => report.userId === user?.id
-        ),
-        likes: undefined,
-      }));
+      if (user) {
+        const reviewsWithLikeStatus = reviews.map((review) => ({
+          ...review,
+          hasLiked: review.likes.some((like) => like.userId === user?.id),
+          hasReported: review.reports.some(
+            (report) => report.userId === user?.id
+          ),
+          likes: undefined,
+        }));
 
-      return c.json({ reviews: reviewsWithLikeStatus }, 200);
+        return c.json({ reviews: reviewsWithLikeStatus }, 200);
+      }
+
+      return c.json({ reviews }, 200);
+    } catch (error) {
+      if (error instanceof AppError) {
+        throw error;
+      }
+      throw new DatabaseError("Failed to fetch reviews", {
+        originalError: error,
+      });
     }
-
-    return c.json({ reviews }, 200);
-  } catch (error) {
-    if (error instanceof AppError) {
-      throw error;
-    }
-    throw new DatabaseError("Failed to fetch reviews", {
-      originalError: error,
-    });
   }
-});
+);
 
 reviewRouter.get("/:slug/stats", async (c) => {
   try {
@@ -302,7 +337,7 @@ reviewRouter.post(
       }
 
       if (review.userId === user.id) {
-        throw new BadRequestError("You cannot like your own review");
+        throw new ConflictError("You cannot like your own review");
       }
 
       const existingLike = await db.query.ReviewLike.findFirst({
@@ -353,18 +388,25 @@ reviewRouter.post(
   authMiddleware,
   writeRateLimiter,
   async (c) => {
+    const user = c.get("user");
+
+    if (!user) {
+      throw new UnauthorizedError("No auth token");
+    }
     try {
-      const user = c.get("user");
-
-      if (!user) {
-        throw new UnauthorizedError("No auth token");
-      }
-
       const { slug } = c.req.param();
 
       if (!slug) {
         throw new BadRequestError("Review slug is required");
       }
+
+      const reportData = c.get("validatedBody") as ReportReviewInput;
+
+      // ✅ SANITIZE REPORT DATA
+      const sanitizedReport = {
+        reason: sanitizePlainText(reportData.reason),
+        details: sanitizeRichText(reportData.details || ""),
+      };
 
       const place = await db.query.Place.findFirst({
         where: eq(Place.slug, slug),
@@ -394,19 +436,16 @@ reviewRouter.post(
       });
 
       if (existingReport) {
-        throw new BadRequestError(
+        throw new ConflictError(
           "You have already reported this review, if you want to update you report please do so in your profile settings."
         );
       }
 
-      const body = await c.req.json();
-      const validatedData = reviewReportSchema.parse(body);
-
       await db.insert(ReviewReport).values({
         userId: user.id,
         reviewId: review.id,
-        reason: validatedData.reason,
-        details: validatedData.details,
+        reason: sanitizedReport.reason,
+        details: sanitizedReport.details,
         status: "pending",
         reviewedAt: new Date(),
         reviewedBy: user.id,

@@ -9,12 +9,14 @@ import {
   DatabaseError,
   NotFoundError,
 } from "../../lib/errors";
+import { validateBody } from "../../middleware/validate";
+import { IslandSlugParam, islandSlugParamSchema } from "./schemas";
 
 export const islandRouter = new Hono();
 
-islandRouter.get("/:slug", async (c) => {
+islandRouter.get("/:slug", validateBody(islandSlugParamSchema), async (c) => {
   try {
-    const { slug } = c.req.param();
+    const { slug } = c.get("validatedBody") as IslandSlugParam;
 
     if (!slug) {
       throw new BadRequestError("Slug is required");
