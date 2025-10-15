@@ -12,15 +12,19 @@ import { regionRouter } from "./routes/region";
 import { cityRouter } from "./routes/city";
 import { islandRouter } from "./routes/island";
 import { reviewRouter } from "./routes/review";
+import { env } from "./config/env";
+import { globalRateLimiter, authRateLimiter } from "./middleware/rate-limit";
+import { errorHandler } from "./middleware/error-handler";
 
 const app = new Hono();
 
+app.use("*", globalRateLimiter); // (200 req / 15min total)
 app.use("*", logger());
 app.use(
   "*",
   cors({
     origin:
-      process.env.NODE_ENV === "development"
+      env.NODE_ENV === "development"
         ? "http://localhost:5173"
         : "https://www.woofswelcome.app",
     maxAge: 86400,
@@ -31,11 +35,13 @@ app.use(
   })
 );
 
-app.on(["POST", "GET"], "/api/auth/*", (c) => {
+app.on(["POST", "GET"], "/api/auth/**", (c) => {
   return auth.handler(c.req.raw);
 });
 
-// Your custom routes
+app.use("/api/auth/*", authRateLimiter);
+
+// custom routes
 app.use("/api/user", authMiddleware);
 app.route("/api/auth", betterAuthRouter);
 app.route("/api/user", authRouter);
@@ -49,9 +55,11 @@ app.get("/", (c) => {
   return c.text("Hello Hono!");
 });
 
+app.onError(errorHandler);
+
 showRoutes(app);
 
 export default {
-  port: process.env.PORT || 9000,
+  port: env.PORT || 9000,
   fetch: app.fetch,
 };

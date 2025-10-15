@@ -3,6 +3,12 @@ import { db } from "../../db";
 import { and, arrayContains, desc, eq, inArray, or, sql } from "drizzle-orm";
 import { City, Island, Place, PlaceImage, Region } from "../../db/schema";
 import { extractPublicId, getResponsiveImageUrls } from "../../lib/helpers";
+import {
+  AppError,
+  BadRequestError,
+  DatabaseError,
+  NotFoundError,
+} from "../../lib/errors";
 
 export const islandRouter = new Hono();
 
@@ -11,7 +17,7 @@ islandRouter.get("/:slug", async (c) => {
     const { slug } = c.req.param();
 
     if (!slug) {
-      return c.json({ error: "Slug is required" }, 400);
+      throw new BadRequestError("Slug is required");
     }
 
     const island = await db.query.Island.findFirst({
@@ -22,7 +28,7 @@ islandRouter.get("/:slug", async (c) => {
     });
 
     if (!island) {
-      return c.json({ error: "Island not found" }, 404);
+      throw new NotFoundError("Island");
     }
 
     const popularCities = await db
@@ -392,7 +398,11 @@ islandRouter.get("/:slug", async (c) => {
 
     return c.json(optimizedIsland);
   } catch (error) {
-    console.error("Error fetching island:", error);
-    return c.json({ error: "Failed to fetch island" }, 500);
+    if (error instanceof AppError) {
+      throw error;
+    }
+    throw new DatabaseError("Failed to fetch island", {
+      originalError: error,
+    });
   }
 });

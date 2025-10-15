@@ -1,9 +1,11 @@
+import { env } from "../config/env";
+
 export const Google = {
   searchPlaces: async (query: string, location?: string) => {
     const searchQuery = location ? `${query} in ${location}` : query;
 
     const response = await fetch(
-      `https://maps.googleapis.com/maps/api/place/textsearch/json?query=${encodeURIComponent(searchQuery)}&key=${process.env.GOOGLE_PLACES_API_KEY}`
+      `https://maps.googleapis.com/maps/api/place/textsearch/json?query=${encodeURIComponent(searchQuery)}&key=${env.GOOGLE_PLACES_API_KEY}`
     );
 
     const data = await response.json();
@@ -20,12 +22,9 @@ export const Google = {
 
     return [];
   },
-  getPlacePhotos: async (
-    placeId: string,
-    apiKey: string
-  ): Promise<string[]> => {
+  getPlacePhotos: async (placeId: string): Promise<string[]> => {
     // First get place details to get photo references
-    const detailsUrl = `https://maps.googleapis.com/maps/api/place/details/json?place_id=${placeId}&fields=photos&key=${apiKey}`;
+    const detailsUrl = `https://maps.googleapis.com/maps/api/place/details/json?place_id=${placeId}&fields=photos&key=${env.GOOGLE_PLACES_API_KEY}`;
 
     const response = await fetch(detailsUrl);
     const data = await response.json();
@@ -34,7 +33,7 @@ export const Google = {
       const photos = data.result.photos.slice(0, 20); // Limit to 20 photos
       // Convert photo references to actual image URLs
       return photos.map((photo: any) => {
-        return `https://maps.googleapis.com/maps/api/place/photo?maxwidth=800&photo_reference=${photo.photo_reference}&key=${apiKey}`;
+        return `https://maps.googleapis.com/maps/api/place/photo?maxwidth=800&photo_reference=${photo.photo_reference}&key=${env.GOOGLE_PLACES_API_KEY}`;
       });
     }
 
@@ -47,7 +46,7 @@ export const Google = {
     const searchQuery = location ? `${query} in ${location}` : query;
 
     const response = await fetch(
-      `https://maps.googleapis.com/maps/api/place/textsearch/json?query=${encodeURIComponent(searchQuery)}&key=${process.env.GOOGLE_PLACES_API_KEY}`
+      `https://maps.googleapis.com/maps/api/place/textsearch/json?query=${encodeURIComponent(searchQuery)}&key=${env.GOOGLE_PLACES_API_KEY}`
     );
 
     const data = await response.json();
@@ -60,18 +59,15 @@ export const Google = {
 
     return [];
   },
-  getRegionOrCityPhoto: async (
-    placeId: string,
-    apiKey: string
-  ): Promise<string | string[]> => {
-    const detailsUrl = `https://maps.googleapis.com/maps/api/place/details/json?place_id=${placeId}&fields=photos&key=${apiKey}`;
+  getRegionOrCityPhoto: async (placeId: string): Promise<string | string[]> => {
+    const detailsUrl = `https://maps.googleapis.com/maps/api/place/details/json?place_id=${placeId}&fields=photos&key=${env.GOOGLE_PLACES_API_KEY}`;
 
     const response = await fetch(detailsUrl);
     const data = await response.json();
 
     if (data.status === "OK" && data.result?.photos) {
       const photo = data.result.photos[1];
-      return `https://maps.googleapis.com/maps/api/place/photo?maxwidth=800&photo_reference=${photo.photo_reference}&key=${apiKey}`;
+      return `https://maps.googleapis.com/maps/api/place/photo?maxwidth=800&photo_reference=${photo.photo_reference}&key=${env.GOOGLE_PLACES_API_KEY}`;
     }
 
     return [];

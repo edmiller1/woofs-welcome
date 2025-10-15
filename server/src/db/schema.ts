@@ -12,7 +12,8 @@ import {
   unique,
   pgEnum,
 } from "drizzle-orm/pg-core";
-import { InferSelectModel, relations } from "drizzle-orm";
+import { InferSelectModel, relations, sql } from "drizzle-orm";
+import { index } from "drizzle-orm/pg-core";
 
 export const placeTypeEnum = pgEnum("place_type", [
   "Park",
@@ -122,90 +123,137 @@ export const verification = pgTable("verification", {
   ),
 });
 
-export const Island = pgTable("island", {
-  id: uuid("id").primaryKey().defaultRandom(),
-  name: text("name").notNull().unique(),
-  slug: text("slug").notNull().unique(),
-  image: text("image"),
-  createdAt: timestamp("created_at").defaultNow().notNull(),
-  updatedAt: timestamp("updated_at").defaultNow().notNull(),
-});
+export const Island = pgTable(
+  "island",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    name: text("name").notNull().unique(),
+    slug: text("slug").notNull().unique(),
+    image: text("image"),
+    createdAt: timestamp("created_at").defaultNow().notNull(),
+    updatedAt: timestamp("updated_at").defaultNow().notNull(),
+  },
+  (table) => ({
+    slugIdx: index("island_slug_idx").on(table.slug),
+  })
+);
 
-export const Region = pgTable("region", {
-  id: uuid("id").primaryKey().defaultRandom(),
-  name: text("name").notNull().unique(),
-  slug: text("slug").notNull().unique(),
-  image: text("image"),
-  islandId: uuid("island_id")
-    .notNull()
-    .references(() => Island.id),
-  createdAt: timestamp("created_at").defaultNow().notNull(),
-  updatedAt: timestamp("updated_at").defaultNow().notNull(),
-});
+export const Region = pgTable(
+  "region",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    name: text("name").notNull().unique(),
+    slug: text("slug").notNull().unique(),
+    image: text("image"),
+    islandId: uuid("island_id")
+      .notNull()
+      .references(() => Island.id),
+    createdAt: timestamp("created_at").defaultNow().notNull(),
+    updatedAt: timestamp("updated_at").defaultNow().notNull(),
+  },
+  (table) => ({
+    slugIdx: index("region_slug_idx").on(table.slug),
+    islandIdx: index("region_island_idx").on(table.islandId),
+  })
+);
 
-export const City = pgTable("city", {
-  id: uuid("id").primaryKey().defaultRandom(),
-  name: text("name").notNull(),
-  slug: text("slug").notNull().unique(),
-  regionId: uuid("region_id")
-    .notNull()
-    .references(() => Region.id),
-  latitude: numeric("latitude", { precision: 10, scale: 6 }),
-  longitude: numeric("longitude", { precision: 10, scale: 6 }),
-  isPopular: boolean("is_popular").default(false),
-  image: text("image"),
-  createdAt: timestamp("created_at").defaultNow().notNull(),
-  updatedAt: timestamp("updated_at").defaultNow().notNull(),
-});
+export const City = pgTable(
+  "city",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    name: text("name").notNull(),
+    slug: text("slug").notNull().unique(),
+    regionId: uuid("region_id")
+      .notNull()
+      .references(() => Region.id),
+    latitude: numeric("latitude", { precision: 10, scale: 6 }),
+    longitude: numeric("longitude", { precision: 10, scale: 6 }),
+    isPopular: boolean("is_popular").default(false),
+    image: text("image"),
+    createdAt: timestamp("created_at").defaultNow().notNull(),
+    updatedAt: timestamp("updated_at").defaultNow().notNull(),
+  },
+  (table) => ({
+    slugIdx: index("city_slug_idx").on(table.slug),
+    regionIdIdx: index("city_region_idx").on(table.regionId),
+  })
+);
 
-export const Place = pgTable("place", {
-  id: uuid("id").primaryKey().defaultRandom(),
-  name: text("name").notNull(),
-  slug: text("slug").unique().notNull(),
-  types: placeTypeEnum("types").array().notNull(),
-  description: text("description"),
-  // Location references
-  cityId: uuid("city_id").references(() => City.id),
-  address: text("address"),
-  latitude: numeric("latitude", { precision: 10, scale: 6 }),
-  longitude: numeric("longitude", { precision: 10, scale: 6 }),
-  // Contact info
-  phone: text("phone"),
-  email: text("email"),
-  website: text("website"),
-  hours: jsonb("hours"), // Store opening hours as JSON
-  // Dog-specific info
-  dogPolicy: text("dog_policy"),
-  indoorAllowed: boolean("indoor_allowed").default(false),
-  outdoorAllowed: boolean("outdoor_allowed").default(false),
-  hasDogMenu: boolean("has_dog_menu").default(false), // for restaurants
+export const Place = pgTable(
+  "place",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    name: text("name").notNull(),
+    slug: text("slug").unique().notNull(),
+    types: placeTypeEnum("types").array().notNull(),
+    description: text("description"),
+    // Location references
+    cityId: uuid("city_id").references(() => City.id),
+    address: text("address"),
+    latitude: numeric("latitude", { precision: 10, scale: 6 }),
+    longitude: numeric("longitude", { precision: 10, scale: 6 }),
+    // Contact info
+    phone: text("phone"),
+    email: text("email"),
+    website: text("website"),
+    hours: jsonb("hours"), // Store opening hours as JSON
+    // Dog-specific info
+    dogPolicy: text("dog_policy"),
+    indoorAllowed: boolean("indoor_allowed").default(false),
+    outdoorAllowed: boolean("outdoor_allowed").default(false),
+    hasDogMenu: boolean("has_dog_menu").default(false), // for restaurants
 
-  // Metrics and flags
-  rating: numeric("rating", { precision: 3, scale: 2 }).default("0"),
-  reviewsCount: integer("reviews_count").default(0),
-  isVerified: boolean("is_verified").default(false),
-  isFeatured: boolean("is_featured").default(false),
-  createdAt: timestamp("created_at").defaultNow().notNull(),
-  updatedAt: timestamp("updated_at").defaultNow().notNull(),
-});
+    // Metrics and flags
+    rating: numeric("rating", { precision: 3, scale: 2 }).default("0"),
+    reviewsCount: integer("reviews_count").default(0),
+    isVerified: boolean("is_verified").default(false),
+    isFeatured: boolean("is_featured").default(false),
+    createdAt: timestamp("created_at").defaultNow().notNull(),
+    updatedAt: timestamp("updated_at").defaultNow().notNull(),
+  },
+  (table) => ({
+    slugIdx: index("place_slug_idx").on(table.slug),
+    cityIdx: index("place_city_idx").on(table.cityId),
+    cityRatingIdx: index("place_city_rating_idx").on(
+      table.cityId,
+      table.rating.desc()
+    ),
+    featuredIdx: index("place_featured_idx")
+      .on(table.isFeatured)
+      .where(sql`${table.isFeatured} = true`),
+  })
+);
 
-export const PlaceImage = pgTable("place_image", {
-  id: uuid("id").primaryKey().defaultRandom(),
-  placeId: uuid("place_id")
-    .notNull()
-    .references(() => Place.id, { onDelete: "cascade" }),
-  publicId: text("public_id").notNull(),
-  url: text("url").notNull(),
-  caption: text("caption"),
-  altText: text("alt_text"),
-  isPrimary: boolean("is_primary").default(false),
-  source: text("source").notNull(), // 'google', 'user_upload', 'admin', 'scraper', etc.
-  uploadedBy: text("uploaded_by").references(() => user.id), // null for google/scraped images
-  isApproved: boolean("is_approved").default(true), // for moderation
-  displayOrder: integer("display_order").default(0),
-  createdAt: timestamp("created_at").defaultNow().notNull(),
-  updatedAt: timestamp("updated_at").defaultNow().notNull(),
-});
+export const PlaceImage = pgTable(
+  "place_image",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    placeId: uuid("place_id")
+      .notNull()
+      .references(() => Place.id, { onDelete: "cascade" }),
+    publicId: text("public_id").notNull(),
+    url: text("url").notNull(),
+    caption: text("caption"),
+    altText: text("alt_text"),
+    isPrimary: boolean("is_primary").default(false),
+    source: text("source").notNull(), // 'google', 'user_upload', 'admin', 'scraper', etc.
+    uploadedBy: text("uploaded_by").references(() => user.id), // null for google/scraped images
+    isApproved: boolean("is_approved").default(true), // for moderation
+    displayOrder: integer("display_order").default(0),
+    createdAt: timestamp("created_at").defaultNow().notNull(),
+    updatedAt: timestamp("updated_at").defaultNow().notNull(),
+  },
+  (table) => ({
+    displayOrderIdx: index("place_image_display_order_idx").on(
+      table.placeId,
+      table.displayOrder
+    ),
+    isPrimaryIdx: index("place_image_is_primary_idx").on(
+      table.placeId,
+      table.isPrimary
+    ),
+  })
+);
 
 export const Review = pgTable(
   "review",
@@ -232,25 +280,39 @@ export const Review = pgTable(
     createdAt: timestamp("created_at").defaultNow().notNull(),
     updatedAt: timestamp("updated_at").defaultNow().notNull(),
   },
-  (table) => {
-    return {
-      // A user can only review a place once
-      userPlaceUnique: unique().on(table.userId, table.placeId),
-    };
-  }
+  (table) => ({
+    // A user can only review a place once
+    userPlaceUnique: unique().on(table.userId, table.placeId),
+    placeIdx: index("review_place_idx").on(table.placeId),
+    userIdx: index("review_user_idx").on(table.userId),
+    placeCreatedAtIdx: index("review_created_at_idx").on(
+      table.placeId,
+      table.createdAt.desc()
+    ),
+    helpfulReviewsIdx: index("review_helpful_idx").on(
+      table.placeId,
+      table.likesCount.desc()
+    ),
+  })
 );
 
-export const ReviewImage = pgTable("review_image", {
-  id: uuid("id").primaryKey().defaultRandom(),
-  reviewId: uuid("review_id")
-    .notNull()
-    .references(() => Review.id, { onDelete: "cascade" }),
-  publicId: text("public_id").notNull(),
-  url: text("url").notNull(),
-  altText: text("alt_text"), // 'google', 'user_upload', 'admin', 'scraper', etc.
-  createdAt: timestamp("created_at").defaultNow().notNull(),
-  updatedAt: timestamp("updated_at").defaultNow().notNull(),
-});
+export const ReviewImage = pgTable(
+  "review_image",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    reviewId: uuid("review_id")
+      .notNull()
+      .references(() => Review.id, { onDelete: "cascade" }),
+    publicId: text("public_id").notNull(),
+    url: text("url").notNull(),
+    altText: text("alt_text"), // 'google', 'user_upload', 'admin', 'scraper', etc.
+    createdAt: timestamp("created_at").defaultNow().notNull(),
+    updatedAt: timestamp("updated_at").defaultNow().notNull(),
+  },
+  (table) => ({
+    reviewIdIdx: index("review_image_place_idx").on(table.reviewId),
+  })
+);
 
 export const ReviewLike = pgTable(
   "review_like",
@@ -267,6 +329,7 @@ export const ReviewLike = pgTable(
   (table) => ({
     // A user can only like a review once
     userReviewUnique: unique().on(table.userId, table.reviewId),
+    reviewIdx: index("review_like_review_idx").on(table.reviewId),
   })
 );
 
@@ -299,12 +362,11 @@ export const Favourite = pgTable(
       .references(() => Place.id, { onDelete: "cascade" }),
     createdAt: timestamp("created_at").defaultNow().notNull(),
   },
-  (table) => {
-    return {
-      // A user can only favourite a place once
-      userPlaceUnique: unique().on(table.userId, table.placeId),
-    };
-  }
+  (table) => ({
+    // A user can only favourite a place once
+    userPlaceUnique: unique().on(table.userId, table.placeId),
+    userIdx: index("favourite_user_idx").on(table.userId),
+  })
 );
 
 export const Claim = pgTable(
@@ -351,12 +413,12 @@ export const PlaceTag = pgTable(
       .references(() => Tag.id, { onDelete: "cascade" }),
     createdAt: timestamp("created_at").defaultNow().notNull(),
   },
-  (table) => {
-    return {
-      // A place can only have a specific tag once
-      placeTagUnique: unique().on(table.placeId, table.tagId),
-    };
-  }
+  (table) => ({
+    // A place can only have a specific tag once
+    placeTagUnique: unique().on(table.placeId, table.tagId),
+    placeIdIdx: index("place_tag_place_idx").on(table.placeId),
+    tagIdIdx: index("place_tag_tag_idx").on(table.tagId),
+  })
 );
 
 export const DogBreed = pgTable("dog_breed", {

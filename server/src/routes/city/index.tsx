@@ -11,6 +11,12 @@ import {
   sql,
 } from "drizzle-orm";
 import { City, Place, PlaceImage, Region } from "../../db/schema";
+import {
+  AppError,
+  BadRequestError,
+  DatabaseError,
+  NotFoundError,
+} from "../../lib/errors";
 
 export const cityRouter = new Hono();
 
@@ -19,7 +25,7 @@ cityRouter.get("/:slug", async (c) => {
     const { slug } = c.req.param();
 
     if (!slug) {
-      return c.json({ error: "No slug provided" }, 400);
+      throw new BadRequestError("No slug provided");
     }
 
     const city = await db.query.City.findFirst({
@@ -34,7 +40,7 @@ cityRouter.get("/:slug", async (c) => {
     });
 
     if (!city) {
-      return c.json({ error: "City not found" }, 404);
+      throw new NotFoundError("City not found");
     }
 
     const [cityStats] = await db
@@ -363,8 +369,12 @@ cityRouter.get("/:slug", async (c) => {
       retail: retailSpotsWithImages,
     });
   } catch (error) {
-    console.error("Error fetching city:", error);
-    return c.json({ error: "Failed to fetch city" }, 500);
+    if (error instanceof AppError) {
+      throw error;
+    }
+    throw new DatabaseError("Failed to fetch city", {
+      originalError: error,
+    });
   }
 });
 

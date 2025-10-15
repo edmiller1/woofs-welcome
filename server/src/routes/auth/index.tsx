@@ -8,8 +8,15 @@ import { CreateProfileInput, createProfileSchema } from "./types";
 import { zValidator } from "@hono/zod-validator";
 import { user } from "../../db/schema";
 import { Cloudinary } from "../../lib/cloudinary";
+import { env } from "../../config/env";
+import {
+  AppError,
+  BadRequestError,
+  DatabaseError,
+  UnauthorizedError,
+} from "../../lib/errors";
 
-const resend = new Resend(process.env.RESEND_API_KEY);
+const resend = new Resend(env.RESEND_API_KEY);
 
 export const authRouter = new Hono();
 
@@ -22,10 +29,8 @@ authRouter.post(
     try {
       const auth = c.get("user");
 
-      console.log(auth);
-
       if (!auth) {
-        return c.json({ error: "Unauthorized", isSynced: false }, 401);
+        throw new UnauthorizedError("No auth token");
       }
 
       const validatedData = c.req.valid("json") as CreateProfileInput;
@@ -90,7 +95,12 @@ authRouter.post(
 
       return c.json(returnData, 200);
     } catch (error) {
-      return c.json({ error: "Failed to create user" }, 500);
+      if (error instanceof AppError) {
+        throw error;
+      }
+      throw new DatabaseError("Failed to create user", {
+        originalError: error,
+      });
     }
   }
 );
@@ -100,7 +110,7 @@ authRouter.get("/check-emails/:email", async (c) => {
     const email = c.req.param("email");
 
     if (!email) {
-      return c.json({ error: "Email parameter is required" }, 400);
+      throw new BadRequestError("Email parameter is required");
     }
 
     const emailExists = await db.query.user.findFirst({
@@ -113,8 +123,12 @@ authRouter.get("/check-emails/:email", async (c) => {
       return c.json({ exists: false }, 200);
     }
   } catch (error) {
-    console.error("Error checking emails:", error);
-    return c.json({ error: "Failed to check emails" }, 500);
+    if (error instanceof AppError) {
+      throw error;
+    }
+    throw new DatabaseError("Failed to check emails", {
+      originalError: error,
+    });
   }
 });
 
@@ -123,14 +137,14 @@ authRouter.post("/welcome", authMiddleware, async (c) => {
     const auth = c.get("user");
 
     if (!auth) {
-      return c.json({ error: "Unauthorized" }, 401);
+      throw new UnauthorizedError("No auth token");
     }
 
     const { name, image }: { name: string; image?: string } =
       await c.req.json();
 
     if (!name) {
-      return c.json({ error: "Name is required" }, 400);
+      throw new BadRequestError("Name is required");
     }
 
     let userImage = { id: "", url: "" };
@@ -150,6 +164,11 @@ authRouter.post("/welcome", authMiddleware, async (c) => {
 
     return c.json({ success: true }, 200);
   } catch (error) {
-    return c.json({ error: "Failed to update profile" }, 500);
+    if (error instanceof AppError) {
+      throw error;
+    }
+    throw new DatabaseError("Failed to update profile", {
+      originalError: error,
+    });
   }
 });

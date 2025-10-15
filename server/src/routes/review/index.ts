@@ -1,22 +1,27 @@
 import { Hono } from "hono";
 import { db } from "../../db";
 import { and, desc, eq, sql } from "drizzle-orm";
-import { Resend } from "resend";
-import { Google } from "../../lib/google";
 import { authMiddleware, optionalAuthMiddleware } from "../../middleware/auth";
 import { reviewFormSchema, reviewReportSchema } from "../../lib/schemas";
-import {
-  Place,
-  Review,
-  ReviewImage,
-  ReviewLike,
-  ReviewReport,
-} from "../../db/schema";
+import { Place, Review, ReviewLike, ReviewReport } from "../../db/schema";
 import { processReviewImagesInBackground } from "../../lib/helpers";
+import {
+  reviewRateLimiter,
+  readRateLimiter,
+  writeRateLimiter,
+} from "../../middleware/rate-limit";
+import {
+  AppError,
+  BadRequestError,
+  DatabaseError,
+  NotFoundError,
+  UnauthorizedError,
+} from "../../lib/errors";
 
 export const reviewRouter = new Hono();
 
-reviewRouter.get("/breeds", async (c) => {
+// Read endpoint - lenient (100 req/15min)
+reviewRouter.get("/breeds", readRateLimiter, async (c) => {
   try {
     const breeds = await db.query.DogBreed.findMany({
       orderBy: (breed, { asc }) => [asc(breed.name)],
@@ -30,16 +35,21 @@ reviewRouter.get("/breeds", async (c) => {
 
     return c.json({ breeds: sortedBreeds }, 200);
   } catch (error) {
-    console.error("Error fetching dog breeds:", error);
-    return c.json({ error: "Internal server error" }, 500);
+    if (error instanceof AppError) {
+      throw error;
+    }
+    throw new DatabaseError("Failed to fetch dog breeds", {
+      originalError: error,
+    });
   }
 });
 
-reviewRouter.post("/create", authMiddleware, async (c) => {
+// (5 reviews/hour per user)
+reviewRouter.post("/create", authMiddleware, reviewRateLimiter, async (c) => {
   try {
     const user = c.get("user");
     if (!user) {
-      return c.json({ error: "Unauthorized" }, 401);
+      throw new UnauthorizedError("No auth token");
     }
 
     const body = await c.req.json();
@@ -101,8 +111,12 @@ reviewRouter.post("/create", authMiddleware, async (c) => {
       201
     );
   } catch (error) {
-    console.error("Error creating review:", error);
-    return c.json({ error: "Internal server error" }, 500);
+    if (error instanceof AppError) {
+      throw error;
+    }
+    throw new DatabaseError("Failed to create review", {
+      originalError: error,
+    });
   }
 });
 
@@ -113,7 +127,7 @@ reviewRouter.get("/:slug", optionalAuthMiddleware, async (c) => {
     const { slug } = c.req.param();
 
     if (!slug) {
-      return c.json({ error: "Place slug is required" }, 400);
+      throw new BadRequestError("Place slug is required");
     }
 
     const page = Number(c.req.query("page")) || 0;
@@ -123,7 +137,7 @@ reviewRouter.get("/:slug", optionalAuthMiddleware, async (c) => {
     });
 
     if (!place) {
-      return c.json({ error: "Place not found" }, 404);
+      throw new NotFoundError("Place");
     }
 
     const reviews = await db.query.Review.findMany({
@@ -163,8 +177,12 @@ reviewRouter.get("/:slug", optionalAuthMiddleware, async (c) => {
 
     return c.json({ reviews }, 200);
   } catch (error) {
-    console.error("Error fetching reviews:", error);
-    return c.json({ error: "Internal server error" }, 500);
+    if (error instanceof AppError) {
+      throw error;
+    }
+    throw new DatabaseError("Failed to fetch reviews", {
+      originalError: error,
+    });
   }
 });
 
@@ -173,7 +191,7 @@ reviewRouter.get("/:slug/stats", async (c) => {
     const { slug } = c.req.param();
 
     if (!slug) {
-      return c.json({ error: "Place slug is required" }, 400);
+      throw new BadRequestError("Place slug is required");
     }
 
     const place = await db.query.Place.findFirst({
@@ -181,7 +199,7 @@ reviewRouter.get("/:slug/stats", async (c) => {
     });
 
     if (!place) {
-      return c.json({ error: "Place not found" }, 404);
+      throw new NotFoundError("Place");
     }
 
     const reviewStats = await db
@@ -239,151 +257,171 @@ reviewRouter.get("/:slug/stats", async (c) => {
       200
     );
   } catch (error) {
-    console.error("Error fetching review stats:", error);
-    return c.json({ error: "Internal server error" }, 500);
+    if (error instanceof AppError) {
+      throw error;
+    }
+    throw new DatabaseError("Failed to fetch review stats", {
+      originalError: error,
+    });
   }
 });
 
-reviewRouter.post("/:slug/like", authMiddleware, async (c) => {
-  try {
-    const user = c.get("user");
+// 20 req/15min
+reviewRouter.post(
+  "/:slug/like",
+  authMiddleware,
+  writeRateLimiter,
+  async (c) => {
+    try {
+      const user = c.get("user");
 
-    if (!user) {
-      return c.json({ error: "Unauthorized" }, 401);
-    }
+      if (!user) {
+        throw new UnauthorizedError("No auth token");
+      }
 
-    const { slug } = c.req.param();
+      const { slug } = c.req.param();
 
-    if (!slug) {
-      return c.json({ error: "Review slug is required" }, 400);
-    }
+      if (!slug) {
+        throw new BadRequestError("Review slug is required");
+      }
 
-    const place = await db.query.Place.findFirst({
-      where: eq(Place.slug, slug),
-    });
-
-    if (!place) {
-      return c.json({ error: "Place not found" }, 404);
-    }
-
-    const review = await db.query.Review.findFirst({
-      where: eq(Review.placeId, place.id),
-    });
-
-    if (!review) {
-      return c.json({ error: "Review not found" }, 404);
-    }
-
-    if (review.userId === user.id) {
-      return c.json({ error: "You cannot like your own review" }, 400);
-    }
-
-    const existingLike = await db.query.ReviewLike.findFirst({
-      where: and(
-        eq(ReviewLike.userId, user.id),
-        eq(ReviewLike.reviewId, review.id)
-      ),
-    });
-
-    if (existingLike) {
-      await db.transaction(async (tx) => {
-        await tx.delete(ReviewLike).where(eq(ReviewLike.id, existingLike.id));
-        await tx
-          .update(Review)
-          .set({ likesCount: sql`${Review.likesCount} - 1` })
-          .where(eq(Review.id, review.id));
+      const place = await db.query.Place.findFirst({
+        where: eq(Place.slug, slug),
       });
-      await db.delete(ReviewLike).where(eq(ReviewLike.id, existingLike.id));
-      return c.json({ success: true, action: "removed" }, 200);
-    } else {
-      await db.transaction(async (tx) => {
-        await tx.insert(ReviewLike).values({
-          userId: user.id,
-          reviewId: review.id,
-          createdAt: new Date(),
+
+      if (!place) {
+        throw new NotFoundError("Place");
+      }
+
+      const review = await db.query.Review.findFirst({
+        where: eq(Review.placeId, place.id),
+      });
+
+      if (!review) {
+        throw new NotFoundError("Review");
+      }
+
+      if (review.userId === user.id) {
+        throw new BadRequestError("You cannot like your own review");
+      }
+
+      const existingLike = await db.query.ReviewLike.findFirst({
+        where: and(
+          eq(ReviewLike.userId, user.id),
+          eq(ReviewLike.reviewId, review.id)
+        ),
+      });
+
+      if (existingLike) {
+        await db.transaction(async (tx) => {
+          await tx.delete(ReviewLike).where(eq(ReviewLike.id, existingLike.id));
+          await tx
+            .update(Review)
+            .set({ likesCount: sql`${Review.likesCount} - 1` })
+            .where(eq(Review.id, review.id));
         });
-        await tx
-          .update(Review)
-          .set({ likesCount: sql`${Review.likesCount} + 1` })
-          .where(eq(Review.id, review.id));
+        await db.delete(ReviewLike).where(eq(ReviewLike.id, existingLike.id));
+        return c.json({ success: true, action: "removed" }, 200);
+      } else {
+        await db.transaction(async (tx) => {
+          await tx.insert(ReviewLike).values({
+            userId: user.id,
+            reviewId: review.id,
+            createdAt: new Date(),
+          });
+          await tx
+            .update(Review)
+            .set({ likesCount: sql`${Review.likesCount} + 1` })
+            .where(eq(Review.id, review.id));
+        });
+        return c.json({ success: true, action: "added" }, 200);
+      }
+    } catch (error) {
+      if (error instanceof AppError) {
+        throw error;
+      }
+      throw new DatabaseError("Failed to liking/unliking review", {
+        originalError: error,
       });
+    }
+  }
+);
+
+// 20 req/15min
+reviewRouter.post(
+  "/:slug/report",
+  authMiddleware,
+  writeRateLimiter,
+  async (c) => {
+    try {
+      const user = c.get("user");
+
+      if (!user) {
+        throw new UnauthorizedError("No auth token");
+      }
+
+      const { slug } = c.req.param();
+
+      if (!slug) {
+        throw new BadRequestError("Review slug is required");
+      }
+
+      const place = await db.query.Place.findFirst({
+        where: eq(Place.slug, slug),
+      });
+
+      if (!place) {
+        throw new NotFoundError("Place");
+      }
+
+      const review = await db.query.Review.findFirst({
+        where: eq(Review.placeId, place.id),
+      });
+
+      if (!review) {
+        throw new NotFoundError("Review");
+      }
+
+      if (review.userId === user.id) {
+        throw new BadRequestError("You cannot report your own review");
+      }
+
+      const existingReport = await db.query.ReviewReport.findFirst({
+        where: and(
+          eq(ReviewReport.userId, user.id),
+          eq(ReviewReport.reviewId, review.id)
+        ),
+      });
+
+      if (existingReport) {
+        throw new BadRequestError(
+          "You have already reported this review, if you want to update you report please do so in your profile settings."
+        );
+      }
+
+      const body = await c.req.json();
+      const validatedData = reviewReportSchema.parse(body);
+
+      await db.insert(ReviewReport).values({
+        userId: user.id,
+        reviewId: review.id,
+        reason: validatedData.reason,
+        details: validatedData.details,
+        status: "pending",
+        reviewedAt: new Date(),
+        reviewedBy: user.id,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      });
+
       return c.json({ success: true, action: "added" }, 200);
+    } catch (error) {
+      if (error instanceof AppError) {
+        throw error;
+      }
+      throw new DatabaseError("Failed to report review", {
+        originalError: error,
+      });
     }
-  } catch (error) {
-    console.error("Error liking/unliking review:", error);
-    return c.json({ error: "Internal server error" }, 500);
   }
-});
-
-reviewRouter.post("/:slug/report", authMiddleware, async (c) => {
-  try {
-    const user = c.get("user");
-
-    if (!user) {
-      return c.json({ error: "Unauthorized" }, 401);
-    }
-
-    const { slug } = c.req.param();
-
-    if (!slug) {
-      return c.json({ error: "Review slug is required" }, 400);
-    }
-
-    const place = await db.query.Place.findFirst({
-      where: eq(Place.slug, slug),
-    });
-
-    if (!place) {
-      return c.json({ error: "Place not found" }, 404);
-    }
-
-    const review = await db.query.Review.findFirst({
-      where: eq(Review.placeId, place.id),
-    });
-
-    if (!review) {
-      return c.json({ error: "Review not found" }, 404);
-    }
-
-    if (review.userId === user.id) {
-      return c.json({ error: "You cannot report your own review" }, 400);
-    }
-
-    const existingReport = await db.query.ReviewReport.findFirst({
-      where: and(
-        eq(ReviewReport.userId, user.id),
-        eq(ReviewReport.reviewId, review.id)
-      ),
-    });
-
-    if (existingReport) {
-      return c.json(
-        {
-          error:
-            "You have already reported this review, if you want to update you report please do so in your profile settings.",
-        },
-        400
-      );
-    }
-
-    const body = await c.req.json();
-    const validatedData = reviewReportSchema.parse(body);
-
-    await db.insert(ReviewReport).values({
-      userId: user.id,
-      reviewId: review.id,
-      reason: validatedData.reason,
-      details: validatedData.details,
-      status: "pending",
-      reviewedAt: new Date(),
-      reviewedBy: user.id,
-      createdAt: new Date(),
-      updatedAt: new Date(),
-    });
-
-    return c.json({ success: true, action: "added" }, 200);
-  } catch (error) {
-    console.error("Error reporting review:", error);
-    return c.json({ error: "Internal server error" }, 500);
-  }
-});
+);

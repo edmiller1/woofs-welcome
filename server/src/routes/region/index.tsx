@@ -13,9 +13,13 @@ import {
   sql,
 } from "drizzle-orm";
 import { City, Place, PlaceImage, Region } from "../../db/schema";
-import { extractPublicId, getResponsiveImageUrls } from "../../lib/helpers";
-
-const resend = new Resend(process.env.RESEND_API_KEY);
+import { getResponsiveImageUrls } from "../../lib/helpers";
+import {
+  AppError,
+  BadRequestError,
+  DatabaseError,
+  NotFoundError,
+} from "../../lib/errors";
 
 export const regionRouter = new Hono();
 
@@ -24,7 +28,7 @@ regionRouter.get("/:slug", async (c) => {
     const { slug } = c.req.param();
 
     if (!slug) {
-      return c.json({ error: "Slug is required" }, 400);
+      throw new BadRequestError("Slug is required");
     }
 
     const region = await db.query.Region.findFirst({
@@ -35,7 +39,7 @@ regionRouter.get("/:slug", async (c) => {
     });
 
     if (!region) {
-      return c.json({ error: "Region not found" }, 404);
+      throw new NotFoundError("Region");
     }
 
     const [regionStats] = await db
@@ -407,7 +411,11 @@ regionRouter.get("/:slug", async (c) => {
 
     return c.json(result);
   } catch (error) {
-    console.error("Error fetching region:", error);
-    return c.json({ error: "Failed to fetch region" }, 500);
+    if (error instanceof AppError) {
+      throw error;
+    }
+    throw new DatabaseError("Failed to fetch region", {
+      originalError: error,
+    });
   }
 });

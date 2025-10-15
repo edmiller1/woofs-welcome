@@ -8,6 +8,7 @@ import { createWelcomeEmail } from "../emails/create-welcome-email";
 import { eq } from "drizzle-orm";
 import { user } from "../db/schema";
 import * as schema from "../db/schema";
+import { env } from "../config/env";
 
 export const auth = betterAuth({
   database: drizzleAdapter(db, {
@@ -29,9 +30,9 @@ export const auth = betterAuth({
   },
   socialProviders: {
     google: {
-      clientId: process.env.GOOGLE_CLIENT_ID!,
-      clientSecret: process.env.GOOGLE_CLIENT_SECRET!,
-      redirectURI: process.env.GOOGLE_REDIRECT_URI!,
+      clientId: env.GOOGLE_CLIENT_ID,
+      clientSecret: env.GOOGLE_CLIENT_SECRET,
+      redirectURI: env.GOOGLE_REDIRECT_URI,
     },
   },
   plugins: [
@@ -58,8 +59,8 @@ export const auth = betterAuth({
     }),
   ],
   basePath: "/api/auth",
-  trustedOrigins: [process.env.CLIENT_BASE_URL!],
-  secret: process.env.BETTER_AUTH_SECRET!,
+  trustedOrigins: [env.CLIENT_BASE_URL],
+  secret: env.BETTER_AUTH_SECRET,
   databaseHooks: {
     user: {
       additionalFields: {

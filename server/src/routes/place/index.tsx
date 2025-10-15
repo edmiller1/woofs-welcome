@@ -1,8 +1,7 @@
 import { Hono } from "hono";
 import { db } from "../../db";
-import { and, between, eq, inArray, ne, sql } from "drizzle-orm";
+import { and, between, eq, ne, sql } from "drizzle-orm";
 import { Favourite, Place, PlaceImage, placeTypeEnum } from "../../db/schema";
-import { Resend } from "resend";
 import { Google } from "../../lib/google";
 import { authMiddleware, optionalAuthMiddleware } from "../../middleware/auth";
 import {
@@ -12,130 +11,145 @@ import {
   optimizePlaceImages,
 } from "../../lib/helpers";
 import { Cloudinary } from "../../lib/cloudinary";
-
-const resend = new Resend(process.env.RESEND_API_KEY);
+import {
+  readRateLimiter,
+  favouriteRateLimiter,
+} from "../../middleware/rate-limit";
+import {
+  BadRequestError,
+  NotFoundError,
+  DatabaseError,
+  AppError,
+  UnauthorizedError,
+} from "../../lib/errors";
 
 export const placeRouter = new Hono();
 
 // Get a place by Slug
-placeRouter.get("/:slug", optionalAuthMiddleware, async (c) => {
-  try {
-    const { slug } = c.req.param();
-    if (!slug) {
-      return c.json({ error: "Slug is required" }, 400);
-    }
+placeRouter.get(
+  "/:slug",
+  readRateLimiter,
+  optionalAuthMiddleware,
+  async (c) => {
+    try {
+      const { slug } = c.req.param();
+      if (!slug) {
+        throw new BadRequestError("Slug is required");
+      }
 
-    const place = await db.query.Place.findFirst({
-      where: eq(Place.slug, slug),
-      with: {
-        city: {
-          with: {
-            region: {
-              with: {
-                island: true,
+      const place = await db.query.Place.findFirst({
+        where: eq(Place.slug, slug),
+        with: {
+          city: {
+            with: {
+              region: {
+                with: {
+                  island: true,
+                },
               },
             },
           },
+          images: true,
+          activeClaim: true,
         },
-        images: true,
-        activeClaim: true,
-      },
-    });
+      });
 
-    if (!place) {
-      return c.json({ error: "Place not found" }, 404);
-    }
+      if (!place) {
+        throw new NotFoundError("Place");
+      }
 
-    if (place.images.length === 0) {
-      try {
-        const placesData = await Google.searchPlaces(
-          place.name,
-          place.city?.name
-        );
+      if (place.images.length === 0) {
+        try {
+          const placesData = await Google.searchPlaces(
+            place.name,
+            place.city?.name
+          );
 
-        const images = await Google.getPlacePhotos(
-          placesData[0].place_id,
-          process.env.GOOGLE_PLACES_API_KEY!
-        );
+          const images = await Google.getPlacePhotos(placesData[0].place_id);
 
-        if (!images || images.length === 0) {
-          console.log("No images found from Google Places");
-          return;
-        }
+          if (!images || images.length === 0) {
+            console.log("No images found from Google Places");
+            return;
+          }
 
-        console.log(
-          `Found ${images.length} images, uploading to Cloudinary...`
-        );
+          console.log(
+            `Found ${images.length} images, uploading to Cloudinary...`
+          );
 
-        // Upload all images
-        const cloudImages = await Promise.allSettled(
-          images.map(async (image, index) => {
-            const cloudImage = await Cloudinary.uploadGoogleImage(
-              image,
-              place.slug,
-              index
+          // Upload all images
+          const cloudImages = await Promise.allSettled(
+            images.map(async (image, index) => {
+              const cloudImage = await Cloudinary.uploadGoogleImage(
+                image,
+                place.slug,
+                index
+              );
+
+              if (cloudImage) {
+                return {
+                  ...cloudImage,
+                  source: "google",
+                  placeId: place.id,
+                };
+              }
+              throw new Error("Upload failed");
+            })
+          );
+
+          // Extract successful uploads
+          const successfulUploads = cloudImages
+            .filter((result) => result.status === "fulfilled")
+            .map(
+              (result) =>
+                (
+                  result as PromiseFulfilledResult<{
+                    url: string;
+                    publicId: string;
+                    displayOrder: number;
+                    placeId: string;
+                    source: string;
+                  }>
+                ).value
             );
 
-            if (cloudImage) {
-              return {
-                ...cloudImage,
-                source: "google",
-                placeId: place.id,
-              };
-            }
-            throw new Error("Upload failed");
-          })
-        );
-
-        // Extract successful uploads
-        const successfulUploads = cloudImages
-          .filter((result) => result.status === "fulfilled")
-          .map(
-            (result) =>
-              (
-                result as PromiseFulfilledResult<{
-                  url: string;
-                  publicId: string;
-                  displayOrder: number;
-                  placeId: string;
-                  source: string;
-                }>
-              ).value
+          const failedUploads = cloudImages.filter(
+            (result) => result.status === "rejected"
           );
 
-        const failedUploads = cloudImages.filter(
-          (result) => result.status === "rejected"
-        );
+          console.log(`✅ ${successfulUploads.length} successful uploads`);
+          console.log(`❌ ${failedUploads.length} failed uploads`);
 
-        console.log(`✅ ${successfulUploads.length} successful uploads`);
-        console.log(`❌ ${failedUploads.length} failed uploads`);
-
-        if (successfulUploads.length > 0) {
-          await db.insert(PlaceImage).values(successfulUploads);
-          console.log(
-            `✅ Saved ${successfulUploads.length} images to database`
-          );
+          if (successfulUploads.length > 0) {
+            await db.insert(PlaceImage).values(successfulUploads);
+            console.log(
+              `✅ Saved ${successfulUploads.length} images to database`
+            );
+          }
+        } catch (error) {
+          console.error("Error in image processing:", error);
         }
-      } catch (error) {
-        console.error("Error in image processing:", error);
       }
+
+      let isFavourited = false;
+      const auth = c.get("user");
+
+      if (auth) {
+        isFavourited = await checkIsFavourited(auth.id, place.id);
+      }
+
+      return c.json({ ...place, isFavourited });
+    } catch (error) {
+      if (error instanceof AppError) {
+        throw error;
+      }
+      throw new DatabaseError("Failed to fetch place", {
+        originalError: error,
+      });
     }
-
-    let isFavourited = false;
-    const auth = c.get("user");
-
-    if (auth) {
-      isFavourited = await checkIsFavourited(auth.id, place.id);
-    }
-
-    return c.json({ ...place, isFavourited });
-  } catch (error) {
-    console.error("Error fetching place:", error);
-    return c.json({ error: "Failed to fetch place" }, 500);
   }
-});
+);
 
-placeRouter.get("/", async (c) => {
+placeRouter.get("/", readRateLimiter, async (c) => {
   const places = await db.query.Place.findMany({
     with: {
       images: true,
@@ -151,52 +165,66 @@ placeRouter.get("/", async (c) => {
 });
 
 // Favorite a place
-placeRouter.post("/:placeId/favourite", authMiddleware, async (c) => {
-  try {
-    const auth = c.get("user");
-    console.log("Auth: ", auth);
+placeRouter.post(
+  "/:placeId/favourite",
+  authMiddleware,
+  favouriteRateLimiter,
+  async (c) => {
+    try {
+      const auth = c.get("user");
+      console.log("Auth: ", auth);
 
-    if (!auth) {
-      return c.json({ error: "Unauthorized" }, 401);
-    }
+      if (!auth) {
+        throw new UnauthorizedError("No auth token");
+      }
 
-    const placeId = c.req.param("placeId");
+      const placeId = c.req.param("placeId");
 
-    if (!placeId) {
-      return c.json({ error: "Place ID is required" }, 400);
-    }
+      if (!placeId) {
+        throw new BadRequestError("Place ID is required");
+      }
 
-    const place = await db.query.Place.findFirst({
-      where: eq(Place.id, placeId),
-    });
-
-    if (!place) {
-      return c.json({ error: "Place not found" }, 404);
-    }
-
-    const existingFavourite = await db.query.Favourite.findFirst({
-      where: and(eq(Favourite.userId, auth.id), eq(Favourite.placeId, placeId)),
-    });
-
-    if (existingFavourite) {
-      await db.delete(Favourite).where(eq(Favourite.id, existingFavourite.id));
-      return c.json({ success: true, action: "removed" }, 200);
-    } else {
-      await db.insert(Favourite).values({
-        userId: auth.id,
-        placeId: placeId,
-        createdAt: new Date(),
+      const place = await db.query.Place.findFirst({
+        where: eq(Place.id, placeId),
       });
-      return c.json({ success: true, action: "added" }, 200);
+
+      if (!place) {
+        throw new NotFoundError("Place");
+      }
+
+      const existingFavourite = await db.query.Favourite.findFirst({
+        where: and(
+          eq(Favourite.userId, auth.id),
+          eq(Favourite.placeId, placeId)
+        ),
+      });
+
+      if (existingFavourite) {
+        await db
+          .delete(Favourite)
+          .where(eq(Favourite.id, existingFavourite.id));
+        return c.json({ success: true, action: "removed" }, 200);
+      } else {
+        await db.insert(Favourite).values({
+          userId: auth.id,
+          placeId: placeId,
+          createdAt: new Date(),
+        });
+        return c.json({ success: true, action: "added" }, 200);
+      }
+    } catch (error) {
+      if (error instanceof AppError) {
+        throw error;
+      }
+      throw new DatabaseError(
+        "Failed adding or removing place to/from favourites",
+        {
+          originalError: error,
+        }
+      );
     }
-  } catch (error) {
-    console.error("Error adding or removing place to/from favourites:", error);
-    return c.json(
-      { error: "Failed adding or removing place to/from favourites" },
-      500
-    );
   }
-});
+);
 
 placeRouter.get("/list/types", async (c) => {
   try {
@@ -228,8 +256,12 @@ placeRouter.get("/list/random", async (c) => {
 
     return c.json({ places: optimizedPlaces }, 200);
   } catch (error) {
-    console.error("Error fetching random places:", error);
-    return c.json({ error: "Failed to fetch random places" }, 500);
+    if (error instanceof AppError) {
+      throw error;
+    }
+    throw new DatabaseError("Failed to fetch random places", {
+      originalError: error,
+    });
   }
 });
 
@@ -238,7 +270,7 @@ placeRouter.get("/nearby/:slug", optionalAuthMiddleware, async (c) => {
     const { slug } = c.req.param();
 
     if (!slug) {
-      return c.json({ error: "Slug is required" }, 400);
+      throw new BadRequestError("Slug is required");
     }
 
     const place = await db.query.Place.findFirst({
@@ -246,7 +278,7 @@ placeRouter.get("/nearby/:slug", optionalAuthMiddleware, async (c) => {
     });
 
     if (!place) {
-      return c.json({ error: "Place not found" }, 404);
+      throw new NotFoundError("Place");
     }
 
     const lat = parseFloat(c.req.query("lat") || "0");
@@ -325,7 +357,11 @@ placeRouter.get("/nearby/:slug", optionalAuthMiddleware, async (c) => {
       radius,
     });
   } catch (error) {
-    console.error("Error fetching nearby places:", error);
-    return c.json({ error: "Failed to fetch nearby places" }, 500);
+    if (error instanceof AppError) {
+      throw error;
+    }
+    throw new DatabaseError("Failed to fetch nearby places", {
+      originalError: error,
+    });
   }
 });
