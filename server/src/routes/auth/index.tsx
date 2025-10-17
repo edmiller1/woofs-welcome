@@ -19,6 +19,7 @@ import {
 import { sanitizePlainText } from "../../lib/sanitize";
 import { validateBody } from "../../middleware/validate";
 import { UpdateProfileInput, updateProfileSchema } from "./schemas";
+import { AuthService } from "../../services/auth.service";
 
 const resend = new Resend(env.RESEND_API_KEY);
 
@@ -141,51 +142,14 @@ authRouter.post(
   authMiddleware,
   validateBody(updateProfileSchema),
   async (c) => {
-    try {
-      const auth = c.get("user");
+    const auth = c.get("user");
 
-      if (!auth) {
-        throw new UnauthorizedError("No auth token");
-      }
+    if (!auth) throw new UnauthorizedError("No auth token");
 
-      const { name, image } = c.get("validatedBody") as UpdateProfileInput;
+    const { name, image } = c.get("validatedBody") as UpdateProfileInput;
 
-      if (!name) {
-        throw new BadRequestError("Name is required");
-      }
+    const result = await AuthService.WelcomeUser(auth.id, name, image);
 
-      const sanitizedName = sanitizePlainText(name);
-
-      if (!sanitizedName || sanitizedName.length < 2) {
-        throw new ValidationError("Name must be at least 2 characters");
-      }
-
-      let userImage = { id: "", url: "" };
-
-      if (image) {
-        userImage = await Cloudinary.upload(image, "ww-profile-images");
-      }
-
-      if (userImage.id) {
-        await db
-          .update(user)
-          .set({ name: sanitizedName, image: userImage.url })
-          .where(eq(user.id, auth.id));
-      } else {
-        await db
-          .update(user)
-          .set({ name: sanitizedName })
-          .where(eq(user.id, auth.id));
-      }
-
-      return c.json({ success: true }, 200);
-    } catch (error) {
-      if (error instanceof AppError) {
-        throw error;
-      }
-      throw new DatabaseError("Failed to update profile", {
-        originalError: error,
-      });
-    }
+    return c.json(result, 200);
   }
 );
