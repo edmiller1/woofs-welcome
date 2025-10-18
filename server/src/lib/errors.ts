@@ -8,7 +8,7 @@
  * - Type safety
  */
 
-import type { ContentfulStatusCode, StatusCode } from "hono/utils/http-status";
+import type { ContentfulStatusCode } from "hono/utils/http-status";
 
 /**
  * Base Application Error

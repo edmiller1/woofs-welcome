@@ -15,6 +15,9 @@ import { reviewRouter } from "./routes/review";
 import { env } from "./config/env";
 import { globalRateLimiter, authRateLimiter } from "./middleware/rate-limit";
 import { errorHandler } from "./middleware/error-handler";
+import { initSentry } from "./lib/sentry";
+
+initSentry();
 
 const app = new Hono();
 

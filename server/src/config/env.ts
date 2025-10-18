@@ -33,6 +33,9 @@ const envSchema = z.object({
 
   // Resend (Email)
   RESEND_API_KEY: z.string().min(1, "RESEND_API_KEY is required"),
+
+  // Sentry
+  SENTRY_DSN: z.string().min(1, "SENTRY_DSN is required"),
 });
 
 function validateEnv() {

@@ -7,6 +7,8 @@
     "@hono/zod-validator": "^0.5.0",
     "@neondatabase/serverless": "^1.0.1",
     "@react-email/components": "^0.0.41",
+    "@sentry/node": "^10.20.0",
+    "@sentry/profiling-node": "^10.20.0",
     "@supabase/supabase-js": "^2.49.8",
     "@types/react": "^19.1.2",
     "better-auth": "^1.2.10",
