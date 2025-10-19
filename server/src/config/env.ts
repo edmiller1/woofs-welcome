@@ -38,7 +38,7 @@ const envSchema = z.object({
   SENTRY_DSN: z.string().min(1, "SENTRY_DSN is required"),
 });
 
-function validateEnv() {
+export function validateEnv() {
   try {
     const parsed = envSchema.parse(process.env);
     return parsed;

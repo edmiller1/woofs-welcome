@@ -1,27 +1,11 @@
 import { Hono } from "hono";
 import { db } from "../../db";
-import { and, between, eq, ne, sql } from "drizzle-orm";
-import { Favourite, Place, PlaceImage, placeTypeEnum } from "../../db/schema";
-import { Google } from "../../lib/google";
 import { authMiddleware, optionalAuthMiddleware } from "../../middleware/auth";
-import {
-  calculateDistance,
-  checkIsFavourited,
-  getBoundingBox,
-  optimizePlaceImages,
-} from "../../lib/helpers";
-import { Cloudinary } from "../../lib/cloudinary";
 import {
   readRateLimiter,
   favouriteRateLimiter,
 } from "../../middleware/rate-limit";
-import {
-  BadRequestError,
-  NotFoundError,
-  DatabaseError,
-  AppError,
-  UnauthorizedError,
-} from "../../lib/errors";
+import { UnauthorizedError } from "../../lib/errors";
 import { validateParams } from "../../middleware/validate";
 import {
   PlaceIdParam,
