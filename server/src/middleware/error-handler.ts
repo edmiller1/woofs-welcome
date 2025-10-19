@@ -1,7 +1,6 @@
 import type { Context } from "hono"; // ← Add StatusCode import
 import { AppError } from "../lib/errors";
 import { ZodError } from "zod";
-import { Sentry } from "../lib/sentry";
 
 /**
  * Error Response Interface
@@ -103,29 +102,6 @@ export const errorHandler = async (error: Error, c: Context) => {
   // Handle Zod validation errors
   if (error instanceof ZodError) {
     error = handleZodError(error);
-  }
-
-  // Log to Sentry if it's a 500 error
-  if (error instanceof AppError && error.statusCode >= 500) {
-    Sentry.captureException(error, {
-      contexts: {
-        request: {
-          method: c.req.method,
-          url: c.req.url,
-          headers: c.req.header(),
-        },
-      },
-    });
-  } else if (!(error instanceof AppError)) {
-    // Unknown error - always log to Sentry
-    Sentry.captureException(error, {
-      contexts: {
-        request: {
-          method: c.req.method,
-          url: c.req.url,
-        },
-      },
-    });
   }
 
   // Handle operational AppErrors
