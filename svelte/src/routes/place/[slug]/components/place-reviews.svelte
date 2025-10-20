@@ -16,6 +16,7 @@
 	import ReviewImageDialog from './review-image-dialog.svelte';
 	import ReportReviewDialog from './report-review-dialog.svelte';
 	import { goto } from '$app/navigation';
+	import ErrorBoundary from '$lib/components/error-boundary.svelte';
 
 	interface Props {
 		placeName: string;
@@ -34,7 +35,7 @@
 
 	const reviews = createQuery({
 		queryKey: ['reviews', placeSlug, currentPage],
-		queryFn: () => api.review.getPlaceReviews(placeSlug, 0),
+		queryFn: () => api.review.getPlaceReviews(placeSlug, currentPage),
 		enabled: !!placeSlug
 	});
 
@@ -49,13 +50,6 @@
 		onSuccess: () => {
 			toast.success('Review liked!');
 			queryClient.invalidateQueries({ queryKey: ['reviews', placeSlug] });
-		},
-		onError: (error: AxiosError<ErrorResponse>) => {
-			if (error.response?.data.error) {
-				toast.error(error.response.data.error);
-			} else {
-				toast.error('Failed to like review. Please try again.');
-			}
 		}
 	});
 
@@ -66,13 +60,6 @@
 			toast.success('Review reported. Thank you for your feedback.');
 			open = false;
 			queryClient.invalidateQueries({ queryKey: ['reviews', placeSlug] });
-		},
-		onError: (error: AxiosError<ErrorResponse>) => {
-			if (error.response?.data.error) {
-				toast.error(error.response.data.error);
-			} else {
-				toast.error('Failed to report review. Please try again.');
-			}
 		}
 	});
 
@@ -103,34 +90,214 @@
 	const prevPage = () => onPageChange(currentPage - 1);
 </script>
 
-{#if $reviewStats.isError || $reviews.isError}
-	<div>Error</div>
-{/if}
+<ErrorBoundary error={$reviews.error}>
+	{#if $reviewStats.isLoading || $reviews.isLoading}
+		<div class="flex min-h-screen items-center justify-center">
+			<LoaderCircle class="text-primary size-10 animate-spin" />
+		</div>
+	{/if}
 
-{#if $reviewStats.isLoading || $reviews.isLoading}
-	<div class="flex min-h-screen items-center justify-center">
-		<LoaderCircle class="text-primary size-10 animate-spin" />
-	</div>
-{/if}
-
-{#if $reviewStats.isSuccess && $reviews.isSuccess}
-	{#if $reviews.data.reviews.length > 0}
-		<div>
-			<div class="mb-6 flex items-center justify-between">
-				<div>
-					<h3 class="text-2xl font-semibold">Reviews ({$reviewStats.data.totalReviews})</h3>
-					<div class="mt-2 flex items-center gap-2">
-						<div class="flex items-center gap-2">
-							<StarRating rating={$reviewStats.data.averageRating} />
+	{#if $reviewStats.isSuccess && $reviews.isSuccess}
+		{#if $reviews.data.reviews.length > 0}
+			<div>
+				<div class="mb-6 flex items-center justify-between">
+					<div>
+						<h3 class="text-2xl font-semibold">Reviews ({$reviewStats.data.totalReviews})</h3>
+						<div class="mt-2 flex items-center gap-2">
+							<div class="flex items-center gap-2">
+								<StarRating rating={$reviewStats.data.averageRating} />
+								<span class="text-muted-foreground text-sm"
+									>{$reviewStats.data.averageRating} out of 5</span
+								>
+							</div>
+							&middot;
 							<span class="text-muted-foreground text-sm"
-								>{$reviewStats.data.averageRating} out of 5</span
+								>Based on {$reviewStats.data.totalReviews} dog owner reviews</span
 							>
 						</div>
-						&middot;
-						<span class="text-muted-foreground text-sm"
-							>Based on {$reviewStats.data.totalReviews} dog owner reviews</span
-						>
 					</div>
+					<a
+						target="_blank"
+						href="/review/{placeSlug}"
+						class={cn(buttonVariants({ variant: 'outline' }))}
+						><Star class="size-4" /> Write a Review</a
+					>
+				</div>
+
+				<div class="bg-muted mb-8 rounded-lg p-6">
+					<div class="space-y-3">
+						{#each $reviewStats.data.reviewBreakdown as { rating, count, percentage }}
+							<div class="flex items-center gap-3">
+								<div class="flex w-16 items-center gap-1">
+									<span class="text-sm">{rating}</span>
+									<Star class="h-4 w-4 fill-yellow-400 text-yellow-400" />
+								</div>
+								<div class="h-2 flex-1 rounded-full bg-gray-200">
+									<div
+										class="h-2 rounded-full bg-yellow-400 transition-all duration-300"
+										style={`width: ${percentage}%`}
+									></div>
+								</div>
+								<div class="text-muted-foreground w-12 text-right text-sm">
+									{count > 0 ? `${percentage}%` : '0%'}
+								</div>
+							</div>
+						{/each}
+					</div>
+				</div>
+
+				<div class="space-y-6">
+					{#each $reviews.data.reviews as review}
+						<div class="rounded-lg border p-6 shadow-sm">
+							<div class="mb-4 flex items-start gap-4">
+								<Avatar.Root class="size-12">
+									<Avatar.Image
+										src={review.user.image}
+										alt="review user avatar"
+										referrerpolicy="no-referrer"
+									/>
+									<Avatar.Fallback>{getUserInitials(review.user.name)}</Avatar.Fallback>
+								</Avatar.Root>
+								<div class="flex-1">
+									<div class="flex items-center justify-between">
+										<div>
+											<h4 class="font-semibold">{review.user.name}</h4>
+											<div class="mt-1 flex items-center gap-2">
+												<StarRating rating={review.rating} />
+												<span class="text-muted-foreground text-sm">
+													{formatDate(review.visitDate)} &middot; {review.numDogs}
+													{review.numDogs === 1 ? 'dog' : 'dogs'}
+												</span>
+												<span class="text-sm">
+													{getTimeOfVisitEmoji(review.timeOfVisit)}
+													{review.timeOfVisit}
+												</span>
+											</div>
+										</div>
+										{#if review.userId !== user?.id}
+											<div class="flex items-center gap-2">
+												<Tooltip.Provider>
+													<Tooltip.Root>
+														<Tooltip.Trigger>
+															<Button
+																variant="outline"
+																class="rounded-full p-1"
+																onclick={handleLikeReview}
+																disabled={$likeReview.isPending}
+															>
+																<ThumbsUp
+																	class={cn(
+																		'h-4 w-4',
+																		review.hasLiked
+																			? 'fill-primary text-primary'
+																			: 'text-muted-foreground'
+																	)}
+																/>
+																{#if review.likesCount > 0}
+																	<span class="text-xs">{review.likesCount}</span>
+																{/if}
+															</Button>
+														</Tooltip.Trigger>
+														<Tooltip.Content>
+															<p>
+																{review.hasLiked ? 'Unlike this review' : 'This review is helpful'}
+															</p>
+														</Tooltip.Content>
+													</Tooltip.Root>
+												</Tooltip.Provider>
+												<Tooltip.Provider>
+													<Tooltip.Root>
+														<Tooltip.Trigger>
+															<Button
+																variant="outline"
+																class="rounded-full p-1"
+																onclick={() => openReportDialog(review.hasReported!)}
+															>
+																<Flag
+																	class={cn(
+																		'size-4',
+																		review.hasReported
+																			? 'fill-primary text-primary'
+																			: 'text-muted-foreground'
+																	)}
+																/>
+															</Button>
+														</Tooltip.Trigger>
+														<Tooltip.Content>
+															<p>
+																{review.hasReported ? 'Update your report' : 'Report this review'}
+															</p>
+														</Tooltip.Content>
+													</Tooltip.Root>
+												</Tooltip.Provider>
+												<ReportReviewDialog
+													{handleReportReview}
+													hasReported={review.hasReported ?? false}
+													{openReportDialog}
+													reportLoading={$reportReview.isPending}
+													{open}
+												/>
+											</div>
+										{/if}
+									</div>
+									<div class="mt-2 flex gap-1">
+										{#each review.dogBreeds as breed}
+											<Badge variant="secondary" class="rounded-full px-2 py-1 text-xs">
+												{breed}
+											</Badge>
+										{/each}
+									</div>
+								</div>
+							</div>
+							<p class="mb-1 font-semibold leading-relaxed">{review.title}</p>
+							<p class="mb-4 leading-relaxed">{review.content}</p>
+							<div class="my-2 flex items-center gap-2 p-2">
+								{#each review.images as image}
+									<ReviewImageDialog {image} images={review.images} />
+								{/each}
+							</div>
+						</div>
+					{/each}
+				</div>
+
+				{#if $reviews.data.reviews.length > 10}
+					<div class="py-8">
+						<Pagination.Root count={$reviewStats.data.totalReviews} perPage={10}>
+							{#snippet children({ pages, currentPage })}
+								<Pagination.Content>
+									<Pagination.Item>
+										<Pagination.PrevButton onclick={prevPage} />
+									</Pagination.Item>
+									<Pagination.Item>
+										{#each pages as page (page.key)}
+											{#if page.type === 'ellipsis'}
+												<Pagination.Item>
+													<Pagination.Ellipsis />
+												</Pagination.Item>
+											{:else}
+												<Pagination.Item>
+													<Pagination.Link {page} isActive={currentPage === page.value}>
+														{page.value}
+													</Pagination.Link>
+												</Pagination.Item>
+											{/if}
+										{/each}
+
+										<Pagination.Item>
+											<Pagination.NextButton onclick={nextPage} />
+										</Pagination.Item>
+									</Pagination.Item>
+								</Pagination.Content>
+							{/snippet}
+						</Pagination.Root>
+					</div>
+				{/if}
+			</div>
+		{:else}
+			<div class="flex items-center justify-between">
+				<div>
+					<h3 class="mb-4 text-2xl font-semibold">Reviews (0)</h3>
+					<p class="text-muted-foreground mb-6">Be the first to review {placeName}!</p>
 				</div>
 				<a
 					target="_blank"
@@ -139,187 +306,6 @@
 					><Star class="size-4" /> Write a Review</a
 				>
 			</div>
-
-			<div class="bg-muted mb-8 rounded-lg p-6">
-				<div class="space-y-3">
-					{#each $reviewStats.data.reviewBreakdown as { rating, count, percentage }}
-						<div class="flex items-center gap-3">
-							<div class="flex w-16 items-center gap-1">
-								<span class="text-sm">{rating}</span>
-								<Star class="h-4 w-4 fill-yellow-400 text-yellow-400" />
-							</div>
-							<div class="h-2 flex-1 rounded-full bg-gray-200">
-								<div
-									class="h-2 rounded-full bg-yellow-400 transition-all duration-300"
-									style={`width: ${percentage}%`}
-								></div>
-							</div>
-							<div class="text-muted-foreground w-12 text-right text-sm">
-								{count > 0 ? `${percentage}%` : '0%'}
-							</div>
-						</div>
-					{/each}
-				</div>
-			</div>
-
-			<div class="space-y-6">
-				{#each $reviews.data.reviews as review}
-					<div class="rounded-lg border p-6 shadow-sm">
-						<div class="mb-4 flex items-start gap-4">
-							<Avatar.Root class="size-12">
-								<Avatar.Image
-									src={review.user.image}
-									alt="review user avatar"
-									referrerpolicy="no-referrer"
-								/>
-								<Avatar.Fallback>{getUserInitials(review.user.name)}</Avatar.Fallback>
-							</Avatar.Root>
-							<div class="flex-1">
-								<div class="flex items-center justify-between">
-									<div>
-										<h4 class="font-semibold">{review.user.name}</h4>
-										<div class="mt-1 flex items-center gap-2">
-											<StarRating rating={review.rating} />
-											<span class="text-muted-foreground text-sm">
-												{formatDate(review.visitDate)} &middot; {review.numDogs}
-												{review.numDogs === 1 ? 'dog' : 'dogs'}
-											</span>
-											<span class="text-sm">
-												{getTimeOfVisitEmoji(review.timeOfVisit)}
-												{review.timeOfVisit}
-											</span>
-										</div>
-									</div>
-									{#if review.userId !== user?.id}
-										<div class="flex items-center gap-2">
-											<Tooltip.Provider>
-												<Tooltip.Root>
-													<Tooltip.Trigger>
-														<Button
-															variant="outline"
-															class="rounded-full p-1"
-															onclick={handleLikeReview}
-															disabled={$likeReview.isPending}
-														>
-															<ThumbsUp
-																class={cn(
-																	'h-4 w-4',
-																	review.hasLiked
-																		? 'fill-primary text-primary'
-																		: 'text-muted-foreground'
-																)}
-															/>
-															{#if review.likesCount > 0}
-																<span class="text-xs">{review.likesCount}</span>
-															{/if}
-														</Button>
-													</Tooltip.Trigger>
-													<Tooltip.Content>
-														<p>
-															{review.hasLiked ? 'Unlike this review' : 'This review is helpful'}
-														</p>
-													</Tooltip.Content>
-												</Tooltip.Root>
-											</Tooltip.Provider>
-											<Tooltip.Provider>
-												<Tooltip.Root>
-													<Tooltip.Trigger>
-														<Button
-															variant="outline"
-															class="rounded-full p-1"
-															onclick={() => openReportDialog(review.hasReported!)}
-														>
-															<Flag
-																class={cn(
-																	'size-4',
-																	review.hasReported
-																		? 'fill-primary text-primary'
-																		: 'text-muted-foreground'
-																)}
-															/>
-														</Button>
-													</Tooltip.Trigger>
-													<Tooltip.Content>
-														<p>
-															{review.hasReported ? 'Update your report' : 'Report this review'}
-														</p>
-													</Tooltip.Content>
-												</Tooltip.Root>
-											</Tooltip.Provider>
-											<ReportReviewDialog
-												{handleReportReview}
-												hasReported={review.hasReported ?? false}
-												{openReportDialog}
-												reportLoading={$reportReview.isPending}
-												{open}
-											/>
-										</div>
-									{/if}
-								</div>
-								<div class="mt-2 flex gap-1">
-									{#each review.dogBreeds as breed}
-										<Badge variant="secondary" class="rounded-full px-2 py-1 text-xs">
-											{breed}
-										</Badge>
-									{/each}
-								</div>
-							</div>
-						</div>
-						<p class="mb-1 font-semibold leading-relaxed">{review.title}</p>
-						<p class="mb-4 leading-relaxed">{review.content}</p>
-						<div class="my-2 flex items-center gap-2 p-2">
-							{#each review.images as image}
-								<ReviewImageDialog {image} images={review.images} />
-							{/each}
-						</div>
-					</div>
-				{/each}
-			</div>
-
-			{#if $reviews.data.reviews.length > 10}
-				<div class="py-8">
-					<Pagination.Root count={$reviewStats.data.totalReviews} perPage={10}>
-						{#snippet children({ pages, currentPage })}
-							<Pagination.Content>
-								<Pagination.Item>
-									<Pagination.PrevButton onclick={prevPage} />
-								</Pagination.Item>
-								<Pagination.Item>
-									{#each pages as page (page.key)}
-										{#if page.type === 'ellipsis'}
-											<Pagination.Item>
-												<Pagination.Ellipsis />
-											</Pagination.Item>
-										{:else}
-											<Pagination.Item>
-												<Pagination.Link {page} isActive={currentPage === page.value}>
-													{page.value}
-												</Pagination.Link>
-											</Pagination.Item>
-										{/if}
-									{/each}
-
-									<Pagination.Item>
-										<Pagination.NextButton onclick={nextPage} />
-									</Pagination.Item>
-								</Pagination.Item>
-							</Pagination.Content>
-						{/snippet}
-					</Pagination.Root>
-				</div>
-			{/if}
-		</div>
-	{:else}
-		<div class="flex items-center justify-between">
-			<div>
-				<h3 class="mb-4 text-2xl font-semibold">Reviews (0)</h3>
-				<p class="text-muted-foreground mb-6">Be the first to review {placeName}!</p>
-			</div>
-			<a
-				target="_blank"
-				href="/review/{placeSlug}"
-				class={cn(buttonVariants({ variant: 'outline' }))}><Star class="size-4" /> Write a Review</a
-			>
-		</div>
+		{/if}
 	{/if}
-{/if}
+</ErrorBoundary>

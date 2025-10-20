@@ -6,9 +6,5 @@ export const getPlaceReviews = async (slug: string, page: number) => {
 		params: { page }
 	});
 
-	if (response.data.error) {
-		throw new Error(response.data.error);
-	}
-
 	return response.data;
 };

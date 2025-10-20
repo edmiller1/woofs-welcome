@@ -6,9 +6,5 @@ export const favouritePlace = async (placeId: string) => {
 		`/place/${placeId}/favourite`
 	);
 
-	if (response.data.error) {
-		throw new Error(response.data.error);
-	}
-
 	return response.data;
 };

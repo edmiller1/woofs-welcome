@@ -6,9 +6,5 @@ export const welcome = async (data: { name: string; image?: string }) => {
 		data
 	);
 
-	if (response.data.error) {
-		throw new Error(response.data.error);
-	}
-
 	return response.data.success;
 };

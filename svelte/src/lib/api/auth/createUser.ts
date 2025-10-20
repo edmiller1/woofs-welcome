@@ -1,18 +1,10 @@
-
-import { protectedProcedure } from "$lib/axios";
-import { type CreateUserResponse } from "$lib/types/responses";
+import { protectedProcedure } from '$lib/axios';
+import { type CreateUserResponse } from '$lib/types/responses';
 
 export const createUser = async (accessToken?: string) => {
-    const config = accessToken 
-    ? { headers: { Authorization: `Bearer ${accessToken}` } }
-    : {};
+	const config = accessToken ? { headers: { Authorization: `Bearer ${accessToken}` } } : {};
 
-  const response =
-    await protectedProcedure.post<CreateUserResponse>("/auth/create", {}, config);
+	const response = await protectedProcedure.post<CreateUserResponse>('/auth/create', {}, config);
 
-  if (response.data.error) {
-    throw new Error(response.data.error);
-  }
-
-  return response.data;
+	return response.data;
 };

@@ -20,6 +20,8 @@
 	import * as Carousel from '$lib/components/ui/carousel/index.js';
 	import { fade } from 'svelte/transition';
 	import Footer from '$lib/components/footer.svelte';
+	import ErrorBoundary from '$lib/components/error-boundary.svelte';
+	import PlaceCardSkeleton from '$lib/components/place-card-skeleton.svelte';
 
 	let { data } = $props();
 	const user = $derived(data.user);
@@ -186,66 +188,76 @@
 							>Explore<ArrowRight class="ml-2 size-4" /></a
 						>
 					</div>
-					<div class="mx-auto w-full">
-						<div class="relative mx-auto w-full">
-							<div class="relative w-full">
-								<Carousel.Root
-									opts={{
-										align: 'start'
-									}}
-									class="w-full"
-								>
-									<Carousel.Content class="-ml-2 md:-ml-4">
-										{#if $places.isSuccess && $places.data?.places}
-											{#each $places.data.places as place}
-												<Carousel.Item
-													class="-lg:pl-8 -md:pl-3 relative w-full basis-[500px] pl-10"
-												>
-													<a
-														href="/place/{place.slug}"
-														aria-label="Explore {place.name}"
-														class="no-underline"
-													>
-														<div class="relative z-[99] h-2/3 w-full overflow-hidden rounded-2xl">
-															<img
-																src={place.images[0].webp.src}
-																srcset={place.images[0].webp.srcset}
-																alt={place.name}
-																class="h-full w-full object-cover"
-															/>
-															<div class="absolute inset-0 z-50 flex flex-col justify-between">
-																<div class="p-5">
-																	<div class="inline-block py-5 text-3xl font-[500] text-white">
-																		{place.name}
-																	</div>
-																</div>
-																<div class="p-4">
-																	<div
-																		class="inline-block py-5 text-xl font-[500] leading-3 text-white"
-																	>
-																		{place.city.name}, {place.city.region.name}
-																	</div>
-																</div>
-															</div>
-															<div class="absolute inset-0 h-full w-full bg-black opacity-40"></div>
-														</div>
-													</a>
-												</Carousel.Item>
-											{/each}
-										{/if}
-									</Carousel.Content>
-									<div class="absolute bottom-48 left-4 z-10 ml-16 flex">
-										<Carousel.Previous
-											class="rounded-full border-zinc-900 bg-[#fefaf5] text-zinc-900 hover:bg-[#fbecd9] hover:text-zinc-900"
-										/>
-										<Carousel.Next
-											class="rounded-full border-zinc-900 bg-[#fefaf5] text-zinc-900 hover:bg-[#fbecd9] hover:text-zinc-900"
-										/>
-									</div>
-								</Carousel.Root>
+					<ErrorBoundary error={$places.error}>
+						{#if $places.isPending}
+							<div class="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-4">
+								{#each Array(8) as _}
+									<PlaceCardSkeleton />
+								{/each}
 							</div>
-						</div>
-					</div>
+						{:else if $places.isSuccess}
+							<div class="mx-auto w-full">
+								<div class="relative mx-auto w-full">
+									<div class="relative w-full">
+										<Carousel.Root
+											opts={{
+												align: 'start'
+											}}
+											class="w-full"
+										>
+											<Carousel.Content class="-ml-2 md:-ml-4">
+												{#each $places.data.places as place}
+													<Carousel.Item
+														class="-lg:pl-8 -md:pl-3 relative w-full basis-[500px] pl-10"
+													>
+														<a
+															href="/place/{place.slug}"
+															aria-label="Explore {place.name}"
+															class="no-underline"
+														>
+															<div class="relative z-[99] h-2/3 w-full overflow-hidden rounded-2xl">
+																<img
+																	src={place.images[0].webp.src}
+																	srcset={place.images[0].webp.srcset}
+																	alt={place.name}
+																	class="h-full w-full object-cover"
+																/>
+																<div class="absolute inset-0 z-50 flex flex-col justify-between">
+																	<div class="p-5">
+																		<div class="inline-block py-5 text-3xl font-[500] text-white">
+																			{place.name}
+																		</div>
+																	</div>
+																	<div class="p-4">
+																		<div
+																			class="inline-block py-5 text-xl font-[500] leading-3 text-white"
+																		>
+																			{place.city.name}, {place.city.region.name}
+																		</div>
+																	</div>
+																</div>
+																<div
+																	class="absolute inset-0 h-full w-full bg-black opacity-40"
+																></div>
+															</div>
+														</a>
+													</Carousel.Item>
+												{/each}
+											</Carousel.Content>
+											<div class="absolute bottom-48 left-4 z-10 ml-16 flex">
+												<Carousel.Previous
+													class="rounded-full border-zinc-900 bg-[#fefaf5] text-zinc-900 hover:bg-[#fbecd9] hover:text-zinc-900"
+												/>
+												<Carousel.Next
+													class="rounded-full border-zinc-900 bg-[#fefaf5] text-zinc-900 hover:bg-[#fbecd9] hover:text-zinc-900"
+												/>
+											</div>
+										</Carousel.Root>
+									</div>
+								</div>
+							</div>
+						{/if}
+					</ErrorBoundary>
 				</div>
 			</div>
 		</div>

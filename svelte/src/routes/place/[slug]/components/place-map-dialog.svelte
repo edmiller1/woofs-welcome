@@ -9,6 +9,7 @@
 	import { createQuery } from '@tanstack/svelte-query';
 	import { api } from '$lib/api';
 	import { untrack } from 'svelte';
+	import ErrorBoundary from '$lib/components/error-boundary.svelte';
 
 	interface Props {
 		accessToken: string;
@@ -344,7 +345,9 @@
 					{placeName}
 				</Dialog.Title>
 			</Dialog.Header>
-			<div bind:this={mapContainer} class="map-container w-full flex-1 rounded-lg"></div>
+			<ErrorBoundary error={$nearbyPlaces.error}>
+				<div bind:this={mapContainer} class="map-container w-full flex-1 rounded-lg"></div>
+			</ErrorBoundary>
 		</div>
 	</Dialog.Content>
 </Dialog.Root>

@@ -11,11 +11,11 @@
 		InputOTPSeparator,
 		InputOTPSlot
 	} from '$lib/components/ui/input-otp';
-	import { Loader2 } from '@lucide/svelte';
+	import { LoaderCircle } from '@lucide/svelte';
 	import { toast } from 'svelte-sonner';
 	import { defaults, superForm } from 'sveltekit-superforms';
 	import { zod4 } from 'sveltekit-superforms/adapters';
-	import { email, z } from 'zod/v4';
+	import { z } from 'zod/v4';
 
 	interface Props {
 		searchParams: {
@@ -111,7 +111,7 @@
 <div>
 	{#if loading}
 		<div class="flex-vol flex items-center justify-center gap-3">
-			<Loader2 class="size-10 animate-spin" />
+			<LoaderCircle class="size-10 animate-spin" />
 			<p>Verifying...</p>
 		</div>
 	{:else}

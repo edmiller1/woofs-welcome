@@ -6,7 +6,7 @@
 	import { Card, CardContent } from '$lib/components/ui/card';
 	import { Input } from '$lib/components/ui/input';
 	import { Label } from '$lib/components/ui/label';
-	import { Loader2 } from '@lucide/svelte';
+	import { LoaderCircle } from '@lucide/svelte';
 	import { toast } from 'svelte-sonner';
 
 	let email = $state<string>('');
@@ -73,7 +73,7 @@
 				</div>
 				<Button type="submit" class="w-full" disabled={loading || googleLoading}>
 					{#if loading}
-						<Loader2 class="size-3 animate-spin" stroke-width={3} />
+						<LoaderCircle class="size-3 animate-spin" stroke-width={3} />
 						Signing in...
 					{:else}
 						Sign in
@@ -94,7 +94,7 @@
 				disabled={loading || googleLoading}
 			>
 				{#if googleLoading}
-					<Loader2 class="size-3 animate-spin" stroke-width={3} />
+					<LoaderCircle class="size-3 animate-spin" stroke-width={3} />
 					Connecting to Google...
 				{:else}
 					<GoogleLogo />

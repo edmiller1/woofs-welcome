@@ -33,13 +33,6 @@
 		onSuccess: () => {
 			toast.success('Profile updated successfully!');
 			goto('/');
-		},
-		onError: (error: AxiosError<ErrorResponse>) => {
-			if (error.response?.data.error) {
-				toast.error(error.response.data.error);
-			} else {
-				toast.error('Failed to update profile. Please try again.');
-			}
 		}
 	});
 

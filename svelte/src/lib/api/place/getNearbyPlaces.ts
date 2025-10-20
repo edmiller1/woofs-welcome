@@ -18,9 +18,5 @@ export const getNearbyPlaces = async (data: {
 		}
 	);
 
-	if (reponse.data.error) {
-		throw new Error(reponse.data.error);
-	}
-
 	return reponse.data;
 };

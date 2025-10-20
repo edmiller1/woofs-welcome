@@ -10,9 +10,5 @@ export const reportReview = async (
 		reportData
 	);
 
-	if (response.status !== 200) {
-		throw new Error(response.data.error || 'An error occurred while reporting the review.');
-	}
-
 	return response.data;
 };

@@ -8,8 +8,10 @@
 	import { toast } from 'svelte-sonner';
 	import GoogleLogo from './google-logo.svelte';
 	import DialogDescription from './ui/dialog/dialog-description.svelte';
-	import { Loader2 } from '@lucide/svelte';
+	import { Loader2, LoaderCircle } from '@lucide/svelte';
 	import { api } from '$lib/api';
+	import { useValidation } from '$lib/hooks/use-validation.svelte';
+	import { emailSchema } from '$lib/validation/schemas';
 
 	let email = $state<string>('');
 	let otp = $state<string>('');
@@ -20,8 +22,14 @@
 	const isOpen = $derived($authModal.isOpen);
 	const mode = $derived($authModal.mode);
 
+	const validation = useValidation(emailSchema);
+
 	const handleEmailSubmit = async () => {
 		if (!email) return;
+
+		if (!validation.validate({ email })) {
+			return;
+		}
 
 		loading = true;
 		try {
@@ -125,6 +133,9 @@
 						bind:value={email}
 						disabled={loading}
 					/>
+					{#if validation.errors.email}
+						<p class="text-sm text-red-600">{validation.errors.email}</p>
+					{/if}
 				</div>
 
 				<Button class="w-full" onclick={handleEmailSubmit} disabled={loading || !email}>
@@ -142,7 +153,7 @@
 
 				<Button variant="outline" class="w-full" onclick={handleGoogleLogin}>
 					{#if googleLoading}
-						<Loader2 class="size-4 animate-spin" stroke-width={3} />
+						<LoaderCircle class="size-4 animate-spin" stroke-width={3} />
 						Connecting to Google...
 					{:else}
 						<GoogleLogo />
