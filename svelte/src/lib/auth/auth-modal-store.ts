@@ -1,64 +1,65 @@
 import { writable } from 'svelte/store';
-import { browser } from '$app/environment';
-import { page } from '$app/state';
-import { get } from 'svelte/store';
+
+type AuthModalMode = 'sign-in' | 'sign-up';
+type AuthModalStep = 'email' | 'otp' | 'welcome';
 
 interface AuthModalState {
 	isOpen: boolean;
-	redirectTo: string | null;
-	mode: 'sign-in' | 'sign-up';
+	mode: AuthModalMode;
+	step: AuthModalStep;
+	email?: string;
 }
 
-const initialState: AuthModalState = {
-	isOpen: false,
-	redirectTo: null,
-	mode: 'sign-in'
-};
+function createAuthModalStore() {
+	const { subscribe, set, update } = writable<AuthModalState>({
+		isOpen: false,
+		mode: 'sign-in',
+		step: 'email'
+	});
 
-export const authModal = writable<AuthModalState>(initialState);
-
-export const authModalActions = {
-	// Open the modal with resirect path
-	open(mode: 'sign-in' | 'sign-up', redirectTo?: string) {
-		if (!browser) return;
-
-		const currentPath = redirectTo || window.location.pathname + window.location.search;
-
-		authModal.update((state) => ({
-			...state,
-			isOpen: true,
-			mode,
-			redirectTo: currentPath
-		}));
-	},
-
-	// Close the modal
-	close() {
-		authModal.update((state) => ({
-			...state,
-			isOpen: false
-		}));
-	},
-
-	// witch between sign-in and sign-up modes
-	switchMode(mode: 'sign-in' | 'sign-up') {
-		authModal.update((state) => ({
-			...state,
-			mode
-		}));
-	},
-
-	async handleSuccess() {
-		const state = get(authModal);
-
-		// Close modal first
-		authModal.update((s) => ({ ...s, isOpen: false }));
-
-		// Redirect to intended destination
-		if (state.redirectTo && state.redirectTo !== '/sign-in') {
-			window.location.href = state.redirectTo;
-		} else {
-			window.location.reload(); // Refresh to update auth state
+	return {
+		subscribe,
+		open: (mode: AuthModalMode = 'sign-in') => {
+			update((state) => ({
+				...state,
+				isOpen: true,
+				mode,
+				step: 'email' // Reset to email step
+			}));
+		},
+		close: () => {
+			set({
+				isOpen: false,
+				mode: 'sign-in',
+				step: 'email',
+				email: undefined
+			});
+		},
+		switchMode: (mode: AuthModalMode) => {
+			update((state) => ({
+				...state,
+				mode,
+				step: 'email' // Reset step when switching mode
+			}));
+		},
+		setStep: (step: AuthModalStep, email?: string) => {
+			update((state) => ({
+				...state,
+				step,
+				...(email && { email })
+			}));
+		},
+		handleSuccess: async () => {
+			// This will be called from the modal after successful auth
+			set({
+				isOpen: false,
+				mode: 'sign-in',
+				step: 'email',
+				email: undefined
+			});
 		}
-	}
-};
+	};
+}
+
+export const authModal = createAuthModalStore();
+export const authModalActions = authModal;

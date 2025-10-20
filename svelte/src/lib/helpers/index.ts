@@ -169,8 +169,20 @@ export const getFileBase64 = (file: File): Promise<string> => {
 	});
 };
 
-export const getUserInitials = (name: string) => {
-	const names = name.split(' ');
-	const initials = names.map((n) => n.charAt(0).toUpperCase()).join('');
-	return initials.slice(0, 2); // Limit to 2 characters
-};
+export function getUserInitials(name: string): string {
+	if (!name) return '?';
+
+	// If it's an email, use first letter
+	if (name.includes('@')) {
+		return name.charAt(0).toUpperCase();
+	}
+
+	// Split name and get initials
+	const parts = name.trim().split(/\s+/);
+
+	if (parts.length === 1) {
+		return parts[0].charAt(0).toUpperCase();
+	}
+
+	return (parts[0].charAt(0) + parts[parts.length - 1].charAt(0)).toUpperCase();
+}

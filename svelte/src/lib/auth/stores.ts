@@ -13,6 +13,11 @@ export const loading = writable(true);
 export const user = derived(session, ($session) => $session?.user ?? null);
 export const isAuthenticated = derived(session, ($session) => !!$session);
 
+export const needsProfileCompletion = derived(user, ($user) => {
+	if (!$user) return false;
+	return !$user.name || $user.name === $user.email || $user.name === '';
+});
+
 export const auth = {
 	async signIn(email: string) {
 		const result = await authClient.emailOtp.sendVerificationOtp({ email, type: 'sign-in' });

@@ -14,7 +14,8 @@
 	import Button from '$lib/components/ui/button/button.svelte';
 	import { createMutation } from '@tanstack/svelte-query';
 	import { api } from '$lib/api';
-	import type { AxiosError } from 'axios';
+	import { auth } from '$lib/auth/stores';
+	import confetti from 'canvas-confetti';
 
 	interface Props {
 		searchParams: {
@@ -30,8 +31,14 @@
 	const updateProfile = createMutation({
 		mutationFn: async (profileData: { name: string; image?: string }) =>
 			api.auth.welcome(profileData),
-		onSuccess: () => {
+		onSuccess: async () => {
 			toast.success('Profile updated successfully!');
+			confetti({
+				particleCount: 100,
+				spread: 70,
+				origin: { y: 0.6 }
+			});
+			await auth.initialize();
 			goto('/');
 		}
 	});

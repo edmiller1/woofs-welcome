@@ -4,30 +4,33 @@
 	import { Input } from '$lib/components/ui/input';
 	import { Label } from '$lib/components/ui/label';
 	import { authModal, authModalActions } from '$lib/auth/auth-modal-store';
-	import { auth } from '$lib/auth/stores';
+	import { auth, needsProfileCompletion } from '$lib/auth/stores';
 	import { toast } from 'svelte-sonner';
 	import GoogleLogo from './google-logo.svelte';
 	import DialogDescription from './ui/dialog/dialog-description.svelte';
-	import { Loader2, LoaderCircle } from '@lucide/svelte';
+	import { Loader2, ArrowLeft } from '@lucide/svelte';
 	import { api } from '$lib/api';
+	import WelcomeStep from '$lib/components/welcome-step.svelte';
 	import { useValidation } from '$lib/hooks/use-validation.svelte';
 	import { emailSchema } from '$lib/validation/schemas';
+	import ValidationError from './validation-error.svelte';
+	import { cn } from '$lib/utils';
 
 	let email = $state<string>('');
 	let otp = $state<string>('');
-	let step = $state<'email' | 'otp'>('email');
 	let loading = $state<boolean>(false);
 	let googleLoading = $state<boolean>(false);
 
 	const isOpen = $derived($authModal.isOpen);
 	const mode = $derived($authModal.mode);
+	const step = $derived($authModal.step);
+	const storedEmail = $derived($authModal.email);
 
-	const validation = useValidation(emailSchema);
+	const emailValidation = useValidation(emailSchema);
 
 	const handleEmailSubmit = async () => {
-		if (!email) return;
-
-		if (!validation.validate({ email })) {
+		// Validate email
+		if (!emailValidation.validate({ email: email.trim() })) {
 			return;
 		}
 
@@ -37,13 +40,12 @@
 				const emailCheck = await api.auth.checkEmails(email.trim());
 
 				if (!emailCheck) {
-					// Automatically switch to sign-up mode
 					authModalActions.switchMode('sign-up');
 					toast.info("No account found. We've switched you to sign-up mode.");
 					return;
 				}
 			}
-			//send OTP
+
 			const result =
 				mode === 'sign-in' ? await auth.signIn(email.trim()) : await auth.signUp(email.trim());
 
@@ -51,7 +53,7 @@
 				toast.error(result.error.message || 'Failed to send verification code');
 				return;
 			} else {
-				step = 'otp';
+				authModalActions.setStep('otp', email.trim());
 				toast.success('Verification code sent to your email!');
 			}
 		} catch (error) {
@@ -63,18 +65,26 @@
 	};
 
 	const handleOtpSubmit = async () => {
-		if (!otp) return;
+		if (!otp || !storedEmail) return;
 
 		loading = true;
 		try {
-			const result = await auth.verifyOtp(email.trim(), otp);
+			const result = await auth.verifyOtp(storedEmail, otp);
 
 			if (result.error) {
 				toast.error(result.error.message || 'Failed to verify code');
 				return;
 			} else {
-				toast.success('Welcome!');
-				await authModalActions.handleSuccess();
+				// Check if user needs to complete profile
+				// Wait a moment for the session to update
+				await new Promise((resolve) => setTimeout(resolve, 100));
+
+				if ($needsProfileCompletion) {
+					authModalActions.setStep('welcome', storedEmail);
+				} else {
+					toast.success('Welcome back!');
+					await authModalActions.handleSuccess();
+				}
 			}
 		} catch (error) {
 			console.error('OTP verification error:', error);
@@ -91,6 +101,24 @@
 		} catch (error) {
 			console.error('Google login error:', error);
 			toast.error('Failed to sign in with Google');
+			googleLoading = false;
+		}
+	};
+
+	const handleResendOTP = async () => {
+		if (!storedEmail) return;
+
+		try {
+			const type = mode === 'sign-in' ? 'sign-in' : 'email-verification';
+			const result = await auth.resendOTP(storedEmail, type);
+
+			if (result.error) {
+				toast.error(result.error.message || 'Failed to resend code');
+			} else {
+				toast.success('Verification code resent!');
+			}
+		} catch (error) {
+			toast.error('Failed to resend code');
 		}
 	};
 
@@ -98,49 +126,147 @@
 		authModalActions.close();
 		email = '';
 		otp = '';
-		step = 'email';
 		loading = false;
+		emailValidation.clearErrors();
+	};
+
+	const handleBack = () => {
+		if (step === 'otp') {
+			authModalActions.setStep('email');
+			otp = '';
+		}
 	};
 
 	const switchMode = () => {
 		const newMode = mode === 'sign-in' ? 'sign-up' : 'sign-in';
 		authModalActions.switchMode(newMode);
-		step = 'email';
+		emailValidation.clearErrors();
+	};
+
+	const handleWelcomeComplete = async () => {
+		toast.success('Profile completed!');
+		await authModalActions.handleSuccess();
 	};
 </script>
 
 <Dialog open={isOpen} onOpenChange={(open) => !open && handleClose()}>
 	<DialogContent class="z-[99] sm:max-w-md">
 		<DialogHeader>
-			<DialogTitle>
-				{mode === 'sign-in' ? 'Sign in to your account' : 'Create Account'}
-			</DialogTitle>
-			<DialogDescription
-				>{mode === 'sign-in'
-					? 'Enter your email below to sign in to your account'
-					: 'Enter your email below to create an account'}</DialogDescription
-			>
+			<div class="flex items-center gap-3">
+				{#if step === 'otp'}
+					<button
+						type="button"
+						onclick={handleBack}
+						class="hover:bg-muted -ml-2 rounded-full p-1 transition-colors"
+					>
+						<ArrowLeft class="h-5 w-5" />
+					</button>
+				{/if}
+
+				<DialogTitle>
+					{#if step === 'welcome'}
+						Welcome!
+					{:else if step === 'otp'}
+						Enter verification code
+					{:else}
+						{mode === 'sign-in' ? 'Welcome back' : 'Create your account'}
+					{/if}
+				</DialogTitle>
+			</div>
+
+			{#if step !== 'welcome'}
+				<DialogDescription>
+					{#if step === 'otp'}
+						We sent a 6-digit code to <strong>{storedEmail}</strong>
+					{:else}
+						{mode === 'sign-in'
+							? 'Sign in to save your favorite dog-friendly places'
+							: 'Join our community of dog lovers'}
+					{/if}
+				</DialogDescription>
+			{/if}
 		</DialogHeader>
 
-		<div class="space-y-4">
-			{#if step === 'email'}
-				<div class="space-y-2">
-					<Label for="email">Email</Label>
-					<Input
-						id="email"
-						type="email"
-						placeholder="Enter your email"
-						bind:value={email}
-						disabled={loading}
-					/>
-					{#if validation.errors.email}
-						<p class="text-sm text-red-600">{validation.errors.email}</p>
-					{/if}
-				</div>
+		{#if step !== 'welcome'}
+			<div class="flex gap-2 py-2">
+				<div
+					class={cn('h-1 flex-1 rounded-full', step === 'email' ? 'bg-primary' : 'bg-muted')}
+				></div>
+				<div
+					class={cn('h-1 flex-1 rounded-full', step === 'otp' ? 'bg-primary' : 'bg-muted')}
+				></div>
+			</div>
+		{/if}
 
-				<Button class="w-full" onclick={handleEmailSubmit} disabled={loading || !email}>
-					{loading ? 'Sending...' : mode === 'sign-in' ? 'Sign In' : 'Create Account'}
-				</Button>
+		<div class="space-y-4 py-4">
+			{#if step === 'welcome'}
+				<!-- Welcome Step -->
+				<WelcomeStep email={storedEmail || email} onComplete={handleWelcomeComplete} />
+			{:else if step === 'otp'}
+				<!-- OTP Step -->
+				<form onsubmit={handleOtpSubmit} class="space-y-4">
+					<div class="space-y-2">
+						<Label for="otp">Verification Code</Label>
+						<Input
+							id="otp"
+							type="text"
+							bind:value={otp}
+							placeholder="000000"
+							maxlength={6}
+							pattern="[0-9]*"
+							inputmode="numeric"
+							disabled={loading}
+							autofocus
+							class="text-center text-2xl tracking-widest"
+						/>
+					</div>
+
+					<Button type="submit" class="w-full" disabled={loading || otp.length !== 6}>
+						{#if loading}
+							<Loader2 class="mr-2 h-4 w-4 animate-spin" />
+							Verifying...
+						{:else}
+							Verify Code
+						{/if}
+					</Button>
+
+					<div class="text-center">
+						<button
+							type="button"
+							onclick={handleResendOTP}
+							class="text-primary text-sm hover:underline"
+							disabled={loading}
+						>
+							Didn't receive the code? Resend
+						</button>
+					</div>
+				</form>
+			{:else}
+				<!-- Email Step -->
+				<form onsubmit={handleEmailSubmit} class="space-y-4">
+					<div class="space-y-2">
+						<Label for="email">Email</Label>
+						<Input
+							id="email"
+							type="email"
+							bind:value={email}
+							placeholder="you@example.com"
+							disabled={loading || googleLoading}
+							autofocus
+							class={emailValidation.errors.email ? 'border-red-500' : ''}
+						/>
+						<ValidationError errors={emailValidation.errors} field="email" />
+					</div>
+
+					<Button type="submit" class="w-full" disabled={loading || googleLoading}>
+						{#if loading}
+							<Loader2 class="mr-2 h-4 w-4 animate-spin" />
+							Sending code...
+						{:else}
+							Continue with Email
+						{/if}
+					</Button>
+				</form>
 
 				<div class="relative">
 					<div class="absolute inset-0 flex items-center">
@@ -151,44 +277,35 @@
 					</div>
 				</div>
 
-				<Button variant="outline" class="w-full" onclick={handleGoogleLogin}>
+				<Button
+					type="button"
+					variant="outline"
+					onclick={handleGoogleLogin}
+					disabled={loading || googleLoading}
+					class="w-full"
+				>
 					{#if googleLoading}
-						<LoaderCircle class="size-4 animate-spin" stroke-width={3} />
-						Connecting to Google...
+						<Loader2 class="mr-2 h-4 w-4 animate-spin" />
+						Signing in...
 					{:else}
 						<GoogleLogo />
-						Sign in with Google
+						Continue with Google
 					{/if}
 				</Button>
 
-				<div class="text-center text-sm">
-					{mode === 'sign-in' ? "Don't have an account?" : 'Already have an account?'}
-					<Button variant="link" class="h-auto p-0" onclick={switchMode}>
-						{mode === 'sign-in' ? 'Sign up' : 'Sign in'}
-					</Button>
+				<div class="text-muted-foreground text-center text-sm">
+					{#if mode === 'sign-in'}
+						Don't have an account?
+						<button type="button" onclick={switchMode} class="text-primary hover:underline">
+							Sign up
+						</button>
+					{:else}
+						Already have an account?
+						<button type="button" onclick={switchMode} class="text-primary hover:underline">
+							Sign in
+						</button>
+					{/if}
 				</div>
-			{:else}
-				<div class="space-y-2">
-					<Label for="otp">Verification Code</Label>
-					<Input
-						id="otp"
-						placeholder="Enter 6-digit code"
-						bind:value={otp}
-						disabled={loading}
-						maxlength={6}
-					/>
-					<p class="text-muted-foreground text-sm">
-						We sent a code to {email}
-					</p>
-				</div>
-
-				<Button class="w-full" onclick={handleOtpSubmit} disabled={loading || otp.length !== 6}>
-					{loading ? 'Verifying...' : 'Verify Code'}
-				</Button>
-
-				<Button variant="outline" class="w-full" onclick={() => (step = 'email')}>
-					Back to Email
-				</Button>
 			{/if}
 		</div>
 	</DialogContent>
