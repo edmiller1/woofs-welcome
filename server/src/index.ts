@@ -15,6 +15,7 @@ import { reviewRouter } from "./routes/review";
 import { env, validateEnv } from "./config/env";
 import { globalRateLimiter, authRateLimiter } from "./middleware/rate-limit";
 import { errorHandler } from "./middleware/error-handler";
+import { sitemapRouter } from "./routes/sitemap";
 
 validateEnv();
 
@@ -52,6 +53,7 @@ app.route("/api/region", regionRouter);
 app.route("/api/city", cityRouter);
 app.route("/api/island", islandRouter);
 app.route("/api/review", reviewRouter);
+app.route("sitemap.xml", sitemapRouter);
 
 app.get("/", (c) => {
   return c.text("Hello Hono!");

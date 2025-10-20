@@ -13,6 +13,9 @@
 	import { Heart, LoaderCircle, Star } from '@lucide/svelte';
 	import Button from '$lib/components/ui/button/button.svelte';
 	import ErrorBoundary from '$lib/components/error-boundary.svelte';
+	import { generateKeywords, getAbsoluteUrl } from '$lib/seo/metadata.js';
+	import { getBreadcrumbSchema, getOrganizationSchema } from '$lib/seo/structured-data.js';
+	import SeoHead from '$lib/components/seo-head.svelte';
 
 	let { data } = $props();
 	const user = $derived(data.user);
@@ -21,7 +24,64 @@
 		queryKey: ['island', data.slug],
 		queryFn: () => api.island.getIsland(data.slug)
 	});
+
+	// Generate SEO metadata
+	const metadata = $derived.by(() => {
+		if (!$island.data) {
+			return {
+				title: 'Loading...',
+				description: 'Loading region information...'
+			};
+		}
+
+		const i = $island.data;
+		const title = `Dog Friendly Places in ${i.name}, New Zealand`;
+		const description = `Discover the best dog-friendly cafes, restaurants, parks, and beaches in ${i.name}. Read reviews from dog owners and find your next adventure with your furry friend.`;
+
+		const keywords = generateKeywords(`${i.name} dog friendly`, [
+			`dog friendly ${i.name}`,
+			`${i.name} dogs allowed`,
+			`pet friendly ${i.name}`,
+			`${i.name} cafes dogs`,
+			`${i.name} restaurants dogs`,
+			`${i.name} parks dogs`
+		]);
+
+		return {
+			title,
+			description,
+			keywords,
+			image: i.image,
+			url: getAbsoluteUrl(window.location.pathname),
+			type: 'website' as const
+		};
+	});
+
+	// Generate structured data
+	const structuredData = $derived.by(() => {
+		if (!$island.data) return [];
+
+		const schemas = [];
+
+		// Organization schema
+		schemas.push(getOrganizationSchema());
+
+		// Breadcrumb schema
+		const breadcrumbs = [
+			{ name: 'Home', url: getAbsoluteUrl('/') },
+			{
+				name: $island.data.name || 'New Zealand',
+				url: getAbsoluteUrl(`/island/${$island.data.slug}`)
+			},
+			{ name: $island.data.name, url: getAbsoluteUrl(window.location.pathname) }
+		];
+		schemas.push(getBreadcrumbSchema(breadcrumbs));
+
+		return schemas;
+	});
 </script>
+
+<SeoHead {metadata} {structuredData} />
 
 <ErrorBoundary error={$island.error}>
 	{#if $island.isLoading}

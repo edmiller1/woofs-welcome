@@ -246,6 +246,7 @@ export interface Review {
 	likesCount: number;
 	createdAt: string;
 	updatedAt: string;
+	user: BAUser;
 }
 
 export interface ReviewImage {

@@ -1,0 +1,21 @@
+{
+	"name": "Woofs Welcome - Dog Friendly Places NZ",
+	"short_name": "Woofs Welcome",
+	"description": "Find dog-friendly places across New Zealand",
+	"start_url": "/",
+	"display": "standalone",
+	"background_color": "#fefaf5",
+	"theme_color": "#fefaf5",
+	"icons": [
+		{
+			"src": "/icon-192.png",
+			"sizes": "192x192",
+			"type": "image/png"
+		},
+		{
+			"src": "/icon-512.png",
+			"sizes": "512x512",
+			"type": "image/png"
+		}
+	]
+}

@@ -10,6 +10,9 @@
 	import CityCarousel from '$lib/components/city-carousel.svelte';
 	import PlaceCard from '$lib/components/place-card.svelte';
 	import ErrorBoundary from '$lib/components/error-boundary.svelte';
+	import { getBreadcrumbSchema, getOrganizationSchema } from '$lib/seo/structured-data.js';
+	import { generateKeywords, getAbsoluteUrl } from '$lib/seo/metadata.js';
+	import SeoHead from '$lib/components/seo-head.svelte';
 
 	let { data } = $props();
 	const user = $derived(data.user);
@@ -18,7 +21,64 @@
 		queryKey: ['region', data.slug],
 		queryFn: () => api.region.getRegion(data.slug)
 	});
+
+	// Generate SEO metadata
+	const metadata = $derived.by(() => {
+		if (!$region.data) {
+			return {
+				title: 'Loading...',
+				description: 'Loading region information...'
+			};
+		}
+
+		const r = $region.data;
+		const title = `Dog Friendly Places in ${r.region.name}, New Zealand`;
+		const description = `Discover the best dog-friendly cafes, restaurants, parks, and beaches in ${r.region.name}. Read reviews from dog owners and find your next adventure with your furry friend.`;
+
+		const keywords = generateKeywords(`${r.region.name} dog friendly`, [
+			`dog friendly ${r.region.name}`,
+			`${r.region.name} dogs allowed`,
+			`pet friendly ${r.region.name}`,
+			`${r.region.name} cafes dogs`,
+			`${r.region.name} restaurants dogs`,
+			`${r.region.name} parks dogs`
+		]);
+
+		return {
+			title,
+			description,
+			keywords,
+			image: r.region.image,
+			url: getAbsoluteUrl(window.location.pathname),
+			type: 'website' as const
+		};
+	});
+
+	// Generate structured data
+	const structuredData = $derived.by(() => {
+		if (!$region.data) return [];
+
+		const schemas = [];
+
+		// Organization schema
+		schemas.push(getOrganizationSchema());
+
+		// Breadcrumb schema
+		const breadcrumbs = [
+			{ name: 'Home', url: getAbsoluteUrl('/') },
+			{
+				name: $region.data.region.island?.name || 'New Zealand',
+				url: getAbsoluteUrl(`/island/${$region.data.region.island?.slug}`)
+			},
+			{ name: $region.data.region.island?.name, url: getAbsoluteUrl(window.location.pathname) }
+		];
+		schemas.push(getBreadcrumbSchema(breadcrumbs));
+
+		return schemas;
+	});
 </script>
+
+<SeoHead {metadata} {structuredData} />
 
 <ErrorBoundary error={$region.error}>
 	{#if $region.isLoading}

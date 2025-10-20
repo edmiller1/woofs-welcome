@@ -28,6 +28,13 @@
 	import PlaceMapDialog from './components/place-map-dialog.svelte';
 	import ErrorBoundary from '$lib/components/error-boundary.svelte';
 	import LoadingSpinner from '$lib/components/loading-spinner.svelte';
+	import SeoHead from '$lib/components/seo-head.svelte';
+	import {
+		getPlaceSchema,
+		getBreadcrumbSchema,
+		getOrganizationSchema
+	} from '$lib/seo/structured-data';
+	import { getAbsoluteUrl, generateKeywords } from '$lib/seo/metadata';
 
 	interface Props {
 		data: {
@@ -159,7 +166,100 @@
 			showStickyHeader = scrollY > headerBottom;
 		}
 	});
+
+	// Generate SEO metadata
+	const metadata = $derived.by(() => {
+		if (!$place.data) {
+			return {
+				title: 'Loading...',
+				description: 'Loading place information...'
+			};
+		}
+
+		const p = $place.data;
+		const cityName = p.city?.name || '';
+		const regionName = p.city?.region?.name || '';
+
+		// Generate descriptive title
+		const title = `${p.name} - Dog Friendly ${p.types?.[0] || 'Place'} in ${cityName}`;
+
+		// Generate rich description
+		let description =
+			p.description ||
+			`Find out why ${p.name} is a dog-friendly ${p.types?.[0]?.toLowerCase() || 'place'} in ${cityName}, ${regionName}.`;
+
+		// Add rating info
+		if (p.rating && p.reviewsCount) {
+			description += ` Rated ${p.rating}/5 from ${p.reviewsCount} dog owner reviews.`;
+		}
+
+		// Add amenity info
+		const amenities = [];
+		if (p.indoorAllowed) amenities.push('dogs allowed indoors');
+		if (p.outdoorAllowed) amenities.push('outdoor seating available');
+		if (amenities.length > 0) {
+			description += ` ${amenities.join(', ')}.`;
+		}
+
+		// Generate keywords
+		const keywords = generateKeywords(`${p.name} ${cityName} ${regionName} ${p.types?.join(' ')}`, [
+			`dog friendly ${cityName}`,
+			`dog friendly ${regionName}`,
+			`${p.types?.[0]?.toLowerCase()} ${cityName}`,
+			'dogs allowed',
+			'pet friendly',
+			p.name
+		]);
+
+		return {
+			title,
+			description,
+			keywords,
+			image: p.images?.[0]?.url,
+			url: getAbsoluteUrl(window.location.pathname),
+			type: 'place' as const
+		};
+	});
+
+	// Generate structured data
+	const structuredData = $derived.by(() => {
+		if (!$place.data) return [];
+
+		const schemas = [];
+
+		// Organization schema (on all pages)
+		schemas.push(getOrganizationSchema());
+
+		// Place schema
+		schemas.push(getPlaceSchema($place.data));
+
+		// Breadcrumb schema
+		const breadcrumbs = [
+			{ name: 'Home', url: getAbsoluteUrl('/') },
+			{
+				name: $place.data.city?.region?.island?.name || 'New Zealand',
+				url: getAbsoluteUrl(`/island/${$place.data.city?.region?.island?.slug}`)
+			},
+			{
+				name: $place.data.city?.region?.name || 'Region',
+				url: getAbsoluteUrl(`/region/${$place.data.city?.region?.slug}`)
+			},
+			{
+				name: $place.data.city?.name || 'City',
+				url: getAbsoluteUrl(`/city/${$place.data.city?.slug}`)
+			},
+			{ name: $place.data.name, url: getAbsoluteUrl(window.location.pathname) }
+		];
+		schemas.push(getBreadcrumbSchema(breadcrumbs));
+
+		return schemas;
+	});
 </script>
+
+<!-- SEO Head -->
+{#if $place.data}
+	<SeoHead {metadata} {structuredData} />
+{/if}
 
 <svelte:window bind:scrollY />
 

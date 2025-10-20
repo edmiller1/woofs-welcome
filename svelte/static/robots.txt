@@ -1,0 +1,14 @@
+# Allow all crawlers
+User-agent: *
+Allow: /
+
+# Sitemap location
+Sitemap: https://www.woofswelcome.app/sitemap.xml
+
+# Crawl delay (optional, helps with server load)
+Crawl-delay: 1
+
+# Disallow admin/auth pages
+Disallow: /admin/
+Disallow: /auth/
+Disallow: /api/

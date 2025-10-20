@@ -1,7 +1,6 @@
 <script lang="ts">
 	import { browser } from '$app/environment';
 	import { api } from '$lib/api/index.js';
-	import { auth } from '$lib/auth/stores.js';
 	import Navbar from '$lib/components/navbar.svelte';
 	import { createQuery } from '@tanstack/svelte-query';
 	import {
@@ -22,6 +21,9 @@
 	import Footer from '$lib/components/footer.svelte';
 	import ErrorBoundary from '$lib/components/error-boundary.svelte';
 	import PlaceCardSkeleton from '$lib/components/place-card-skeleton.svelte';
+	import SeoHead from '$lib/components/seo-head.svelte';
+	import { getOrganizationSchema, getWebsiteSchema } from '$lib/seo/structured-data';
+	import { SITE_CONFIG } from '$lib/seo/metadata';
 
 	let { data } = $props();
 	const user = $derived(data.user);
@@ -59,7 +61,31 @@
 	const selectType = (type: string) => {
 		selectedType = type;
 	};
+
+	// Homepage metadata
+	const metadata = {
+		title: '', // Will use default site title
+		description: SITE_CONFIG.description,
+		keywords: [
+			'dog friendly new zealand',
+			'dog friendly cafes nz',
+			'dog friendly restaurants nz',
+			'dog friendly parks nz',
+			'dog friendly beaches nz',
+			'pet friendly nz',
+			'dogs allowed nz',
+			'dog friendly accommodation nz'
+		],
+		image: SITE_CONFIG.image,
+		url: SITE_CONFIG.url,
+		type: 'website' as const
+	};
+
+	// Structured data for homepage
+	const structuredData = [getOrganizationSchema(), getWebsiteSchema()];
 </script>
+
+<SeoHead {metadata} {structuredData} />
 
 <div class="min-h-screen bg-[#fefaf5]">
 	<Navbar {user} />

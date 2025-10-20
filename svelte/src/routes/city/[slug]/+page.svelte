@@ -9,6 +9,9 @@
 	import Breadcrumbs from '$lib/components/breadcrumbs.svelte';
 	import PlaceCard from '$lib/components/place-card.svelte';
 	import ErrorBoundary from '$lib/components/error-boundary.svelte';
+	import SeoHead from '$lib/components/seo-head.svelte';
+	import { getBreadcrumbSchema, getOrganizationSchema } from '$lib/seo/structured-data';
+	import { getAbsoluteUrl, generateKeywords } from '$lib/seo/metadata';
 
 	let { data } = $props();
 	const user = $derived(data.user);
@@ -17,7 +20,64 @@
 		queryKey: ['city', data.slug],
 		queryFn: () => api.city.getCity(data.slug)
 	});
+
+	// Generate SEO metadata
+	const metadata = $derived.by(() => {
+		if (!$city.data) {
+			return {
+				title: 'Loading...',
+				description: 'Loading region information...'
+			};
+		}
+
+		const c = $city.data;
+		const title = `Dog Friendly Places in ${c.city.name}, New Zealand`;
+		const description = `Discover the best dog-friendly cafes, restaurants, parks, and beaches in ${c.city.name}. Read reviews from dog owners and find your next adventure with your furry friend.`;
+
+		const keywords = generateKeywords(`${c.city.name} dog friendly`, [
+			`dog friendly ${c.city.name}`,
+			`${c.city.name} dogs allowed`,
+			`pet friendly ${c.city.name}`,
+			`${c.city.name} cafes dogs`,
+			`${c.city.name} restaurants dogs`,
+			`${c.city.name} parks dogs`
+		]);
+
+		return {
+			title,
+			description,
+			keywords,
+			image: c.city.image,
+			url: getAbsoluteUrl(window.location.pathname),
+			type: 'website' as const
+		};
+	});
+
+	// Generate structured data
+	const structuredData = $derived.by(() => {
+		if (!$city.data) return [];
+
+		const schemas = [];
+
+		// Organization schema
+		schemas.push(getOrganizationSchema());
+
+		// Breadcrumb schema
+		const breadcrumbs = [
+			{ name: 'Home', url: getAbsoluteUrl('/') },
+			{
+				name: $city.data.city.region.island?.name || 'New Zealand',
+				url: getAbsoluteUrl(`/island/${$city.data.city.region.island?.slug}`)
+			},
+			{ name: $city.data.city.name, url: getAbsoluteUrl(window.location.pathname) }
+		];
+		schemas.push(getBreadcrumbSchema(breadcrumbs));
+
+		return schemas;
+	});
 </script>
+
+<SeoHead {metadata} {structuredData} />
 
 <ErrorBoundary error={$city.error}>
 	{#if $city.isLoading}
