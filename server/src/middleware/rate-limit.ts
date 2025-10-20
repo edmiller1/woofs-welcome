@@ -21,6 +21,29 @@ const createRateLimitMessage = (limit: number, window: string) => {
 };
 
 /**
+ * Session Check Rate Limit - For get-session endpoint
+ *
+ * More lenient since it's called on every page load
+ * Limit: 30 requests per 15 minutes per IP
+ */
+export const sessionRateLimiter = rateLimiter({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  limit: 30, // ← More lenient
+  standardHeaders: "draft-6",
+  keyGenerator: getClientIdentifier,
+  handler: (c) => {
+    return c.json(
+      {
+        error: "Too many session check attempts",
+        message: createRateLimitMessage(30, "15 minutes"),
+        retryAfter: c.get("ratelimit-reset"),
+      },
+      429
+    );
+  },
+});
+
+/**
  * STRICT Rate Limit - For Authentication Endpoints
  *
  * Use Case: Sign-in, sign-up, OTP verification

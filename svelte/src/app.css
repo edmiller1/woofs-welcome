@@ -218,7 +218,7 @@ body {
     flex: 0 0 100%;
   }
 
-  :global(.map-dialog .dialog-content) {
+   :global(.map-dialog .dialog-content) {
 	max-width: 95vw !important;
 	width: 95vw !important;
 	height: 95vh !important;

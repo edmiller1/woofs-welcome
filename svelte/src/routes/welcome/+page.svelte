@@ -146,7 +146,7 @@
 			<Form.Field {form} name="name">
 				<Form.Control>
 					{#snippet children({ props })}
-						<Form.Label class="block text-sm/6 font-medium">Fullname</Form.Label>
+						<Form.Label class="block text-sm/6 font-medium">Name</Form.Label>
 						<div class="mt-2">
 							<Input
 								type="text"

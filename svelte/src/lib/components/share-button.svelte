@@ -26,7 +26,7 @@
 
 <DropdownMenu.Root>
 	<DropdownMenu.Trigger>
-		<Button variant="ghost" size="sm" class="underline">
+		<Button variant="ghost" class="underline">
 			Share <Share class="size-3" />
 		</Button>
 	</DropdownMenu.Trigger>

@@ -5,11 +5,14 @@
 	import { authModalActions } from '$lib/auth/auth-modal-store';
 	import { toast } from 'svelte-sonner';
 	import { LoaderCircle } from '@lucide/svelte';
+	import { sessionCache } from '$lib/auth/session-cache';
 
 	let status = $state('processing');
 
 	onMount(async () => {
 		try {
+			sessionCache.invalidate();
+
 			const success = await auth.handleOAuthCallback();
 
 			if (success) {

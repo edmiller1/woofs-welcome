@@ -13,7 +13,11 @@ import { cityRouter } from "./routes/city";
 import { islandRouter } from "./routes/island";
 import { reviewRouter } from "./routes/review";
 import { env, validateEnv } from "./config/env";
-import { globalRateLimiter, authRateLimiter } from "./middleware/rate-limit";
+import {
+  globalRateLimiter,
+  authRateLimiter,
+  sessionRateLimiter,
+} from "./middleware/rate-limit";
 import { errorHandler } from "./middleware/error-handler";
 import { sitemapRouter } from "./routes/sitemap";
 
@@ -38,11 +42,14 @@ app.use(
   })
 );
 
-app.on(["POST", "GET"], "/api/auth/**", (c) => {
+app.all("/api/auth/*", (c) => {
   return auth.handler(c.req.raw);
 });
 
-app.use("/api/auth/*", authRateLimiter);
+app.use("/api/auth/get-session", sessionRateLimiter);
+app.use("/api/auth/email-otp/*", authRateLimiter);
+app.use("/api/auth/sign-in/*", authRateLimiter);
+app.use("/api/auth/sign-up/*", authRateLimiter);
 
 // custom routes
 app.use("/api/user", authMiddleware);

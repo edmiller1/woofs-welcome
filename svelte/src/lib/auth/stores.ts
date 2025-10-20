@@ -2,6 +2,7 @@
 import { writable, derived } from 'svelte/store';
 import { browser } from '$app/environment';
 import { authClient } from './auth-client';
+import { sessionCache } from './session-cache';
 import type { Session } from './auth-client';
 import { goto } from '$app/navigation';
 
@@ -27,14 +28,19 @@ export const auth = {
 	async signUp(email: string) {
 		const result = await authClient.emailOtp.sendVerificationOtp({
 			email,
-			type: 'email-verification'
+			type: 'sign-in'
 		});
 		return result;
 	},
 
 	async verifyOtp(email: string, otp: string) {
-		const result = await authClient.signIn.emailOtp({ email, otp });
+		console.log('Auth store - verifyOtp called:', { email, otp });
+		const result = await authClient.signIn.emailOtp({ email: email.trim(), otp: otp.trim() });
+
+		console.log('Auth store - verifyOtp result:', result);
 		if (result.data) {
+			//@ts-ignore
+			sessionCache.setSession(result.data);
 			//@ts-ignore
 			session.set(result.data);
 		}
@@ -49,6 +55,7 @@ export const auth = {
 
 	async signOut() {
 		await authClient.signOut();
+		sessionCache.clear();
 		session.set(null);
 		window.location.reload();
 	},
@@ -73,7 +80,7 @@ export const auth = {
 		if (!browser) return;
 
 		try {
-			const { data } = await authClient.getSession();
+			const { data } = await sessionCache.getSession();
 			if (data) {
 				session.set(data);
 
@@ -96,13 +103,26 @@ export const auth = {
 
 		loading.set(true);
 		try {
-			const { data } = await authClient.getSession();
+			const { data } = await sessionCache.getSession();
 			session.set(data || null);
 		} catch (error) {
 			console.error('Failed to initialize session:', error);
 			session.set(null);
 		} finally {
 			loading.set(false);
+		}
+	},
+
+	async refresh() {
+		if (!browser) return;
+
+		try {
+			sessionCache.invalidate();
+			const { data } = await sessionCache.getSession();
+			session.set(data || null);
+		} catch (error) {
+			console.error('Failed to refresh session:', error);
+			session.set(null);
 		}
 	}
 };

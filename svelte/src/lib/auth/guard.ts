@@ -1,8 +1,8 @@
 import { redirect } from '@sveltejs/kit';
-import { authClient } from './auth-client';
+import { sessionCache } from './session-cache';
 
 export async function requireAuth() {
-	const { data } = await authClient.getSession();
+	const { data } = await sessionCache.getSession();
 	if (!data?.session) {
 		throw redirect(302, '/sign-in');
 	}
@@ -13,14 +13,14 @@ export async function requireAuth() {
 }
 
 export async function requireGuest(): Promise<void> {
-	const { data } = await authClient.getSession();
+	const { data } = await sessionCache.getSession();
 	if (data?.session) {
 		throw redirect(302, '/');
 	}
 }
 
 export async function getUser() {
-	const { data } = await authClient.getSession();
+	const { data } = await sessionCache.getSession();
 	if (!data?.user) {
 		return null;
 	}

@@ -4,7 +4,7 @@
 	import { toast } from 'svelte-sonner';
 	import { Button } from './ui/button';
 	import type { BAUser } from '$lib/types/models.js';
-	import { Heart, Loader2 } from '@lucide/svelte';
+	import { Heart, Loader2, LoaderCircle } from '@lucide/svelte';
 
 	interface Props {
 		user: BAUser | null;
@@ -32,13 +32,12 @@
 </script>
 
 {#if $favouritePlace.isPending}
-	<Button variant="outline" size="sm" class="rounded-full" disabled>
-		<Loader2 class="size-4 animate-spin" />
+	<Button variant="outline" class="rounded-full" disabled>
+		<LoaderCircle class="size-4 animate-spin" />
 	</Button>
 {:else}
 	<Button
 		variant="outline"
-		size="sm"
 		class="rounded-full"
 		onclick={user ? () => $favouritePlace.mutate(placeId) : openAuthModal}
 	>

@@ -46,8 +46,7 @@
 				}
 			}
 
-			const result =
-				mode === 'sign-in' ? await auth.signIn(email.trim()) : await auth.signUp(email.trim());
+			const result = await auth.signIn(email.trim());
 
 			if (result.error) {
 				toast.error(result.error.message || 'Failed to send verification code');
@@ -69,9 +68,17 @@
 
 		loading = true;
 		try {
+			console.log('Verifying OTP:', {
+				email: storedEmail,
+				otp: otp,
+				otpLength: otp.length
+			});
 			const result = await auth.verifyOtp(storedEmail, otp);
 
+			console.log('OTP verification result:', result); // ✅ Log response
+
 			if (result.error) {
+				console.error('OTP error details:', result.error);
 				toast.error(result.error.message || 'Failed to verify code');
 				return;
 			} else {
@@ -146,6 +153,7 @@
 	const handleWelcomeComplete = async () => {
 		toast.success('Profile completed!');
 		await authModalActions.handleSuccess();
+		window.location.reload();
 	};
 </script>
 

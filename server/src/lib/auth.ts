@@ -42,6 +42,11 @@ export const auth = betterAuth({
       otpLength: 6,
       expiresIn: 300, // 5 minutes
       async sendVerificationOTP({ email, otp, type }) {
+        console.log("Sending OTP:", {
+          email,
+          otp: otp.slice(0, 2) + "****",
+          type,
+        });
         const subject = "Sign in to Woofs Welcome";
 
         const { error } = await resend.emails.send({
@@ -55,6 +60,7 @@ export const auth = betterAuth({
           console.error("Failed to send OTP email:", error);
           throw new Error("Failed to send verification email");
         }
+        console.log("OTP email sent successfully");
       },
     }),
   ],
