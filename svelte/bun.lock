@@ -5,6 +5,7 @@
       "name": "svelte",
       "dependencies": {
         "@internationalized/date": "^3.8.1",
+        "@lottiefiles/dotlottie-svelte": "^0.8.5",
         "@sentry/sveltekit": "^10.20.0",
         "@supabase/ssr": "^0.6.1",
         "@supabase/supabase-js": "^2.50.0",
@@ -292,6 +293,10 @@
     "@layerstack/utils": ["@layerstack/utils@2.0.0-next.11", "", { "dependencies": { "d3-array": "^3.2.4", "d3-time": "^3.1.0", "d3-time-format": "^4.1.0", "lodash-es": "^4.17.21" } }, "sha512-Bkww/IfUghga0ah82P/MOSHRVE7Np4VeAl2lUXNqkCwp1M3H690CFb4twKEEsBNUTIYoTCThrM7LuepTx5Hj8g=="],
 
     "@levischuck/tiny-cbor": ["@levischuck/tiny-cbor@0.2.11", "", {}, "sha512-llBRm4dT4Z89aRsm6u2oEZ8tfwL/2l6BwpZ7JcyieouniDECM5AqNgr/y08zalEIvW3RSK4upYyybDcmjXqAow=="],
+
+    "@lottiefiles/dotlottie-svelte": ["@lottiefiles/dotlottie-svelte@0.8.5", "", { "dependencies": { "@lottiefiles/dotlottie-web": "0.54.1" }, "peerDependencies": { "svelte": "^4.0.0" } }, "sha512-Bz+iw8Y/fQLbNVgJs5mTRAJXq1VyMSgU1Eoz5+jAoLGTgzaoqaB26yO6knuGno08kjFTvZ1FWyIe9E5OEILB5Q=="],
+
+    "@lottiefiles/dotlottie-web": ["@lottiefiles/dotlottie-web@0.54.1", "", {}, "sha512-Xq6wKvQ1hJUAalctrrVSZNIPStJBEAzSsQl4rtinPEfl6LBZdos0GGfVLdyGjZZYODzoG28SMN09YKAC9Kz6RQ=="],
 
     "@lucide/svelte": ["@lucide/svelte@0.544.0", "", { "peerDependencies": { "svelte": "^5" } }, "sha512-9f9O6uxng2pLB01sxNySHduJN3HTl5p0HDu4H26VR51vhZfiMzyOMe9Mhof3XAk4l813eTtl+/DYRvGyoRR+yw=="],
 

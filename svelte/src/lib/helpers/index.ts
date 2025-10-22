@@ -186,3 +186,96 @@ export function getUserInitials(name: string): string {
 
 	return (parts[0].charAt(0) + parts[parts.length - 1].charAt(0)).toUpperCase();
 }
+
+export function debounce<T extends (...args: any[]) => any>(
+	func: T,
+	delay: number
+): T & { cancel: () => void; flush: () => void } {
+	let timeoutId: ReturnType<typeof setTimeout> | null = null;
+	let lastArgs: Parameters<T> | null = null;
+	let lastThis: any = null;
+
+	const debounced = function (this: any, ...args: Parameters<T>) {
+		// Store the latest arguments and context
+		lastArgs = args;
+		lastThis = this;
+
+		// Clear existing timeout
+		if (timeoutId) {
+			clearTimeout(timeoutId);
+		}
+
+		// Set new timeout
+		timeoutId = setTimeout(() => {
+			if (lastArgs) {
+				func.apply(lastThis, lastArgs);
+				lastArgs = null;
+				lastThis = null;
+			}
+			timeoutId = null;
+		}, delay);
+	} as T;
+
+	// Add cancel method
+	(debounced as any).cancel = () => {
+		if (timeoutId) {
+			clearTimeout(timeoutId);
+			timeoutId = null;
+		}
+		lastArgs = null;
+		lastThis = null;
+	};
+
+	// Add flush method - immediately execute pending invocation
+	(debounced as any).flush = () => {
+		if (timeoutId && lastArgs) {
+			clearTimeout(timeoutId);
+			timeoutId = null;
+			func.apply(lastThis, lastArgs);
+			lastArgs = null;
+			lastThis = null;
+		}
+	};
+
+	return debounced as T & { cancel: () => void; flush: () => void };
+}
+
+export const boundsToParams = (bounds: mapboxgl.LngLatBounds | null | undefined) => {
+	if (!bounds) return null;
+
+	const ne = bounds.getNorthEast();
+	const sw = bounds.getSouthWest();
+
+	return {
+		north: ne.lat,
+		south: sw.lat,
+		east: ne.lng,
+		west: sw.lng,
+		// Or calculate center and radius from bounds
+		centerLat: (ne.lat + sw.lat) / 2,
+		centerLng: (ne.lng + sw.lng) / 2,
+		// Calculate approximate radius in km
+		radius: Math.max(
+			haversineDistance(ne.lat, ne.lng, sw.lat, sw.lng) / 2,
+			5 // minimum 5km
+		)
+	};
+};
+export const haversineDistance = (
+	lat1: number,
+	lon1: number,
+	lat2: number,
+	lon2: number
+): number => {
+	const R = 6371; // Earth's radius in km
+	const dLat = ((lat2 - lat1) * Math.PI) / 180;
+	const dLon = ((lon2 - lon1) * Math.PI) / 180;
+	const a =
+		Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+		Math.cos((lat1 * Math.PI) / 180) *
+			Math.cos((lat2 * Math.PI) / 180) *
+			Math.sin(dLon / 2) *
+			Math.sin(dLon / 2);
+	const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+	return R * c;
+};

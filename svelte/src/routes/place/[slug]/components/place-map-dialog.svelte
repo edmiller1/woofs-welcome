@@ -10,6 +10,8 @@
 	import { api } from '$lib/api';
 	import { untrack } from 'svelte';
 	import ErrorBoundary from '$lib/components/error-boundary.svelte';
+	import { boundsToParams, debounce } from '$lib/helpers';
+	import { DotLottieSvelte } from '@lottiefiles/dotlottie-svelte';
 
 	interface Props {
 		accessToken: string;
@@ -45,6 +47,11 @@
 	let mainPopupComponent = $state<any>(null);
 	let isInitialized = $state<boolean>(false);
 	let wasOpen = $state<boolean>(false);
+	let currentBounds = $state<mapboxgl.LngLatBounds | null | undefined>(null);
+	let isMapMoving = $state<boolean>(false);
+	let isMapZooming = $state<boolean>(false);
+	let currentZoom = $state<number>(zoom);
+	let currentCenter = $state<{ lng: number; lat: number }>({ lng, lat });
 
 	let nearbyMarkers: mapboxgl.Marker[] = [];
 	let nearbyPopupComponents: any[] = [];
@@ -53,9 +60,25 @@
 	const nearbyPlaces = createQuery({
 		queryKey: ['nearby-places', lat, lng, place.types, place.slug],
 		queryFn: async () => {
-			console.log('Fetching nearby places...', { lat, lng, slug: place.slug });
-			return api.place.getNearbyPlaces({ slug: place.slug, lat, lng, radius: 5 });
-		}
+			const params = boundsToParams(currentBounds);
+
+			if (!params) {
+				return api.place.getNearbyPlaces({
+					slug: place.slug,
+					lat,
+					lng,
+					radius: 5
+				});
+			}
+
+			return api.place.getNearbyPlaces({
+				slug: place.slug,
+				lat: params.centerLat,
+				lng: params.centerLng,
+				radius: params.radius
+			});
+		},
+		enabled: !!place.slug
 	});
 
 	// Watch for dialog closing and cleanup
@@ -104,6 +127,56 @@
 			});
 		}
 	});
+
+	$effect(() => {
+		if (map && isInitialized) {
+			const handleMove = () => {
+				isMapMoving = true;
+				handleMapSettled();
+			};
+
+			const handleMoveEnd = () => {
+				isMapMoving = false;
+				handleMapSettled.flush(); // Immediately execute if pending
+			};
+
+			map.on('move', handleMove);
+			map.on('moveend', handleMoveEnd);
+
+			return () => {
+				handleMapSettled.cancel();
+				map?.off('move', handleMove);
+				map?.off('moveend', handleMoveEnd);
+			};
+		}
+	});
+
+	$effect(() => {
+		if ($nearbyPlaces.isSuccess && map && isInitialized) {
+			console.log('✅ Updating nearby markers:', $nearbyPlaces.data.places.length);
+
+			untrack(() => {
+				createNearbyMarkers($nearbyPlaces.data.places);
+			});
+		}
+	});
+
+	const handleMapSettled = debounce(() => {
+		console.log('Map has settled');
+
+		if (map) {
+			const bounds = map.getBounds();
+			const center = map.getCenter();
+			const zoom = map.getZoom();
+
+			currentBounds = bounds;
+
+			console.log('Current state:', { bounds, center, zoom });
+
+			// You could trigger API calls here
+			$nearbyPlaces.refetch();
+		}
+	}, 1000);
 
 	function createNearbyMarkers(places: any[]) {
 		if (!map || !places || places.length === 0) {
@@ -346,8 +419,26 @@
 				</Dialog.Title>
 			</Dialog.Header>
 			<ErrorBoundary error={$nearbyPlaces.error}>
+				{#if $nearbyPlaces.isFetching && !$nearbyPlaces.isLoading}
+					<div
+						class="absolute left-1/2 top-16 z-10 h-[50px] w-[80px] -translate-x-1/2 overflow-hidden rounded-full bg-white shadow-md"
+					>
+						<div class="lottie-container flex h-full w-full items-center justify-center">
+							<DotLottieSvelte src="/moody-dog.json" loop autoplay />
+						</div>
+					</div>
+				{/if}
 				<div bind:this={mapContainer} class="map-container w-full flex-1 rounded-lg"></div>
 			</ErrorBoundary>
 		</div>
 	</Dialog.Content>
 </Dialog.Root>
+
+<style>
+	/* Make sure the canvas inside scales */
+	.lottie-container :global(canvas) {
+		width: 100% !important;
+		height: 100% !important;
+		object-fit: contain;
+	}
+</style>
