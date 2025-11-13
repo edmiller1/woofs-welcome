@@ -20,6 +20,7 @@ import { sanitizePlainText } from "../../lib/sanitize";
 import { validateBody } from "../../middleware/validate";
 import { UpdateProfileInput, updateProfileSchema } from "./schemas";
 import { AuthService } from "../../services/auth.service";
+import { readRateLimiter } from "../../middleware/rate-limit";
 
 const resend = new Resend(env.RESEND_API_KEY);
 
@@ -153,3 +154,13 @@ authRouter.post(
     return c.json(result, 200);
   }
 );
+
+authRouter.get("/favourites", readRateLimiter, authMiddleware, async (c) => {
+  const auth = c.get("user");
+
+  if (!auth) throw new UnauthorizedError();
+
+  const result = await AuthService.getFavourites(auth.id);
+
+  return c.json(result, 200);
+});

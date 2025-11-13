@@ -23,13 +23,23 @@ export const getPlacesQuerySchema = z.object({
   city: z.string().optional(),
   type: z
     .enum([
-      "restaurant",
-      "cafe",
-      "park",
-      "beach",
-      "accommodation",
-      "retail",
-      "activity",
+      "Park",
+      "Restaurant",
+      "Hotel",
+      "Motel",
+      "AirBnb",
+      "Store",
+      "Café",
+      "Bar",
+      "Dog Park",
+      "Beach",
+      "Walk",
+      "Hike",
+      "Service",
+      "Activity",
+      "Lake",
+      "River",
+      "Trail",
     ])
     .optional(),
   page: z
@@ -96,13 +106,23 @@ export const searchPlacesQuerySchema = z.object({
   city: z.string().optional(),
   type: z
     .enum([
-      "restaurant",
-      "cafe",
-      "park",
-      "beach",
-      "accommodation",
-      "retail",
-      "activity",
+      "Park",
+      "Restaurant",
+      "Hotel",
+      "Motel",
+      "AirBnb",
+      "Store",
+      "Café",
+      "Bar",
+      "Dog Park",
+      "Beach",
+      "Walk",
+      "Hike",
+      "Service",
+      "Activity",
+      "Lake",
+      "River",
+      "Trail",
     ])
     .optional(),
   page: z
@@ -122,3 +142,70 @@ export const searchPlacesQuerySchema = z.object({
 });
 
 export type SearchPlacesQuery = z.infer<typeof searchPlacesQuerySchema>;
+
+export const getExplorePlacesQuerySchema = z.object({
+  city: z.string().optional(),
+  types: z
+    .enum([
+      "Park",
+      "Restaurant",
+      "Hotel",
+      "Motel",
+      "AirBnb",
+      "Store",
+      "Café",
+      "Bar",
+      "Dog Park",
+      "Beach",
+      "Walk",
+      "Hike",
+      "Service",
+      "Activity",
+      "Lake",
+      "River",
+      "Trail",
+    ])
+    .optional(),
+  dogAccess: z.enum(["indoor", "outdoor", "both"]).optional(),
+  page: z
+    .string()
+    .regex(/^\d+$/)
+    .transform(Number)
+    .pipe(z.number().int().min(0))
+    .optional()
+    .default("0"),
+  limit: z
+    .string()
+    .regex(/^\d+$/)
+    .transform(Number)
+    .pipe(z.number().int().min(1).max(50))
+    .optional()
+    .default("20"),
+  minRating: z
+    .string()
+    .regex(/^\d+$/)
+    .transform(Number)
+    .pipe(z.number().int().min(1).max(5))
+    .optional(),
+  sortBy: z.enum(["rating", "recent", "name"]).optional().default("rating"),
+});
+
+export type GetExplorePlacesQuery = z.infer<typeof getExplorePlacesQuerySchema>;
+
+export const searchPlacesNavbarQuerySchema = z.object({
+  q: z
+    .string()
+    .min(3, "Search query must be at least 3 characters")
+    .max(100, "Search query too long"),
+  limit: z
+    .string()
+    .regex(/^\d+$/)
+    .transform(Number)
+    .pipe(z.number().int().min(1).max(10))
+    .optional()
+    .default("10"),
+});
+
+export type SearchPlacesNavbarQuery = z.infer<
+  typeof searchPlacesNavbarQuerySchema
+>;

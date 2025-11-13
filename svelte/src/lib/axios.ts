@@ -8,6 +8,9 @@ const baseConfig = {
 	baseURL: PUBLIC_NODE_ENV === 'development' ? `${PUBLIC_BASE_URL}` : '',
 	headers: {
 		'Content-Type': 'application/json'
+	},
+	paramsSerializer: {
+		indexes: null
 	}
 };
 

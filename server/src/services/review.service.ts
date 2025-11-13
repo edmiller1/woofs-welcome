@@ -155,10 +155,7 @@ export class ReviewService {
             columns: {
               id: true,
               name: true,
-              emailVerified: true,
               image: true,
-              createdAt: true,
-              updatedAt: true,
             },
           },
           images: true,

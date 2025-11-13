@@ -6,16 +6,62 @@ import {
   favouriteRateLimiter,
 } from "../../middleware/rate-limit";
 import { UnauthorizedError } from "../../lib/errors";
-import { validateParams } from "../../middleware/validate";
 import {
+  validateBody,
+  validateParams,
+  validateQuery,
+} from "../../middleware/validate";
+import {
+  GetExplorePlacesQuery,
+  getExplorePlacesQuerySchema,
   PlaceIdParam,
   placeIdParamSchema,
   PlaceSlugParam,
   placeSlugParamSchema,
+  SearchPlacesNavbarQuery,
+  searchPlacesNavbarQuerySchema,
 } from "./schemas";
 import { PlaceService } from "../../services/place.service";
 
 export const placeRouter = new Hono();
+
+/**
+ * GET /place/search
+ * Search places for navbar
+ */
+placeRouter.get(
+  "/search",
+  readRateLimiter,
+  optionalAuthMiddleware,
+  validateQuery(searchPlacesNavbarQuerySchema),
+  async (c) => {
+    const user = c.get("user");
+    const query = c.get("validatedQuery") as SearchPlacesNavbarQuery;
+
+    const result = await PlaceService.searchPlacesNavbar(query, user?.id);
+
+    return c.json({ places: result }, 200);
+  }
+);
+
+/**
+ * GET /place/explore
+ * Get places for explore page
+ */
+placeRouter.get(
+  "/explore",
+  readRateLimiter,
+  optionalAuthMiddleware,
+  validateQuery(getExplorePlacesQuerySchema),
+  async (c) => {
+    const query = c.get("validatedQuery") as GetExplorePlacesQuery;
+    const user = c.get("user");
+
+    const result = await PlaceService.getExplorePlaces(query, user?.id);
+
+    return c.json(result, 200);
+  }
+);
 
 /**
  * GET /place/:slug

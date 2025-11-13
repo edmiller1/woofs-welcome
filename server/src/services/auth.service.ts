@@ -1,8 +1,8 @@
-import { eq } from "drizzle-orm";
+import { desc, eq } from "drizzle-orm";
 import { db } from "../db";
-import { user } from "../db/schema";
+import { Favourite, user } from "../db/schema";
 import { Cloudinary } from "../lib/cloudinary";
-import { AppError, DatabaseError } from "../lib/errors";
+import { AppError, DatabaseError, UnauthorizedError } from "../lib/errors";
 import { sanitizePlainText } from "../lib/sanitize";
 
 /**
@@ -49,6 +49,40 @@ export class AuthService {
         throw error;
       }
       throw new DatabaseError("Failed to fetch city", {
+        originalError: error,
+      });
+    }
+  }
+
+  static async getFavourites(userId: string) {
+    try {
+      const favourites = await db.query.Favourite.findMany({
+        where: eq(Favourite.userId, userId),
+        with: {
+          place: {
+            with: {
+              images: {
+                limit: 1,
+              },
+              city: {
+                with: {
+                  region: true,
+                },
+              },
+            },
+          },
+        },
+        limit: 12,
+        orderBy: [desc(Favourite.createdAt)],
+      });
+
+      return favourites.map((fav) => fav.place);
+    } catch (error) {
+      console.error("Error fetching favourites:", error);
+      if (error instanceof AppError) {
+        throw error;
+      }
+      throw new DatabaseError("Failed to fetch favourites", {
         originalError: error,
       });
     }

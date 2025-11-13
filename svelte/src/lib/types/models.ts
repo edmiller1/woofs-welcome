@@ -91,6 +91,7 @@ export interface Place {
 	regionSlug?: string;
 	cityName?: string;
 	citySlug?: string;
+	activeClaim?: Claim | null;
 }
 
 export interface PlaceImage {
@@ -217,6 +218,8 @@ export interface PlaceWithOptimizedImages extends Place {
 		sizes: string;
 		updatedAt: string;
 		uploadedBy: string;
+		src: string;
+		srcset: string;
 		responsive: {
 			'2xl': string;
 			lg: string;
@@ -229,6 +232,8 @@ export interface PlaceWithOptimizedImages extends Place {
 			srcset: string;
 		};
 	}[];
+	hasFavourited?: boolean;
+	reviews: ReviewWithUserAndImages[];
 }
 
 export interface Review {
@@ -246,7 +251,11 @@ export interface Review {
 	likesCount: number;
 	createdAt: string;
 	updatedAt: string;
-	user: BAUser;
+	user: {
+		id: string;
+		name: string;
+		image: string;
+	};
 }
 
 export interface ReviewImage {
@@ -260,7 +269,11 @@ export interface ReviewImage {
 }
 
 export interface ReviewWithUserAndImages extends Review {
-	user: BAUser;
+	user: {
+		id: string;
+		name: string;
+		image: string;
+	};
 	images: ReviewImage[];
 	likes: Like[];
 	hasLiked?: boolean;
@@ -283,4 +296,95 @@ export interface PlaceWithDistance extends Place {
 	distance: number;
 	isFavourited: boolean;
 	activeClaim: Claim | null;
+}
+
+export interface SearchSuggestion {
+	id: string;
+	name: string;
+	type: 'place' | 'history';
+	location?: string;
+}
+
+export type PlaceType =
+	| 'Park'
+	| 'Restaurant'
+	| 'Hotel'
+	| 'Motel'
+	| 'AirBnb'
+	| 'Store'
+	| 'Café'
+	| 'Bar'
+	| 'Dog Park'
+	| 'Beach'
+	| 'Walk'
+	| 'Hike'
+	| 'Service'
+	| 'Activity'
+	| 'Lake'
+	| 'River'
+	| 'Trail';
+
+export type DogAccess = 'indoor' | 'outdoor' | 'both';
+
+export type Location = {
+	id: string;
+	name: string;
+	displayName: string;
+	region: string | null;
+	placeCount: number;
+	type: 'city' | 'region';
+};
+
+export type FilterState = {
+	location: string | null;
+	types: string[];
+	dogAccess: DogAccess;
+	minRating: number;
+};
+
+export interface ExplorePlace {
+	id: string;
+	name: string;
+	slug: string;
+	types: PlaceType[];
+	description: string | null;
+	city: {
+		id: string;
+		name: string;
+		slug: string;
+		region: {
+			id: string;
+			name: string;
+			slug: string;
+		};
+	} | null;
+	images: {
+		id: string;
+		url: string;
+		caption: string | null;
+		altText: string | null;
+		isPrimary: boolean;
+	}[];
+	rating: string;
+	reviewsCount: number;
+	indoorAllowed: boolean;
+	outdoorAllowed: boolean;
+	isVerified: boolean;
+	isFeatured: boolean;
+	hasFavourited?: boolean;
+}
+
+export interface ExplorePlacesRequest {
+	city?: string;
+	types?: string[];
+	dogAccess?: 'indoor' | 'outdoor' | 'both';
+	page?: number;
+	limit?: number;
+	minRating?: number;
+	sortBy?: 'rating' | 'recent' | 'name';
+}
+
+export interface Favourite extends Place {
+	cityId: string;
+	city: CityWithRegion;
 }

@@ -117,3 +117,23 @@ export interface GetNearbyPlacesResponse {
 	radius: number;
 	error?: string;
 }
+
+export interface GetExplorePlacesResponse {
+	places: PlaceWithOptimizedImages[];
+	pagination: {
+		page: number;
+		limit: number;
+		total: number;
+		totalPages: number;
+		hasMore: boolean;
+	};
+}
+
+export interface SearchLocationsResponse {
+	id: string;
+	name: string;
+	displayName: string;
+	region: string | null;
+	placeCount: number;
+	type: 'city' | 'region';
+}

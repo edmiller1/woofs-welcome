@@ -3,6 +3,7 @@
 	import { Avatar, AvatarFallback, AvatarImage } from '$lib/components/ui/avatar';
 	import { type BAUser } from '$lib/types/models';
 	import { cn } from '$lib/utils';
+	import { CircleUser, Cog, LogOut } from '@lucide/svelte';
 	import {
 		DropdownMenu,
 		DropdownMenuContent,
@@ -20,7 +21,11 @@
 			<AvatarFallback>{user.name}</AvatarFallback>
 		</Avatar>
 	</DropdownMenuTrigger>
-	<DropdownMenuContent class="mr-5">
-		<DropdownMenuItem onclick={() => auth.signOut()}>Sign out</DropdownMenuItem>
+	<DropdownMenuContent align="end" class="mt-2">
+		<DropdownMenuItem><CircleUser class="text-foreground" /> Profile</DropdownMenuItem>
+		<DropdownMenuItem><Cog class="text-foreground" />Settings</DropdownMenuItem>
+		<DropdownMenuItem onclick={() => auth.signOut()}
+			><LogOut class="text-foreground" />Sign out</DropdownMenuItem
+		>
 	</DropdownMenuContent>
 </DropdownMenu>

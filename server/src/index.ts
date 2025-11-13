@@ -20,6 +20,7 @@ import {
 } from "./middleware/rate-limit";
 import { errorHandler } from "./middleware/error-handler";
 import { sitemapRouter } from "./routes/sitemap";
+import { locationRouter } from "./routes/location";
 
 validateEnv();
 
@@ -60,6 +61,7 @@ app.route("/api/region", regionRouter);
 app.route("/api/city", cityRouter);
 app.route("/api/island", islandRouter);
 app.route("/api/review", reviewRouter);
+app.route("/api/location", locationRouter);
 app.route("sitemap.xml", sitemapRouter);
 
 app.get("/", (c) => {

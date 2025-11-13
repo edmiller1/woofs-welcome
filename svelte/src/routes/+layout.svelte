@@ -51,5 +51,5 @@
 	{/if}
 	<AuthModal />
 	<Toaster />
-	<SvelteQueryDevtools />
+	<!-- <SvelteQueryDevtools /> -->
 </QueryClientProvider>
