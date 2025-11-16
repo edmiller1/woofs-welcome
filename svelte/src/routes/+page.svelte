@@ -98,7 +98,7 @@
 
 <SeoHead {metadata} {structuredData} />
 
-<div class="min-h-screen bg-[#fefaf5]">
+<div class="min-h-screen bg-[#fafdf8]">
 	<Navbar {user} />
 	<!-- <PlaceFilters /> -->
 	<div class="-lg:px-8 -md:px-5 mx-auto w-full px-12">
@@ -107,10 +107,11 @@
 				class="xs:-mt-20 grid items-center gap-x-20 gap-y-7 py-12 xl:min-h-screen xl:grid-cols-[760px_auto] xl:py-20"
 			>
 				<div class="flex flex-col">
-					<h1 class="mb-6 text-2xl font-bold text-[#2a2a2a] md:text-6xl">
-						Discover and explore New Zealand's dog-friendly places
+					<h1 class="text-foreground mb-6 text-2xl font-bold md:text-6xl">
+						<span class="text-primary">Discover</span> and <span class="text-primary">explore</span>
+						New Zealand's <span class="text-primary">dog-friendly</span> places
 					</h1>
-					<h2 class="mb-8 text-xl text-[#2a2a2a]">
+					<h2 class="text-foregound mb-8 text-xl">
 						Find your next adventure with your furry companions.
 					</h2>
 					<div
@@ -195,8 +196,8 @@
 					<div class="mt-7 xl:mt-8">
 						<a href={exploreUrl}>
 							<button
-								class="inline-flex cursor-pointer items-center rounded-full border border-zinc-900 px-20 py-5 hover:bg-[#fbecd9]"
-								>Start Exploring <ArrowRight class="siz-5 ml-2" />
+								class="border-background bg-secondary text-background hover:bg-secondary-hover group inline-flex cursor-pointer items-center rounded-full border px-20 py-5 duration-200"
+								>Start Exploring <ArrowRight class="ml-2 size-5 group-hover:pl-5" />
 							</button>
 						</a>
 					</div>
