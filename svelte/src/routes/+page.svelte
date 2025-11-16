@@ -195,8 +195,8 @@
 					<div class="mt-7 xl:mt-8">
 						<a href={exploreUrl}>
 							<button
-								class="inline-flex cursor-pointer items-center rounded-full border border-zinc-900 px-20 py-5 hover:bg-[#fbecd9]"
-								>Start Exploring <ArrowRight class="siz-5 ml-2" />
+								class="group inline-flex cursor-pointer items-center rounded-full border border-zinc-900 px-20 py-5 hover:bg-[#fbecd9]"
+								>Start Exploring <ArrowRight class="siz-5 ml-2 transition-transform group-hover:-translate-x-2" />
 							</button>
 						</a>
 					</div>
