@@ -30,6 +30,7 @@
 
 	let selectedCity = $state<string>('');
 	let selectedType = $state<string>('');
+	let exploreUrl = $state<string>('/explore');
 
 	// onMount(() => {
 	// 	if (!user) {
@@ -56,10 +57,20 @@
 
 	const selectCity = (city: string) => {
 		selectedCity = city;
+		if (selectedType) {
+			exploreUrl = `/explore?location=${city}&types=${selectedType}`;
+		} else {
+			exploreUrl = `/explore?location=${city}`;
+		}
 	};
 
 	const selectType = (type: string) => {
 		selectedType = type;
+		if (selectedCity) {
+			exploreUrl = `/explore?location=${selectedCity}&types=${type}`;
+		} else {
+			exploreUrl = `/explore?types=${type}`;
+		}
 	};
 
 	// Homepage metadata
@@ -118,7 +129,7 @@
 										>
 											<div class="flex w-full items-center justify-between">
 												<span class="text-base font-medium"
-													>{selectedCity ? selectCity : 'All Cities'}</span
+													>{selectedCity ? selectedCity : 'All Cities'}</span
 												>
 												<ChevronDown class="text-muted-foreground h-4 w-4 flex-shrink-0" />
 											</div>
@@ -135,7 +146,7 @@
 													class="cursor-pointer {selectedCity === city.id
 														? 'bg-accent text-accent-foreground'
 														: ''}"
-													onclick={() => selectCity(city.id)}
+													onclick={() => selectCity(city.name)}
 												>
 													{city.name}
 												</DropdownMenu.Item>
@@ -182,7 +193,7 @@
 						</div>
 					</div>
 					<div class="mt-7 xl:mt-8">
-						<a href="/explore">
+						<a href={exploreUrl}>
 							<button
 								class="inline-flex cursor-pointer items-center rounded-full border border-zinc-900 px-20 py-5 hover:bg-[#fbecd9]"
 								>Start Exploring <ArrowRight class="siz-5 ml-2" />

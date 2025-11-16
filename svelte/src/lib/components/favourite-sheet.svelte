@@ -1,9 +1,10 @@
 <script lang="ts">
 	import * as Sheet from '$lib/components/ui/sheet/index.js';
-	import { Heart } from '@lucide/svelte';
-	import { Button } from './ui/button';
+	import { Heart, LoaderCircle } from '@lucide/svelte';
+	import { Button, buttonVariants } from './ui/button';
 	import { api } from '$lib/api';
 	import { createQuery } from '@tanstack/svelte-query';
+	import { cn } from '$lib/utils';
 
 	const favourites = createQuery({
 		queryKey: ['favourites'],
@@ -26,7 +27,9 @@
 			<Sheet.Description>View and update your favourite places.</Sheet.Description>
 		</Sheet.Header>
 		{#if $favourites.isLoading}
-			<div class="text-muted-foreground p-4 text-center text-sm">Loading favourites...</div>
+			<div class="text-muted-foreground flex justify-center p-4 text-center text-sm">
+				<LoaderCircle class="text-primary animate-spin" />
+			</div>
 		{:else if $favourites.error}
 			<div class="p-4 text-center text-sm text-red-500">Error loading favourites.</div>
 		{:else if $favourites.data && $favourites.data.length === 0}
@@ -34,11 +37,11 @@
 		{:else if $favourites.data}
 			<div class="my-6 grid grid-cols-2 gap-5 p-4">
 				{#each $favourites.data as favourite}
-					<a href={`/place/${favourite.slug}`}>
+					<a href={`/place/${favourite.slug}`} target="_blank">
 						<img
 							src={favourite.images[0].url}
 							alt={favourite.images[0].altText}
-							class="h-32 w-full rounded-lg object-cover object-center transition-transform duration-200 hover:scale-105"
+							class="h-32 w-full rounded-lg object-cover object-center"
 						/>
 						<div>
 							<span class="truncate text-xs">{favourite.name}</span>
@@ -50,7 +53,9 @@
 				{/each}
 			</div>
 			<div class="mx-auto flex w-full items-end justify-center p-4">
-				<Button variant="outline" class="w-full">View all</Button>
+				<a href="/profile/favourites" class={cn(buttonVariants({ variant: 'outline' }), 'w-full')}
+					>View all</a
+				>
 			</div>
 		{/if}
 	</Sheet.Content>

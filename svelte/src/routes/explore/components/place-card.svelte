@@ -16,6 +16,8 @@
 
 	let { place, onCardClick, onFavouriteClick, favouritePending }: Props = $props();
 
+	let showArrows = $state<boolean>(false);
+
 	// Check if this card is currently selected
 	const isSelected = $derived(page.url.searchParams.get('place') === place.slug);
 
@@ -55,13 +57,27 @@
 	function handleCardClick() {
 		onCardClick(place);
 	}
+
+	function handleShowArrows() {
+		showArrows = true;
+	}
+
+	function handleHideArrows() {
+		showArrows = false;
+	}
 </script>
 
 <button class="m-0 flex w-full justify-center p-0" onclick={handleCardClick}>
 	<div class="m-0 flex h-full max-w-sm cursor-pointer flex-col overflow-hidden p-0">
 		<div class="relative w-full overflow-hidden rounded-lg">
 			<Carousel.Root setApi={(emblaApi) => (carouselApi = emblaApi)}>
-				<div class="group relative cursor-pointer">
+				<div
+					role="button"
+					tabindex="0"
+					class="group relative cursor-pointer"
+					onmouseenter={handleShowArrows}
+					onmouseleave={handleHideArrows}
+				>
 					<Carousel.Content class="basis-[280px] md:basis-[320px]">
 						{#each images as image}
 							<Carousel.Item class="pl-3">
@@ -76,6 +92,10 @@
 								</div>
 							</Carousel.Item>
 						{/each}
+						{#if showArrows}
+							<Carousel.Next class="absolute right-2" />
+							<Carousel.Previous class="absolute left-2" />
+						{/if}
 					</Carousel.Content>
 
 					<!-- Selected indicator -->
