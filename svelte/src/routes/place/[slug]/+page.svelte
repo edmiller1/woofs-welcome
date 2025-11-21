@@ -352,8 +352,8 @@
 												aria-current={currentTab ? 'page' : undefined}
 												class={classNames(
 													currentTab === tab.name
-														? 'border-primary text-[#304cc5] dark:border-[#4e7ce3] dark:text-[#4e7ce3]'
-														: 'border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700 dark:text-gray-400 dark:hover:border-white/20 dark:hover:text-gray-200',
+														? 'border-primary text-primary'
+														: 'border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700',
 													'whitespace-nowrap border-b-2 px-1 py-4 text-sm'
 												)}
 												onclick={() => changeTab(tab.name)}>{tab.name}</a

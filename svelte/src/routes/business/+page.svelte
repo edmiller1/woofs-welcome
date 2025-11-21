@@ -1,6 +1,6 @@
 <script lang="ts">
 	import Footer from '$lib/components/footer.svelte';
-	import Navbar from '$lib/components/navbar.svelte';
+	import HomeNavbar from '$lib/components/home-navbar.svelte';
 	import Features from './components/features.svelte';
 	import Hero from './components/hero.svelte';
 	import Pricing from './components/pricing.svelte';
@@ -14,7 +14,7 @@
 	<meta name="description" content="Create or claim your dog-friendly business." />
 </svelte:head>
 
-<Navbar {user} />
+<HomeNavbar {user} />
 <Hero />
 <Features />
 <Pricing />

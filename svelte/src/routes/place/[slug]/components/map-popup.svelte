@@ -48,9 +48,9 @@
 	};
 </script>
 
-<div class="visible z-[99] flex rounded-xl bg-white sm:w-[327px] sm:flex-col">
+<div class="visible z-[99] flex overflow-hidden rounded-lg sm:w-[327px] sm:flex-col">
 	<div
-		class="relative overflow-hidden rounded-t-xl"
+		class="relative overflow-hidden rounded-t-lg"
 		role="img"
 		aria-label="Popup image"
 		onmouseenter={showArrows}
@@ -67,7 +67,7 @@
 					<img
 						src={image.url}
 						alt={image.altText || 'Place image'}
-						class="popup-card-image h-52 w-full flex-shrink-0 object-cover object-center"
+						class="h-52 w-full flex-shrink-0 object-cover object-center"
 					/>
 				{/each}
 			</div>
@@ -77,7 +77,12 @@
 			</div>
 		{/if}
 
-		<a href={`/place/${activePlace.slug}`} aria-label="View place details" target="_blank">
+		<a
+			href={`/place/${activePlace.slug}`}
+			aria-label="View place details"
+			target="_blank"
+			class="rounded-t-lg"
+		>
 			<div class="absolute inset-0 z-10 flex cursor-pointer items-start justify-end p-2"></div>
 		</a>
 
@@ -95,10 +100,10 @@
 			<div class="absolute left-2 top-[45%] z-20">
 				<button
 					onclick={prevImage}
-					class="rounded-full bg-white/80 p-1 text-gray-800 shadow transition-all hover:bg-white focus:outline-none"
+					class="cursor-pointer rounded-full bg-white/80 p-1 text-gray-800 shadow transition-all hover:bg-white focus:outline-none"
 					aria-label="Previous image"
 				>
-					<ChevronLeft class="size-6" />
+					<ChevronLeft class="size-4" />
 				</button>
 			</div>
 		{/if}
@@ -107,10 +112,10 @@
 			<div class="absolute right-2 top-[45%] z-20">
 				<button
 					onclick={nextImage}
-					class="rounded-full bg-white/80 p-1 text-gray-800 shadow transition-all hover:bg-white focus:outline-none"
+					class="cursor-pointer rounded-full bg-white/80 p-1 text-gray-800 shadow transition-all hover:bg-white focus:outline-none"
 					aria-label="Next image"
 				>
-					<ChevronRight class="size-6" />
+					<ChevronRight class="size-4" />
 				</button>
 			</div>
 		{/if}
@@ -122,7 +127,7 @@
 						<button
 							onclick={() => (currentIndex = index)}
 							class={cn(
-								'size-2 rounded-full bg-white transition-all',
+								'size-2 cursor-pointer rounded-full bg-white transition-all',
 								currentIndex === index ? 'scale-125' : 'opacity-50'
 							)}
 							aria-label={`Go to image ${index + 1}`}
@@ -133,7 +138,7 @@
 		{/if}
 	</div>
 
-	<div class="rounded-b-xl bg-white p-2 text-black">
+	<div class="rounded-b-xl bg-white px-2 pb-3 pt-2 text-black">
 		<div class="flex items-center justify-between">
 			<span class="mt-1 text-[1.01rem] font-bold">
 				{activePlace.name}

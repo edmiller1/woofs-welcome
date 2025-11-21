@@ -35,7 +35,7 @@
 		{:else if $favourites.data && $favourites.data.length === 0}
 			<div class="text-muted-foreground p-4 text-center text-sm">You have no favourite places.</div>
 		{:else if $favourites.data}
-			<div class="my-6 grid grid-cols-2 gap-5 p-4">
+			<div class="grid grid-cols-2 gap-5 p-4">
 				{#each $favourites.data as favourite}
 					<a href={`/place/${favourite.slug}`} target="_blank">
 						<img

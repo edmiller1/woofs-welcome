@@ -5,7 +5,7 @@
 @custom-variant dark (&:is(.dark *));
 
 :root {
-  --background: oklch(0.9940 0 0);
+  --background: oklch(1 0 0);
   --foreground: oklch(0.3600 0 0);
   --card: oklch(0.9940 0 0);
   --card-foreground: oklch(0.3600 0 0);
@@ -17,7 +17,7 @@
   --secondary-hover: oklch(0.4853 0.0789 162.87);
   --secondary-foreground: oklch(1.0000 0 0);
   --muted: oklch(0.9702 0 0);
-  --muted-foreground: oklch(0.4386 0 0);
+  --muted-foreground: oklch(0.6268 0 0);
   --accent: oklch(0.9351 0.0310 48.3709);
   --accent-foreground: oklch(0.6830 0.1687 36.0371);
   --destructive: oklch(0.6290 0.1902 23.0704);
@@ -58,6 +58,7 @@
   --shadow-2xl: 0px 2px 3px 0px hsl(0 0% 0% / 0.40);
   --tracking-normal: -0.025em;
   --spacing: 0.27rem;
+  --mint: oklch(0.9904 0.0073 132.41);
 }
 
 .dark {
@@ -148,6 +149,8 @@
   --color-sidebar-border: var(--sidebar-border);
   --color-sidebar-ring: var(--sidebar-ring);
 
+  --color-mint: var(--mint);
+
   --font-sans: var(--font-sans);
   --font-mono: var(--font-mono);
   --font-serif: var(--font-serif);
@@ -234,12 +237,7 @@ body {
 
 	:global(.custom-popup .mapboxgl-popup-content) {
 		padding: 0;
-		border-radius: 8px;
 		box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-	}
-
-	:global(.custom-popup .mapboxgl-popup-tip) {
-		border-top-color: white;
 	}
 
   :global(.pop-card-image) {
@@ -251,6 +249,11 @@ body {
 	width: 95vw !important;
 	height: 95vh !important;
 	max-height: 95vh !important;
+}
+
+.custom-popup .mapboxgl-popup {
+  border-radius: 25px;
+  background-color: pink;
 }
 
 /* Minimalist Scrollbar Styles */

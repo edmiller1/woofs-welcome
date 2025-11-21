@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { browser } from '$app/environment';
 	import { api } from '$lib/api/index.js';
-	import Navbar from '$lib/components/navbar.svelte';
+	import Navbar from '$lib/components/home-navbar.svelte';
 	import { createQuery } from '@tanstack/svelte-query';
 	import {
 		Search,
@@ -24,6 +24,7 @@
 	import SeoHead from '$lib/components/seo-head.svelte';
 	import { getOrganizationSchema, getWebsiteSchema } from '$lib/seo/structured-data';
 	import { SITE_CONFIG } from '$lib/seo/metadata';
+	import HomeNavbar from '$lib/components/home-navbar.svelte';
 
 	let { data } = $props();
 	const user = $derived(data.user);
@@ -98,8 +99,8 @@
 
 <SeoHead {metadata} {structuredData} />
 
-<div class="min-h-screen bg-[#fafdf8]">
-	<Navbar {user} />
+<div class="bg-mint min-h-screen">
+	<HomeNavbar {user} />
 	<!-- <PlaceFilters /> -->
 	<div class="-lg:px-8 -md:px-5 mx-auto w-full px-12">
 		<div class="max-w-screen-3xl mx-auto">
@@ -196,8 +197,10 @@
 					<div class="mt-7 xl:mt-8">
 						<a href={exploreUrl}>
 							<button
-								class="border-background bg-secondary text-background hover:bg-secondary-hover group inline-flex cursor-pointer items-center rounded-full border px-20 py-5 duration-200"
-								>Start Exploring <ArrowRight class="ml-2 size-5 group-hover:pl-5" />
+								class="border-background bg-secondary text-background hover:bg-secondary-hoverinline-flex group flex cursor-pointer items-center rounded-full border px-20 py-5 duration-200"
+								>Start Exploring <ArrowRight
+									class="ml-2 size-5 transition-transform group-hover:translate-x-2"
+								/>
 							</button>
 						</a>
 					</div>
@@ -222,7 +225,7 @@
 						</div>
 						<a
 							href="/explore"
-							class="flex items-center rounded-full border border-zinc-800 px-10 py-2.5 hover:bg-[#fbecd9]"
+							class="hover:bg-secondary-hover bg-secondary text-background flex items-center rounded-full border px-10 py-2.5"
 							>Explore<ArrowRight class="ml-2 size-4" /></a
 						>
 					</div>

@@ -13,6 +13,7 @@
 	import { getBreadcrumbSchema, getOrganizationSchema } from '$lib/seo/structured-data.js';
 	import { generateKeywords, getAbsoluteUrl } from '$lib/seo/metadata.js';
 	import SeoHead from '$lib/components/seo-head.svelte';
+	import Navbar from '$lib/components/navbar.svelte';
 
 	let { data } = $props();
 	const user = $derived(data.user);
@@ -89,7 +90,7 @@
 
 	{#if $region.isSuccess}
 		<div class="mx-auto max-w-7xl px-2 sm:px-4 lg:px-8">
-			<MainNavbar {user} currentPlace={$region.data.region.name} />
+			<Navbar {user} currentPlace={$region.data.region.name} />
 			<div class="py-2 lg:flex lg:items-center lg:justify-between">
 				<div class="min-w-0 flex-1">
 					<Breadcrumbs

@@ -5,7 +5,7 @@
 	import type { BAUser, FilterState, PlaceType, PlaceWithOptimizedImages } from '$lib/types/models';
 	import { createMutation } from '@tanstack/svelte-query';
 	import FilterSidebar from './components/filter-sidebar.svelte';
-	import Navbar from './components/navbar.svelte';
+	import Navbar from '../../lib/components/navbar.svelte';
 	import { api } from '$lib/api';
 	import { LoaderCircle } from '@lucide/svelte';
 	import { onMount } from 'svelte';
@@ -236,7 +236,7 @@
 		</div>
 
 		<main
-			class="flex-1 overflow-y-auto bg-[#f5f9fc] p-6 pb-24 transition-[margin-right] duration-300 ease-in-out lg:pb-6"
+			class="bg-mint flex-1 overflow-y-auto p-6 pb-24 transition-[margin-right] duration-300 ease-in-out lg:pb-6"
 			class:mr-[450px]={isPanelOpen}
 		>
 			<div class="mx-auto max-w-full">
@@ -296,7 +296,7 @@
 
 	<!-- Detail Panel -->
 	<div
-		class="fixed inset-y-0 right-0 z-50 w-full transform-gpu bg-white shadow-2xl transition-transform duration-300 ease-in-out lg:w-[450px]"
+		class="fixed inset-y-0 right-0 z-50 w-full transform-gpu bg-white shadow-2xl transition-transform duration-300 ease-in-out lg:w-[470px]"
 		style:transform={isPanelOpen ? 'translateX(0)' : 'translateX(100%)'}
 	>
 		{#if isPanelLoading}

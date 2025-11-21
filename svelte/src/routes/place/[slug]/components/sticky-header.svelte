@@ -52,7 +52,7 @@
 	<div
 		class="sticky top-0 z-50 w-full border-b border-gray-200 bg-white shadow-lg backdrop-blur-sm dark:border-white/10 dark:bg-gray-900/95"
 	>
-		<div class="mx-auto max-w-7xl px-2 py-3 sm:px-4 lg:px-8">
+		<div class="mx-auto max-w-7xl px-2 pt-3 sm:px-4 lg:px-8">
 			<!-- Place name and buttons -->
 			<div class="mb-3 flex items-center justify-between">
 				<div class="flex items-center gap-4">
@@ -94,8 +94,8 @@
 							aria-current={currentTab ? 'page' : undefined}
 							class={classNames(
 								currentTab === tab.name
-									? 'border-primary text-[#304cc5] dark:border-[#4e7ce3] dark:text-[#4e7ce3]'
-									: 'border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700 dark:text-gray-400 dark:hover:border-white/20 dark:hover:text-gray-200',
+									? 'border-primary text-primary '
+									: 'border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700',
 								'whitespace-nowrap border-b-2 px-1 py-2 text-sm'
 							)}
 							onclick={() => changeTab(tab.name)}

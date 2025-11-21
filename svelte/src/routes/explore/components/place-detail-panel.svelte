@@ -241,7 +241,7 @@
 				<!-- Dog Access -->
 				{#if place.indoorAllowed || place.outdoorAllowed}
 					<div>
-						<h3 class="mb-3 text-lg font-semibold">Dog Access</h3>
+						<h3 class="mb-1 mt-3 text-lg font-semibold">Dog Access</h3>
 						<div class="flex gap-4">
 							{#if place.indoorAllowed}
 								<div class="flex flex-1 items-center gap-2 rounded-lg bg-blue-50 px-4 py-3">
@@ -271,7 +271,7 @@
 				<!-- Contact Information -->
 				{#if place.phone || place.email || place.website}
 					<div class="my-3">
-						<h3 class="mb-3 text-lg font-semibold">Contact</h3>
+						<h3 class="text-lg font-semibold">Contact</h3>
 						<div class="space-y-2">
 							{#if place.phone}
 								<a
@@ -311,7 +311,7 @@
 				<!-- Map -->
 				{#if mapUrl()}
 					<div class="my-3">
-						<h3 class="mb-3 text-lg font-semibold">Location</h3>
+						<h3 class="text-lg font-semibold">Location</h3>
 						{#if place.address}
 							<p class="text-muted-foreground mb-3 text-sm">{place.address}</p>
 						{/if}

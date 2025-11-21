@@ -39,7 +39,7 @@
 		<Carousel.Content class="-ml-2 md:-ml-4">
 			{#each places as place}
 				<Carousel.Item class="basis-[280px] pl-2 md:basis-[320px] md:pl-4">
-					<Card.Root class="border-0 shadow-none">
+					<Card.Root class="bg-background border-0 shadow-none">
 						<div class="group relative cursor-pointer">
 							<a href={`/place/${place.slug}`} class="block no-underline" aria-label={place.name}>
 								<div class="relative aspect-[4/3] overflow-hidden rounded-xl">

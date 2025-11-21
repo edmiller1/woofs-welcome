@@ -12,6 +12,7 @@
 	import SeoHead from '$lib/components/seo-head.svelte';
 	import { getBreadcrumbSchema, getOrganizationSchema } from '$lib/seo/structured-data';
 	import { getAbsoluteUrl, generateKeywords } from '$lib/seo/metadata';
+	import Navbar from '$lib/components/navbar.svelte';
 
 	let { data } = $props();
 	const user = $derived(data.user);
@@ -88,7 +89,7 @@
 
 	{#if $city.isSuccess}
 		<div class="mx-auto max-w-7xl px-2 sm:px-4 lg:px-8">
-			<MainNavbar {user} currentPlace={$city.data.city.name} />
+			<Navbar {user} currentPlace={$city.data.city.name} />
 			<div class="py-2 lg:flex lg:items-center lg:justify-between">
 				<div class="min-w-0 flex-1">
 					<Breadcrumbs

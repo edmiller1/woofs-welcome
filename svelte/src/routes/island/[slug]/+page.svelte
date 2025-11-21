@@ -16,6 +16,7 @@
 	import { generateKeywords, getAbsoluteUrl } from '$lib/seo/metadata.js';
 	import { getBreadcrumbSchema, getOrganizationSchema } from '$lib/seo/structured-data.js';
 	import SeoHead from '$lib/components/seo-head.svelte';
+	import Navbar from '$lib/components/navbar.svelte';
 
 	let { data } = $props();
 	const user = $derived(data.user);
@@ -92,7 +93,7 @@
 
 	{#if $island.isSuccess}
 		<div class="mx-auto max-w-7xl px-2 sm:px-4 lg:px-8">
-			<MainNavbar {user} currentPlace={getNameFromSlug(data.slug)} />
+			<Navbar {user} currentPlace={getNameFromSlug(data.slug)} />
 			<div class="py-2 lg:flex lg:items-center lg:justify-between">
 				<div class="min-w-0 flex-1">
 					<Breadcrumbs type="island" islandName={$island.data.name} />
@@ -121,11 +122,8 @@
 						<div class="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-4">
 							{#each $island.data.verifiedPlaces as place}
 								<div class="basis-[280px] pl-2 md:basis-[320px] md:pl-4">
-									<Card.Root class="border-0 p-0 shadow-none" style="background-color: #f0d3ef;">
-										<div
-											class="group relative cursor-pointer rounded-xl p-4"
-											style="background-color: #f0d3ef;"
-										>
+									<Card.Root class="bg-muted border-0 p-0 shadow-none">
+										<div class="group relative cursor-pointer rounded-xl p-4">
 											<a
 												href={`/place/${place.slug}`}
 												class="block no-underline"
