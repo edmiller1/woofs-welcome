@@ -72,7 +72,37 @@ export const user = pgTable(
     updatedAt: timestamp("updated_at")
       .$defaultFn(() => /* @__PURE__ */ new Date())
       .notNull(),
-    emailNotifications: boolean("email_notifications").default(true),
+    deletedAt: timestamp("deleted_at"),
+    notificationPreferences: jsonb("notification_preferences")
+      .default({
+        email: {
+          // Engagement
+          reviewReplies: true,
+          reviewLikes: true,
+          newReviewsOnFavourites: true,
+          // Business/Admin
+          placeUpdates: true,
+          claimStatus: true,
+          reportStatus: true,
+          // Digest
+          weeklyDigest: true,
+          // Marketing
+          marketing: false,
+          newsletter: false,
+        },
+        push: {
+          // Engagement
+          reviewReplies: true,
+          reviewLikes: true,
+          newReviewsOnFavourites: true,
+          // Discovery
+          nearbyPlaces: false,
+          favourites: true,
+          // Business/Admin
+          claimStatus: true,
+        },
+      })
+      .$type<NotificationPreferences>(),
   },
   (table) => ({
     emailIdx: uniqueIndex("email_idx").on(table.email),
@@ -599,4 +629,38 @@ export type ReviewReportSelect = InferSelectModel<typeof ReviewReport>;
 
 export type PlaceWithImagesSelect = PlaceSelect & {
   images: PlaceImageSelect[];
+};
+
+export type NotificationPreferences = {
+  email: {
+    // Engagement
+    reviewReplies: boolean;
+    reviewLikes: boolean;
+    newReviewsOnFavourites: boolean;
+
+    // Business/Admin
+    placeUpdates: boolean; // for claimed venues
+    claimStatus: boolean;
+    reportStatus: boolean;
+
+    // Digest
+    weeklyDigest: boolean;
+
+    // Marketing
+    marketing: boolean;
+    newsletter: boolean;
+  };
+  push: {
+    // Engagement
+    reviewReplies: boolean;
+    reviewLikes: boolean;
+    newReviewsOnFavourites: boolean;
+
+    // Discovery
+    nearbyPlaces: boolean;
+    favourites: boolean;
+
+    // Business/Admin
+    claimStatus: boolean;
+  };
 };

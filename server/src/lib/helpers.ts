@@ -2,9 +2,11 @@ import { and, eq } from "drizzle-orm";
 import { db } from "../db";
 import {
   Favourite,
+  NotificationPreferences,
   PlaceImageSelect,
   PlaceWithImagesSelect,
   ReviewImage,
+  UserSelect,
 } from "../db/schema";
 import { Cloudinary } from "./cloudinary";
 
@@ -188,3 +190,40 @@ export const calculateDistance = (
   const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
   return R * c;
 };
+
+export const DEFAULT_NOTIFICATION_PREFERENCES: NotificationPreferences = {
+  email: {
+    reviewReplies: true,
+    reviewLikes: true,
+    newReviewsOnFavourites: true,
+    placeUpdates: true,
+    claimStatus: true,
+    reportStatus: true,
+    weeklyDigest: true,
+    marketing: false,
+    newsletter: false,
+  },
+  push: {
+    reviewReplies: true,
+    reviewLikes: true,
+    newReviewsOnFavourites: true,
+    nearbyPlaces: false,
+    favourites: true,
+    claimStatus: true,
+  },
+};
+
+export function getUserNotificationPreferences(
+  user: UserSelect
+): NotificationPreferences {
+  return {
+    email: {
+      ...DEFAULT_NOTIFICATION_PREFERENCES.email,
+      ...(user.notificationPreferences?.email || {}),
+    },
+    push: {
+      ...DEFAULT_NOTIFICATION_PREFERENCES.push,
+      ...(user.notificationPreferences?.push || {}),
+    },
+  };
+}

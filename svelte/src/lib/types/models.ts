@@ -388,3 +388,63 @@ export interface Favourite extends Place {
 	cityId: string;
 	city: CityWithRegion;
 }
+
+export interface NotificationPreferences {
+	email: {
+		// Engagement
+		reviewReplies: boolean;
+		reviewLikes: boolean;
+		newReviewsOnFavourites: boolean;
+
+		// Business/Admin
+		placeUpdates: boolean; // for claimed venues
+		claimStatus: boolean;
+		reportStatus: boolean;
+
+		// Digest
+		weeklyDigest: boolean;
+
+		// Marketing
+		marketing: boolean;
+		newsletter: boolean;
+	};
+	push: {
+		// Engagement
+		reviewReplies: boolean;
+		reviewLikes: boolean;
+		newReviewsOnFavourites: boolean;
+
+		// Discovery
+		nearbyPlaces: boolean;
+		favourites: boolean;
+
+		// Business/Admin
+		claimStatus: boolean;
+	};
+}
+
+export interface NotificationPreferencesInput {
+	email?:
+		| {
+				reviewReplies?: boolean | undefined;
+				reviewLikes?: boolean | undefined;
+				newReviewsOnFavourites?: boolean | undefined;
+				placeUpdates?: boolean | undefined;
+				claimStatus?: boolean | undefined;
+				reportStatus?: boolean | undefined;
+				weeklyDigest?: boolean | undefined;
+				marketing?: boolean | undefined;
+				newsletter?: boolean | undefined;
+		  }
+		| undefined;
+	push?:
+		| {
+				reviewReplies?: boolean | undefined;
+				reviewLikes?: boolean | undefined;
+				newReviewsOnFavourites?: boolean | undefined;
+				claimStatus?: boolean | undefined;
+				nearbyPlaces?: boolean | undefined;
+				favourites?: boolean | undefined;
+		  }
+		| undefined;
+}

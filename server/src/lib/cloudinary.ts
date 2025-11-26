@@ -69,4 +69,18 @@ export const Cloudinary = {
       return null;
     }
   },
+  deleteAvatar: async (publicId: string) => {
+    try {
+      const result = await cloudinary.uploader.destroy(publicId);
+      if (result.result === "ok") {
+        console.log(`✅ Deleted image: ${publicId}`);
+        return { success: true };
+      } else {
+        console.warn(`⚠️ Failed to delete image: ${publicId}`, result);
+        return { success: false, result };
+      }
+    } catch (error) {
+      console.error(`❌ Failed to delete avatar:`, error);
+    }
+  },
 };

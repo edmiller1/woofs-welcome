@@ -42,7 +42,8 @@
 
 	let { user, currentPlace }: Props = $props();
 
-	const explorePage = page.url.pathname.includes('/explore');
+	const isExplorePageOrProfilePage =
+		page.url.pathname.includes('/explore') || page.url.pathname.includes('/profile');
 </script>
 
 <nav class="bg-background sticky top-0 z-50 w-full border-b">
@@ -95,7 +96,7 @@
 				<Button variant="default" class="ml-2">Sign In</Button>
 			{/if}
 			<!-- Mobile Menu -->
-			{#if !explorePage}
+			{#if !isExplorePageOrProfilePage}
 				<div class="relative z-10 -ml-3 flex items-center lg:hidden">
 					<Sheet.Root>
 						<Sheet.Trigger class={`${buttonVariants({ variant: 'ghost' })} ml-5`}>
@@ -129,7 +130,7 @@
 			{/if}
 		</div>
 	</div>
-	{#if !explorePage}
+	{#if !isExplorePageOrProfilePage}
 		<div class="hidden lg:flex lg:space-x-4 lg:py-2">
 			{#each types as type}
 				<a

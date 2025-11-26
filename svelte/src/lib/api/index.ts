@@ -5,6 +5,7 @@ import { island } from './island';
 import { city } from './city';
 import { review } from './review';
 import { location } from './location';
+import { notification } from './notification';
 
 export const api = {
 	auth,
@@ -13,5 +14,6 @@ export const api = {
 	island,
 	city,
 	review,
-	location
+	location,
+	notification
 };

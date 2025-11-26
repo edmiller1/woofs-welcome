@@ -21,6 +21,7 @@ import {
 import { errorHandler } from "./middleware/error-handler";
 import { sitemapRouter } from "./routes/sitemap";
 import { locationRouter } from "./routes/location";
+import { notificationRouter } from "./routes/notification";
 
 validateEnv();
 
@@ -36,7 +37,7 @@ app.use(
         ? "http://localhost:5173"
         : "https://www.woofswelcome.app",
     maxAge: 86400,
-    allowMethods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+    allowMethods: ["GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"],
     exposeHeaders: ["Content-Length"],
     allowHeaders: ["Content-Type", "Authorization"],
     credentials: true,
@@ -51,9 +52,9 @@ app.use("/api/auth/get-session", sessionRateLimiter);
 app.use("/api/auth/email-otp/*", authRateLimiter);
 app.use("/api/auth/sign-in/*", authRateLimiter);
 app.use("/api/auth/sign-up/*", authRateLimiter);
+app.use("/api/user", authMiddleware);
 
 // custom routes
-app.use("/api/user", authMiddleware);
 app.route("/api/auth", betterAuthRouter);
 app.route("/api/user", authRouter);
 app.route("/api/place", placeRouter);
@@ -62,6 +63,7 @@ app.route("/api/city", cityRouter);
 app.route("/api/island", islandRouter);
 app.route("/api/review", reviewRouter);
 app.route("/api/location", locationRouter);
+app.route("/api/notification", notificationRouter);
 app.route("sitemap.xml", sitemapRouter);
 
 app.get("/", (c) => {

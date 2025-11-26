@@ -22,7 +22,9 @@
 		</Avatar>
 	</DropdownMenuTrigger>
 	<DropdownMenuContent align="end" class="mt-2">
-		<DropdownMenuItem><CircleUser class="text-foreground" /> Profile</DropdownMenuItem>
+		<a href="/profile">
+			<DropdownMenuItem><CircleUser class="text-foreground" /> Profile</DropdownMenuItem>
+		</a>
 		<DropdownMenuItem><Cog class="text-foreground" />Settings</DropdownMenuItem>
 		<DropdownMenuItem onclick={() => auth.signOut()}
 			><LogOut class="text-foreground" />Sign out</DropdownMenuItem

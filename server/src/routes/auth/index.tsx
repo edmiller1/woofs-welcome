@@ -14,9 +14,7 @@ import {
   BadRequestError,
   DatabaseError,
   UnauthorizedError,
-  ValidationError,
 } from "../../lib/errors";
-import { sanitizePlainText } from "../../lib/sanitize";
 import { validateBody } from "../../middleware/validate";
 import { UpdateProfileInput, updateProfileSchema } from "./schemas";
 import { AuthService } from "../../services/auth.service";
@@ -150,6 +148,23 @@ authRouter.post(
     const { name, image } = c.get("validatedBody") as UpdateProfileInput;
 
     const result = await AuthService.WelcomeUser(auth.id, name, image);
+
+    return c.json(result, 200);
+  }
+);
+
+authRouter.patch(
+  "/update",
+  authMiddleware,
+  validateBody(updateProfileSchema),
+  async (c) => {
+    const auth = c.get("user");
+
+    if (!auth) throw new UnauthorizedError("No auth token");
+
+    const { name, image } = c.get("validatedBody") as UpdateProfileInput;
+
+    const result = await AuthService.updateProfile(auth.id, name, image);
 
     return c.json(result, 200);
   }
