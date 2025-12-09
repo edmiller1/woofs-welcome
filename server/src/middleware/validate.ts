@@ -81,6 +81,7 @@ export function validateQuery<T extends ZodSchema>(schema: T) {
           field: err.path.join("."),
           message: err.message,
         }));
+        console.log(error);
 
         throw new ValidationError("Invalid query parameters", details);
       }

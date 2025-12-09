@@ -63,7 +63,7 @@
 					<Button variant="ghost" class="font-medium">Explore</Button>
 				</a>
 				<a href="/help">
-					<Button variant="ghost" class="font-medium">Help</Button>
+					<Button variant="ghost" class="font-medium">Support</Button>
 				</a>
 			</div>
 		</div>

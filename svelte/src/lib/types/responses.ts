@@ -5,9 +5,12 @@ import type {
 	CityWithRegion,
 	Claim,
 	IslandWithRegions,
+	OptimizedImage,
 	Place,
 	PlaceWithDistance,
 	PlaceWithOptimizedImages,
+	Region,
+	RegionWithCities,
 	RegionWithIsland,
 	ReviewWithUserAndImages,
 	Stats
@@ -19,28 +22,120 @@ export interface CreateUserResponse {
 	error?: string;
 }
 
-export interface GetRegionResponse {
-	cities: CityWithPlaces[];
-	region: RegionWithIsland;
+export interface GetRegionResponse extends Region {
 	stats: Stats;
-	foodSpots: Place[];
-	stays: Place[];
-	adventures: Place[];
-	retailPlaces: Place[];
+	popularPlaces: {
+		id: string;
+		name: string;
+		isVerified: boolean;
+		rating: string;
+		regionName: string;
+		regionSlug: string;
+		cityName: string;
+		citySlug: string;
+		types: string[];
+		description: string;
+		imageUrl: OptimizedImage;
+		hasFavourited: boolean;
+	}[];
 	error?: string;
+}
+
+export interface getRegionPlacesResponse {
+	places: {
+		cityName: string;
+		citySlug: string;
+		regionName: string;
+		regionSlug: string;
+		id: string;
+		name: string;
+		slug: string;
+		types: string[];
+		description: string;
+		isVerified: boolean;
+		rating: string;
+		reviewsCount: number;
+		imageUrl: OptimizedImage;
+		hasFavourited: boolean;
+	}[];
+	events: any[];
+}
+
+export interface getCityPlacesResponse {
+	places: {
+		cityName: string;
+		citySlug: string;
+		regionName: string;
+		regionSlug: string;
+		id: string;
+		name: string;
+		slug: string;
+		types: string[];
+		description: string;
+		isVerified: boolean;
+		rating: string;
+		reviewsCount: number;
+		imageUrl: OptimizedImage;
+		hasFavourited: boolean;
+	}[];
+	events: any[];
 }
 
 export interface GetIslandResponse extends IslandWithRegions {
+	stats: Stats;
+	popularPlaces: {
+		id: string;
+		name: string;
+		isVerified: boolean;
+		rating: string;
+		regionName: string;
+		regionSlug: string;
+		cityName: string;
+		citySlug: string;
+		types: string[];
+		description: string;
+		imageUrl: OptimizedImage;
+		hasFavourited: boolean;
+	}[];
 	error?: string;
 }
 
-export interface getCityResponse {
-	city: CityWithRegion;
+export interface getIslandPlacesResponse {
+	places: {
+		cityName: string;
+		citySlug: string;
+		regionName: string;
+		regionSlug: string;
+		id: string;
+		name: string;
+		slug: string;
+		types: string[];
+		description: string;
+		isVerified: boolean;
+		rating: string;
+		reviewsCount: number;
+		imageUrl: OptimizedImage;
+		hasFavourited: boolean;
+	}[];
+	events: any[];
+}
+
+export interface getCityResponse extends CityWithRegion {
 	stats: Stats;
-	foodSpots: Place[];
-	stays: Place[];
-	adventures: Place[];
-	retail: Place[];
+	popularPlaces: {
+		id: string;
+		name: string;
+		isVerified: boolean;
+		rating: string;
+		regionName: string;
+		regionSlug: string;
+		cityName: string;
+		citySlug: string;
+		types: string[];
+		description: string;
+		imageUrl: OptimizedImage;
+		hasFavourited: boolean;
+	}[];
 	error?: string;
 }
 

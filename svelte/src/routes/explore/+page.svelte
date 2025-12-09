@@ -11,7 +11,6 @@
 	import { onMount } from 'svelte';
 	import PlaceCard from './components/place-card.svelte';
 	import { PUBLIC_MAPBOX_API_KEY } from '$env/static/public';
-	import { page } from '$app/state';
 	import PlaceDetailPanel from './components/place-detail-panel.svelte';
 	import PlaceDetailSkeleton from './components/place-detail-skeleton.svelte';
 	import { toast } from 'svelte-sonner';

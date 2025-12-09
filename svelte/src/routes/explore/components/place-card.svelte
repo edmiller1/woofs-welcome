@@ -65,6 +65,16 @@
 	function handleHideArrows() {
 		showArrows = false;
 	}
+
+	function handleNextClick(e: Event) {
+		e.stopPropagation();
+		carouselApi!.scrollNext();
+	}
+
+	function handlePreviousClick(e: Event) {
+		e.stopPropagation();
+		carouselApi!.scrollPrev();
+	}
 </script>
 
 <button class="m-0 flex w-full justify-center p-0" onclick={handleCardClick}>
@@ -93,8 +103,8 @@
 							</Carousel.Item>
 						{/each}
 						{#if showArrows}
-							<Carousel.Next class="absolute right-2" />
-							<Carousel.Previous class="absolute left-2" />
+							<Carousel.Next onclick={handleNextClick} class="absolute right-2" />
+							<Carousel.Previous onclick={handlePreviousClick} class="absolute left-2" />
 						{/if}
 					</Carousel.Content>
 

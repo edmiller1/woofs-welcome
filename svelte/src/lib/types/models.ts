@@ -22,6 +22,13 @@ export interface Region {
 	name: string;
 	slug: string;
 	islandId: string;
+	island: {
+		createdAt: string;
+		updatedAt: string;
+		id: string;
+		name: string;
+		slug: string;
+	};
 	image: string;
 	createdAt: string;
 	updatedAt: string;
@@ -147,11 +154,6 @@ export interface PopularCity {
 export interface IslandWithRegions extends Island {
 	optimizedImage: OptimizedImage;
 	regions: Region[];
-	popularCities: City[];
-	foodSpots: IslandPlace[];
-	retailSpots: IslandPlace[];
-	adventures: IslandPlace[];
-	verifiedPlaces: IslandPlace[];
 }
 
 export interface RegionWithIsland extends Region {
@@ -234,6 +236,23 @@ export interface PlaceWithOptimizedImages extends Place {
 	}[];
 	hasFavourited?: boolean;
 	reviews: ReviewWithUserAndImages[];
+}
+
+export interface FilterablePlace {
+	cityName: string;
+	citySlug: string;
+	regionName: string;
+	regionSlug: string;
+	id: string;
+	name: string;
+	slug: string;
+	types: string[];
+	description: string;
+	isVerified: boolean;
+	rating: string;
+	reviewsCount: number;
+	imageUrl: OptimizedImage;
+	hasFavourited: boolean;
 }
 
 export interface Review {

@@ -631,6 +631,74 @@ export type PlaceWithImagesSelect = PlaceSelect & {
   images: PlaceImageSelect[];
 };
 
+export type IslandPlaceWithSingleImageSelect = {
+  id: string;
+  name: string;
+  slug: string;
+  types: (
+    | "Park"
+    | "Restaurant"
+    | "Hotel"
+    | "Motel"
+    | "AirBnb"
+    | "Store"
+    | "Café"
+    | "Bar"
+    | "Dog Park"
+    | "Beach"
+    | "Walk"
+    | "Hike"
+    | "Service"
+    | "Activity"
+    | "Lake"
+    | "River"
+    | "Trail"
+  )[];
+  description: string | null;
+  rating: string | null;
+  reviewsCount: number | null;
+  isVerified: boolean | null;
+  cityName: string;
+  citySlug: string;
+  regionName: string;
+  regionSlug: string;
+  imageUrl: string | null;
+};
+
+export type RegionPlaceWithSingleImageSelect = {
+  id: string;
+  name: string;
+  slug: string;
+  types: (
+    | "Park"
+    | "Restaurant"
+    | "Hotel"
+    | "Motel"
+    | "AirBnb"
+    | "Store"
+    | "Café"
+    | "Bar"
+    | "Dog Park"
+    | "Beach"
+    | "Walk"
+    | "Hike"
+    | "Service"
+    | "Activity"
+    | "Lake"
+    | "River"
+    | "Trail"
+  )[];
+  description: string | null;
+  rating: string | null;
+  reviewsCount: number | null;
+  isVerified: boolean | null;
+  cityName: string;
+  citySlug: string;
+  islandName: string;
+  islandSlug: string;
+  imageUrl: string | null;
+};
+
 export type NotificationPreferences = {
   email: {
     // Engagement

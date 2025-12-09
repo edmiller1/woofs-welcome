@@ -1,10 +1,15 @@
-import { and, eq } from "drizzle-orm";
+import { and, desc, eq, gte, or, sql } from "drizzle-orm";
 import { db } from "../db";
 import {
+  City,
   Favourite,
+  Island,
   NotificationPreferences,
+  Place,
+  PlaceImage,
   PlaceImageSelect,
   PlaceWithImagesSelect,
+  Region,
   ReviewImage,
   UserSelect,
 } from "../db/schema";
@@ -96,6 +101,7 @@ export const checkIsFavourited = async (userId: string, placeId: string) => {
   return !!favourite;
 };
 
+// Multiple images
 export const optimizePlaceImages = async (places: PlaceWithImagesSelect[]) => {
   return places.map((place) => ({
     ...place,
@@ -227,3 +233,21 @@ export function getUserNotificationPreferences(
     },
   };
 }
+
+export const validatePlaceFilter = (
+  filter?: string
+): "popular" | "new" | "verified" | "surprise" => {
+  const validFilters = ["popular", "new", "verified", "surprise"] as const;
+  if (filter && validFilters.includes(filter as any)) {
+    return filter as "popular" | "new" | "verified" | "surprise";
+  }
+  return "popular"; // default
+};
+
+export const validateEventFilter = (filter?: string): "new" | "upcoming" => {
+  const validFilters = ["new", "upcoming"] as const;
+  if (filter && validFilters.includes(filter as any)) {
+    return filter as "new" | "upcoming";
+  }
+  return "new"; // default
+};

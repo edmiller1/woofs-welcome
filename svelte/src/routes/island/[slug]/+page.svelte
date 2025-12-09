@@ -1,22 +1,36 @@
 <script lang="ts">
 	import { api } from '$lib/api/index.js';
 	import Breadcrumbs from '$lib/components/breadcrumbs.svelte';
-	import MainNavbar from '$lib/components/main-navbar.svelte';
 	import { getNameFromSlug } from '$lib/helpers/index.js';
-	import { createQuery } from '@tanstack/svelte-query';
-	import RegionCarousel from '$lib/components/region-carousel.svelte';
-	import CityCarousel from '$lib/components/city-carousel.svelte';
+	import { createMutation, createQuery } from '@tanstack/svelte-query';
 	import Footer from '$lib/components/footer.svelte';
-	import PlaceCarousel from '$lib/components/place-carousel.svelte';
-	import * as Card from '$lib/components/ui/card/index.js';
-	import { Badge } from '$lib/components/ui/badge';
-	import { Heart, LoaderCircle, Star } from '@lucide/svelte';
+	import {
+		ArrowRight,
+		BadgeCheck,
+		Bubbles,
+		Footprints,
+		Hotel,
+		LoaderCircle,
+		MapPin,
+		MapPinHouse,
+		PartyPopper,
+		ShoppingBag,
+		Sparkles,
+		Star,
+		UtensilsCrossed
+	} from '@lucide/svelte';
 	import Button from '$lib/components/ui/button/button.svelte';
 	import ErrorBoundary from '$lib/components/error-boundary.svelte';
 	import { generateKeywords, getAbsoluteUrl } from '$lib/seo/metadata.js';
 	import { getBreadcrumbSchema, getOrganizationSchema } from '$lib/seo/structured-data.js';
 	import SeoHead from '$lib/components/seo-head.svelte';
 	import Navbar from '$lib/components/navbar.svelte';
+	import Separator from '$lib/components/ui/separator/separator.svelte';
+	import { page } from '$app/state';
+	import { goto, invalidateAll } from '$app/navigation';
+	import PlaceCardSingleImage from '$lib/components/place-card-single-image.svelte';
+	import { toast } from 'svelte-sonner';
+	import { authModalActions } from '$lib/auth/auth-modal-store.js';
 
 	let { data } = $props();
 	const user = $derived(data.user);
@@ -80,6 +94,76 @@
 
 		return schemas;
 	});
+
+	const mainPopularPlaces = $derived($island.data?.popularPlaces.slice(0, 2) || []);
+	const popularPlaces = $derived($island.data?.popularPlaces.slice(2) || []);
+	const currentPlaceFilter = $derived(page.url.searchParams.get('placeSort') ?? 'popular');
+	const currentEventFilter = $derived(page.url.searchParams.get('eventSort') ?? 'new');
+
+	let pendingFavouritePlaceId = $state<string | null>(null);
+
+	const islandPlacesAndEvents = $derived(
+		createQuery({
+			queryKey: ['islandPlacesAndEvents', data.slug, currentPlaceFilter, currentEventFilter],
+			queryFn: () =>
+				api.island.getIslandPlacesAndEvents(data.slug, {
+					placeSort: currentPlaceFilter,
+					eventSort: currentEventFilter
+				})
+		})
+	);
+
+	const favouritePlace = createMutation({
+		mutationFn: api.place.favouritePlace,
+		onMutate: (placeId) => {
+			pendingFavouritePlaceId = placeId;
+		},
+		onSuccess: (result) => {
+			toast.success(`Place ${result.action === 'added' ? 'added to' : 'removed from'} favourites`);
+			invalidateAll();
+		},
+		onError: (error) => {
+			toast.error(`Operation failed: ${error.message}`);
+		},
+		onSettled: () => {
+			pendingFavouritePlaceId = null;
+		}
+	});
+
+	const openAuthModal = () => {
+		authModalActions.open('sign-in');
+	};
+
+	const handleFavouriteClick = (placeId: string) => {
+		if (!data.user) {
+			openAuthModal();
+			return;
+		}
+
+		$favouritePlace.mutate(placeId);
+	};
+
+	// Function to update place filter
+	function setPlaceFilter(filter: string) {
+		const params = new URLSearchParams(page.url.searchParams);
+		params.set('placeSort', filter);
+		goto(`?${params.toString()}`, {
+			keepFocus: true,
+			noScroll: true,
+			replaceState: true // don't add to browser history (might change later)
+		});
+	}
+
+	// Function to update event filter (for later)
+	function setEventFilter(filter: string) {
+		const params = new URLSearchParams(page.url.searchParams);
+		params.set('eventSort', filter);
+		goto(`?${params.toString()}`, {
+			keepFocus: true,
+			noScroll: true,
+			replaceState: true
+		});
+	}
 </script>
 
 <SeoHead {metadata} {structuredData} />
@@ -102,6 +186,32 @@
 					>
 						{$island.data.name}
 					</h2>
+					<div class="text-muted-foreground mt-2 flex h-4 flex-wrap items-center space-x-2 text-sm">
+						<p class="flex items-center">
+							<MapPin class="mr-1 h-4 w-4" />
+							{$island.data.stats.totalPlaces} places
+						</p>
+						<Separator orientation="vertical" />
+						<p class="flex items-center">
+							<Footprints class="mr-1 h-4 w-4" />
+							{$island.data.stats.totalAdventures} adventures
+						</p>
+						<Separator orientation="vertical" />
+						<p class="flex items-center">
+							<UtensilsCrossed class="mr-1 h-4 w-4" />
+							{$island.data.stats.totalEats} eats
+						</p>
+						<Separator orientation="vertical" />
+						<p class="flex items-center">
+							<Hotel class="mr-1 h-4 w-4" />
+							{$island.data.stats.totalStays} stays
+						</p>
+						<Separator orientation="vertical" />
+						<p class="flex items-center">
+							<ShoppingBag class="mr-1 h-4 w-4" />
+							{$island.data.stats.totalStores} stores
+						</p>
+					</div>
 					<div class="min-width-full relative my-5 flex justify-center">
 						<img
 							src={$island.data.optimizedImage.src}
@@ -112,85 +222,189 @@
 							loading="lazy"
 						/>
 					</div>
-					<RegionCarousel
-						heading="Explore the {$island.data.name}"
-						regions={$island.data.regions}
-					/>
-					<!-- Claimed Places -->
-					<div class="my-10">
-						<h2 class="mb-4 text-2xl font-semibold">Explore our recommended places</h2>
-						<div class="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-4">
-							{#each $island.data.verifiedPlaces as place}
-								<div class="basis-[280px] pl-2 md:basis-[320px] md:pl-4">
-									<Card.Root class="bg-muted border-0 p-0 shadow-none">
-										<div class="group relative cursor-pointer rounded-xl p-4">
-											<a
-												href={`/place/${place.slug}`}
-												class="block no-underline"
-												aria-label={place.name}
-											>
-												<div class="relative aspect-[4/3] overflow-hidden rounded-xl">
-													<img
-														src={place.images[0].url}
-														alt={place.name}
-														srcset={place.images[0].url}
-														sizes={place.images[0].url}
-														loading="lazy"
-														class="h-full w-full object-cover transition-transform duration-200 group-hover:scale-105"
-													/>
-												</div>
-												<div class="space-y-1 pt-3">
-													<div class="m-0 flex items-center justify-between">
-														<h3 class="truncate font-medium text-gray-900">{place.name}</h3>
-														<div class="flex items-center gap-1">
-															<Star class="size-4" fill="#000000" />
-															<span>{place.rating.toFixed(1)}</span>
-														</div>
-													</div>
-													<div class="text-muted-foreground m-0 text-sm">
-														{place.cityName}, {place.regionName}
-													</div>
-													<div class="mt-1 flex items-center gap-1">
-														{#each place.types as type}
-															<Badge class="rounded-full">{type}</Badge>
-														{/each}
-													</div>
-												</div>
-											</a>
+					<section class="mx-auto mt-20 w-full max-w-7xl rounded-lg border p-4 shadow-sm">
+						<!-- Header -->
+						<div class="mb-6 flex items-center justify-between">
+							<div class="flex items-center gap-2">
+								<Star class="size-7 fill-yellow-500 text-yellow-500" />
+								<h2 class="text-2xl font-bold">Popular Places in the {$island.data.name}</h2>
+							</div>
+							<a href="/" class="hover:underline"> View all </a>
+						</div>
 
-											<div class="absolute right-5 top-5 z-10">
-												<Button
-													variant="ghost"
-													size="icon"
-													class="rounded-full bg-white/80 hover:bg-white"
-													onclick={(e) => {
-														e.preventDefault();
-														e.stopPropagation();
-														// Your favorite logic here
-														console.log('Favorited:', place.name);
-													}}
-												>
-													<Heart class="size-6" />
-												</Button>
+						<!-- Popular Places first 2 -->
+						<div class="mb-4 grid grid-cols-1 gap-4 lg:grid-cols-2">
+							{#each mainPopularPlaces as place}
+								<div class="group cursor-pointer overflow-hidden rounded-lg border">
+									<div class="relative aspect-video overflow-hidden">
+										<img
+											src={place.imageUrl.webp.src}
+											alt={place.name}
+											class="object-cover transition-transform duration-300 group-hover:scale-105"
+											srcset={place.imageUrl.srcset}
+										/>
+									</div>
+									<div class="rounded-lg p-4">
+										<div class="flex items-center gap-2">
+											<h3 class="line-clamp-1 text-lg font-semibold">
+												{place.name}
+											</h3>
+											{#if place.isVerified}
+												<BadgeCheck class="fill-primary size-4" />
+											{/if}
+										</div>
+										<div class="text-muted-foreground mb-2 flex items-center gap-3 text-sm">
+											<span>{place.cityName}, {place.regionName}</span>
+											<div class="flex items-center gap-1">
+												<Star class="fill-muted-foreground size-3" />
+												<span>{place.rating}</span>
 											</div>
 										</div>
-									</Card.Root>
+										{#if place.description}
+											<p class="text-muted-foreground line-clamp-2 text-sm">{place.description}</p>
+										{/if}
+									</div>
 								</div>
 							{/each}
 						</div>
+
+						<!-- Popular Places -->
+						<div class="grid grid-cols-2 gap-4 md:grid-cols-4">
+							{#each popularPlaces as place}
+								<div class="group cursor-pointer overflow-hidden rounded-md border">
+									<div class="relative aspect-video overflow-hidden">
+										<img
+											src={place.imageUrl.webp.src}
+											alt={place.name}
+											class="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
+											srcset={place.imageUrl.srcset}
+										/>
+									</div>
+									<div class="p-3">
+										<div class="flex items-center gap-2">
+											<h3 class="line-clamp-1 text-lg font-semibold">
+												{place.name}
+											</h3>
+											{#if place.isVerified}
+												<BadgeCheck class="fill-primary size-4" />
+											{/if}
+										</div>
+										<div class="text-muted-foreground flex items-center gap-2 text-xs">
+											<span>{place.cityName}, {place.regionName}</span>
+											<div class="flex items-center gap-1">
+												<Star class="fill-muted-foreground size-3" />
+												<span>{place.rating}</span>
+											</div>
+										</div>
+									</div>
+								</div>
+							{/each}
+						</div>
+					</section>
+
+					<!-- Premium Banner -->
+					<div
+						class="relative my-20 flex h-64 w-full items-center rounded-xl border border-[#bee9a6] bg-[#fafdf8] px-8"
+					>
+						<div class="text-secondary flex w-full items-center justify-between">
+							<div class="flex items-center gap-5">
+								<div class="flex-shrink-0">
+									<Sparkles class="size-12" />
+								</div>
+								<div class="flex flex-col gap-2">
+									<h2 class="text-4xl font-semibold">
+										Claim your business with <span class="text-primary">premium</span>
+									</h2>
+									<p class="text-lg">
+										Upgrade to <span class="text-primary font-semibold">premium</span> to claim, create,
+										manage events and adverts for your businesses.
+									</p>
+								</div>
+							</div>
+							<Button variant="secondary" size="lg"
+								>Go Premium <ArrowRight class="h-4 w-4" /></Button
+							>
+						</div>
 					</div>
 
-					<!-- Places -->
-					<h2 class="text-2xl font-semibold">The {$island.data.name} has plenty to offer</h2>
+					<!-- Places Filter -->
+					<section>
+						<div>
+							<div class="flex items-center justify-between gap-2 border-b">
+								<div class="mb-2 flex items-center justify-between gap-2">
+									<MapPinHouse />
+									<h2 class="text-2xl font-bold">Places in the {$island.data.name}</h2>
+								</div>
+								<a href="/" class="hover:underline">View all</a>
+							</div>
+							<div class="mb-2 mt-3 flex items-center gap-2">
+								<Button
+									variant={currentPlaceFilter === 'popular' ? 'default' : 'outline'}
+									size="sm"
+									onclick={() => setPlaceFilter('popular')}
+								>
+									<Star />Popular
+								</Button>
+								<Button
+									variant={currentPlaceFilter === 'new' ? 'default' : 'outline'}
+									size="sm"
+									onclick={() => setPlaceFilter('new')}
+								>
+									<Bubbles />New
+								</Button>
+								<Button
+									variant={currentPlaceFilter === 'verified' ? 'default' : 'outline'}
+									size="sm"
+									onclick={() => setPlaceFilter('verified')}
+								>
+									<BadgeCheck />Verified
+								</Button>
+								<Button
+									variant={currentPlaceFilter === 'surprise' ? 'default' : 'outline'}
+									size="sm"
+									onclick={() => setPlaceFilter('surprise')}
+								>
+									<PartyPopper /> Surprise
+								</Button>
+							</div>
+						</div>
+						{#if $islandPlacesAndEvents.data?.places && $islandPlacesAndEvents.data?.places.length > 0}
+							<div class="my-5 grid grid-cols-4 gap-4">
+								{#each $islandPlacesAndEvents.data.places as place}
+									<PlaceCardSingleImage {place} onFavouriteClick={handleFavouriteClick} />
+								{/each}
+							</div>
+							{#if $islandPlacesAndEvents.data.events.length === 20}
+								<div class="mb-5 flex w-full items-center justify-center">
+									<Button>View More</Button>
+								</div>
+							{/if}
+						{:else if $islandPlacesAndEvents.isLoading}
+							<div class="flex min-h-[200px] w-full items-center justify-center">
+								<LoaderCircle class="text-primary size-10 animate-spin" />
+							</div>
+						{:else}
+							<p class="text-center text-gray-500">No places found in this island.</p>
+						{/if}
+					</section>
 
-					<PlaceCarousel title="Great Food" places={$island.data.foodSpots} />
-					<PlaceCarousel title="Leisurely Shopping" places={$island.data.retailSpots} />
-					<PlaceCarousel title="Adventure" places={$island.data.adventures} />
-
-					<CityCarousel
-						heading="Popular Cities to visit in the {$island.data.name}"
-						cities={$island.data.popularCities}
-					/>
+					<!-- Events section -->
+					<!-- <section class="my-20">
+						<div class="flex items-center justify-between gap-2 border-b">
+							<div class="mb-2 flex items-center justify-between gap-2">
+								<Ticket />
+								<h2 class="text-2xl font-bold">Events in the {$island.data.name}</h2>
+							</div>
+							<a href="/" class="hover:underline">View all</a>
+						</div>
+						<div class="mb-2 mt-3 flex items-center gap-2">
+							<Button variant="outline" size="sm"><Bubbles />New</Button>
+							<Button variant="outline" size="sm"><CalendarClock />Upcoming</Button>
+							<Button variant="outline" size="sm">
+								<PartyPopper /> Surprise
+							</Button>
+						</div>
+					</section> -->
 				</div>
 			</div>
 			<Footer />
