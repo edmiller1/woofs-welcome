@@ -165,6 +165,7 @@ export const Island = pgTable(
   },
   (table) => ({
     slugIdx: index("island_slug_idx").on(table.slug),
+    nameIdx: index("island_name_lower_idx").on(sql`lower(${table.name})`),
   })
 );
 
@@ -184,6 +185,7 @@ export const Region = pgTable(
   (table) => ({
     slugIdx: index("region_slug_idx").on(table.slug),
     islandIdx: index("region_island_idx").on(table.islandId),
+    nameIdx: index("region_name_lower_idx").on(sql`lower(${table.name})`),
   })
 );
 
@@ -206,6 +208,7 @@ export const City = pgTable(
   (table) => ({
     slugIdx: index("city_slug_idx").on(table.slug),
     regionIdIdx: index("city_region_idx").on(table.regionId),
+    nameIdx: index("city_name_lower_idx").on(sql`lower(${table.name})`),
   })
 );
 

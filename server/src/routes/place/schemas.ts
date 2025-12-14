@@ -144,7 +144,7 @@ export const searchPlacesQuerySchema = z.object({
 export type SearchPlacesQuery = z.infer<typeof searchPlacesQuerySchema>;
 
 export const getExplorePlacesQuerySchema = z.object({
-  city: z.string().optional(),
+  location: z.string().optional(),
   types: z
     .enum([
       "Park",
@@ -188,6 +188,18 @@ export const getExplorePlacesQuerySchema = z.object({
     .pipe(z.number().int().min(1).max(5))
     .optional(),
   sortBy: z.enum(["rating", "recent", "name"]).optional().default("rating"),
+  isNew: z
+    .string()
+    .optional()
+    .transform((val) => val === "true")
+    .pipe(z.boolean())
+    .optional(),
+  isVerified: z
+    .string()
+    .optional()
+    .transform((val) => val === "true")
+    .pipe(z.boolean())
+    .optional(),
 });
 
 export type GetExplorePlacesQuery = z.infer<typeof getExplorePlacesQuerySchema>;

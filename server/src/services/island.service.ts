@@ -73,7 +73,7 @@ export class IslandService {
       let placesWithFavourites = optimizedPlaces;
 
       if (userId) {
-        const placeIds = optimizedPlaces.map((p) => p.id);
+        const placeIds = placesWithFavourites.map((p) => p.id);
         const favourites = await db.query.Favourite.findMany({
           where: and(
             eq(Favourite.userId, userId),
@@ -114,7 +114,7 @@ export class IslandService {
         ...(island.image && {
           optimizedImage: getResponsiveImageUrls(island.image),
         }),
-        popularPlaces: optimizedPlaces,
+        popularPlaces: placesWithFavourites,
         stats: stats[0] || {
           totalPlaces: 0,
           totalAdventures: 0,

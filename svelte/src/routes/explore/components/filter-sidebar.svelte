@@ -11,7 +11,6 @@
 	import Separator from '$lib/components/ui/separator/separator.svelte';
 	import { goto } from '$app/navigation';
 	import { api } from '$lib/api';
-	import { Skeleton } from '$lib/components/ui/skeleton';
 
 	interface Props {
 		initialFilters?: Partial<FilterState>;
@@ -27,6 +26,8 @@
 	let selectedTypes = $state<string[]>(initialFilters.types || []);
 	let dogAccess = $state<DogAccess>(initialFilters.dogAccess || 'both');
 	let minRating = $state<number>(initialFilters.minRating || 0);
+	let isNew = $state<boolean>(initialFilters.isNew || false);
+	let isVerified = $state<boolean>(initialFilters.isVerified || false);
 
 	// Location search
 	let locationSearch = $state('');
@@ -35,12 +36,12 @@
 
 	// Main cities for quick selection
 	const mainCities = [
-		'Auckland',
-		'Hamilton',
-		'Wellington',
-		'Christchurch',
-		'Queenstown',
-		'Dunedin'
+		{ name: 'Auckland', slug: 'auckland' },
+		{ name: 'Hamilton', slug: 'hamilton' },
+		{ name: 'Wellington', slug: 'wellington' },
+		{ name: 'Christchurch', slug: 'christchurch' },
+		{ name: 'Queenstown', slug: 'queenstown' },
+		{ name: 'Dunedin', slug: 'dunedin' }
 	];
 
 	// All place types
@@ -84,10 +85,10 @@
 	}
 
 	// Select location
-	function selectLocation(location: string) {
+	function selectLocation(location: Location) {
 		console.log('Selected location:', location);
-		selectedLocation = location;
-		locationSearch = location;
+		selectedLocation = location.slug;
+		locationSearch = location.name;
 		showLocationDropdown = false;
 	}
 
@@ -113,7 +114,9 @@
 			location: selectedLocation,
 			types: selectedTypes,
 			dogAccess,
-			minRating
+			minRating,
+			isNew,
+			isVerified
 		};
 		drawerOpen = false;
 		onApplyFilters(filters);
@@ -127,12 +130,19 @@
 		dogAccess = 'both';
 		minRating = 0;
 		locationResults = [];
+		isNew = false;
+		isVerified = false;
 		goto('/explore');
 	}
 
 	// Check if filters have changed
 	let hasActiveFilters = $derived(
-		selectedLocation !== null || selectedTypes.length > 0 || dogAccess !== 'both' || minRating > 0
+		selectedLocation !== null ||
+			selectedTypes.length > 0 ||
+			dogAccess !== 'both' ||
+			minRating > 0 ||
+			isNew ||
+			isVerified
 	);
 
 	// Get active filter count
@@ -140,7 +150,9 @@
 		(selectedLocation ? 1 : 0) +
 			selectedTypes.length +
 			(dogAccess !== 'both' ? 1 : 0) +
-			(minRating > 0 ? 1 : 0)
+			(minRating > 0 ? 1 : 0) +
+			(isNew ? 1 : 0) +
+			(isVerified ? 1 : 0)
 	);
 </script>
 
@@ -187,6 +199,23 @@
 							</button>
 						</Badge>
 					{/if}
+					{#if isNew}
+						<Badge variant="secondary" class="gap-1">
+							New
+							<button onclick={() => (isNew = false)} class="ml-1">
+								<X class="h-3 w-3" />
+							</button>
+						</Badge>
+					{/if}
+
+					{#if isVerified}
+						<Badge variant="secondary" class="gap-1">
+							Verified
+							<button onclick={() => (isVerified = false)} class="ml-1">
+								<X class="h-3 w-3" />
+							</button>
+						</Badge>
+					{/if}
 				</div>
 			</div>
 		{/if}
@@ -228,7 +257,7 @@
 					>
 						{#each locationResults as location}
 							<button
-								onclick={() => selectLocation(location.name)}
+								onclick={() => selectLocation(location)}
 								class="hover:bg-muted w-full cursor-pointer px-4 py-2 text-left text-sm"
 							>
 								<div class="font-medium">{location.name}</div>
@@ -247,12 +276,15 @@
 				<div class="flex flex-wrap gap-2">
 					{#each mainCities as city}
 						<Button
-							variant={selectedLocation === city ? 'default' : 'outline'}
+							variant={selectedLocation === city.slug ? 'default' : 'outline'}
 							size="sm"
-							onclick={() => selectLocation(city)}
+							onclick={() => {
+								selectedLocation = city.slug;
+								locationSearch = city.name;
+							}}
 							class="rounded-full text-xs"
 						>
-							{city}
+							{city.name}
 						</Button>
 					{/each}
 				</div>
@@ -325,6 +357,37 @@
 			<div class="text-muted-foreground flex justify-between text-xs">
 				<span>Any</span>
 				<span>5 Stars</span>
+			</div>
+		</div>
+
+		<!-- New/Verified Filters -->
+		<div class="space-y-3 border-t pt-6">
+			<Label class="text-base font-semibold">Additional Filters</Label>
+
+			<div class="space-y-3">
+				<!-- New Places Filter -->
+				<div class="flex items-center space-x-2">
+					<Checkbox
+						id="isNew"
+						checked={isNew}
+						onCheckedChange={(checked) => (isNew = checked === true)}
+					/>
+					<Label for="isNew" class="cursor-pointer text-sm font-normal">
+						New (Added in last 2 months)
+					</Label>
+				</div>
+
+				<!-- Verified Places Filter -->
+				<div class="flex items-center space-x-2">
+					<Checkbox
+						id="isVerified"
+						checked={isVerified}
+						onCheckedChange={(checked) => (isVerified = checked === true)}
+					/>
+					<Label for="isVerified" class="cursor-pointer text-sm font-normal">
+						Verified Places Only
+					</Label>
+				</div>
 			</div>
 		</div>
 
@@ -442,6 +505,23 @@
 									</button>
 								</Badge>
 							{/if}
+							{#if isNew}
+								<Badge variant="secondary" class="gap-1">
+									New
+									<button onclick={() => (isNew = false)} class="ml-1">
+										<X class="h-3 w-3" />
+									</button>
+								</Badge>
+							{/if}
+
+							{#if isVerified}
+								<Badge variant="secondary" class="gap-1">
+									Verified
+									<button onclick={() => (isVerified = false)} class="ml-1">
+										<X class="h-3 w-3" />
+									</button>
+								</Badge>
+							{/if}
 						</div>
 					</div>
 				{/if}
@@ -487,7 +567,7 @@
 							>
 								{#each locationResults as location}
 									<button
-										onclick={() => selectLocation(location.name)}
+										onclick={() => selectLocation(location)}
 										class="hover:bg-muted w-full px-4 py-2 text-left text-sm"
 									>
 										<div class="font-medium">{location.name}</div>
@@ -506,12 +586,15 @@
 						<div class="flex flex-wrap gap-2">
 							{#each mainCities as city}
 								<Button
-									variant={selectedLocation === city ? 'default' : 'outline'}
+									variant={selectedLocation === city.slug ? 'default' : 'outline'}
 									size="sm"
-									onclick={() => selectLocation(city)}
+									onclick={() => {
+										selectedLocation = city.slug;
+										locationSearch = city.name;
+									}}
 									class="text-xs"
 								>
-									{city}
+									{city.name}
 								</Button>
 							{/each}
 						</div>
@@ -592,6 +675,38 @@
 							<span>3</span>
 							<span>4</span>
 							<span>5</span>
+						</div>
+					</div>
+
+					<!-- New/Verified Filters -->
+					<!-- Additional Filters -->
+					<div class="space-y-3 border-t pt-6">
+						<Label class="text-base font-semibold">Additional Filters</Label>
+
+						<div class="space-y-3">
+							<!-- New Places Filter -->
+							<div class="flex items-center space-x-2">
+								<Checkbox
+									id="isNew"
+									checked={isNew}
+									onCheckedChange={(checked) => (isNew = checked === true)}
+								/>
+								<Label for="isNew" class="cursor-pointer text-sm font-normal">
+									New (Added in last 2 months)
+								</Label>
+							</div>
+
+							<!-- Verified Places Filter -->
+							<div class="flex items-center space-x-2">
+								<Checkbox
+									id="isVerified"
+									checked={isVerified}
+									onCheckedChange={(checked) => (isVerified = checked === true)}
+								/>
+								<Label for="isVerified" class="cursor-pointer text-sm font-normal">
+									Verified Places Only
+								</Label>
+							</div>
 						</div>
 					</div>
 

@@ -4,9 +4,11 @@ import { AppError, DatabaseError, NotFoundError } from "../lib/errors";
 import {
   City,
   Favourite,
+  Island,
   Place,
   PlaceImage,
   placeTypeEnum,
+  Region,
   Review,
 } from "../db/schema";
 import { Cloudinary } from "../lib/cloudinary";
@@ -333,27 +335,74 @@ export class PlaceService {
   ) {
     try {
       const {
-        city,
+        location,
         types,
         dogAccess,
         page,
         limit = 20,
         minRating,
         sortBy,
+        isNew,
+        isVerified,
       } = query;
 
       const conditions = [];
 
-      // Filter by city
-      if (city) {
-        const cityRecord = await db.query.City.findFirst({
-          where: eq(City.name, city),
-        });
-
-        console.log("Filtering by city:", cityRecord);
+      if (location) {
+        // Find out what location is being passed
+        const [cityRecord, regionRecord, islandRecord] = await Promise.all([
+          db.query.City.findFirst({
+            where: eq(City.slug, location),
+          }),
+          db.query.Region.findFirst({
+            where: eq(Region.slug, location),
+          }),
+          db.query.Island.findFirst({
+            where: eq(Island.slug, location),
+          }),
+        ]);
 
         if (cityRecord) {
+          console.log("Filtering by city:", cityRecord);
           conditions.push(eq(Place.cityId, cityRecord.id));
+        } else if (regionRecord) {
+          console.log("Filtering by region:", regionRecord);
+
+          // Get all city IDs in this region
+          const citiesInRegion = await db.query.City.findMany({
+            where: eq(City.regionId, regionRecord.id),
+            columns: { id: true },
+          });
+
+          const cityIds = citiesInRegion.map((c) => c.id);
+
+          if (cityIds.length > 0) {
+            conditions.push(inArray(Place.cityId, cityIds));
+          }
+        } else if (islandRecord) {
+          console.log("Filtering by island:", islandRecord);
+
+          // Get all regions in this island
+          const regionsInIsland = await db.query.Region.findMany({
+            where: eq(Region.islandId, islandRecord.id),
+            columns: { id: true },
+          });
+
+          const regionIds = regionsInIsland.map((r) => r.id);
+
+          // Then get all cities in those regions
+          if (regionIds.length > 0) {
+            const citiesInRegions = await db.query.City.findMany({
+              where: inArray(City.regionId, regionIds),
+              columns: { id: true },
+            });
+
+            const cityIds = citiesInRegions.map((c) => c.id);
+
+            if (cityIds.length > 0) {
+              conditions.push(inArray(Place.cityId, cityIds));
+            }
+          }
         }
       }
 
@@ -380,6 +429,20 @@ export class PlaceService {
       // Filter by minimum rating
       if (minRating) {
         conditions.push(sql`${Place.rating}::numeric >= ${minRating}`);
+      }
+
+      // Filter by new places (created in last 2 months)
+      if (isNew) {
+        const twoMonthsAgo = new Date();
+        twoMonthsAgo.setMonth(twoMonthsAgo.getMonth() - 2);
+        conditions.push(
+          sql`${Place.createdAt} >= ${twoMonthsAgo.toISOString()}`
+        );
+      }
+
+      // Filter by verified places
+      if (isVerified) {
+        conditions.push(eq(Place.isVerified, true));
       }
 
       // Determine sort order

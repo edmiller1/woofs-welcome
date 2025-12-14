@@ -27,6 +27,7 @@ export interface GetRegionResponse extends Region {
 	popularPlaces: {
 		id: string;
 		name: string;
+		slug: string;
 		isVerified: boolean;
 		rating: string;
 		regionName: string;
@@ -86,6 +87,7 @@ export interface GetIslandResponse extends IslandWithRegions {
 	popularPlaces: {
 		id: string;
 		name: string;
+		slug: string;
 		isVerified: boolean;
 		rating: string;
 		regionName: string;
@@ -125,6 +127,7 @@ export interface getCityResponse extends CityWithRegion {
 	popularPlaces: {
 		id: string;
 		name: string;
+		slug: string;
 		isVerified: boolean;
 		rating: string;
 		regionName: string;
@@ -227,6 +230,7 @@ export interface GetExplorePlacesResponse {
 export interface SearchLocationsResponse {
 	id: string;
 	name: string;
+	slug: string;
 	displayName: string;
 	region: string | null;
 	placeCount: number;

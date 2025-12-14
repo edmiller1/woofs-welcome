@@ -104,17 +104,21 @@
 				? ((data.searchParams.types as string).split(',').filter(Boolean) as PlaceType[])
 				: [],
 			dogAccess: (data.searchParams.dogAccess as 'indoor' | 'outdoor' | 'both') || 'both',
-			minRating: data.searchParams.minRating ? Number(data.searchParams.minRating) : 0
+			minRating: data.searchParams.minRating ? Number(data.searchParams.minRating) : 0,
+			isNew: data.searchParams.isNew === 'true',
+			isVerified: data.searchParams.isVerified === 'true'
 		};
 	}
 
 	function handleApplyFilters(filterState: FilterState) {
 		const params = new URLSearchParams();
 
-		if (filterState.location) params.set('location', filterState.location);
+		if (filterState.location) params.set('location', filterState.location.toLowerCase());
 		if (filterState.types.length > 0) params.set('types', filterState.types.join(','));
 		if (filterState.dogAccess !== 'both') params.set('dogAccess', filterState.dogAccess);
 		if (filterState.minRating > 0) params.set('minRating', filterState.minRating.toString());
+		if (filterState.isNew) params.set('isNew', 'true');
+		if (filterState.isVerified) params.set('isVerified', 'true');
 
 		const currentPlace = pageStore.url.searchParams.get('place');
 		if (currentPlace) params.set('place', currentPlace);
@@ -150,7 +154,7 @@
 		try {
 			const filters = parseFiltersFromURL();
 			const response = await api.place.getExplorePlaces({
-				city: filters.location || undefined,
+				location: filters.location || undefined,
 				types: filters.types.length > 0 ? filters.types : undefined,
 				dogAccess: filters.dogAccess !== 'both' ? filters.dogAccess : undefined,
 				minRating: filters.minRating > 0 ? filters.minRating : undefined,

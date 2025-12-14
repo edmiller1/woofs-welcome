@@ -2,13 +2,14 @@
 	import { api } from '$lib/api/index.js';
 	import Breadcrumbs from '$lib/components/breadcrumbs.svelte';
 	import { getNameFromSlug } from '$lib/helpers/index.js';
-	import { createMutation, createQuery } from '@tanstack/svelte-query';
+	import { createMutation, createQuery, useQueryClient } from '@tanstack/svelte-query';
 	import Footer from '$lib/components/footer.svelte';
 	import {
 		ArrowRight,
 		BadgeCheck,
 		Bubbles,
 		Footprints,
+		Heart,
 		Hotel,
 		LoaderCircle,
 		MapPin,
@@ -34,6 +35,8 @@
 
 	let { data } = $props();
 	const user = $derived(data.user);
+
+	const queryClient = useQueryClient();
 
 	const island = createQuery({
 		queryKey: ['island', data.slug],
@@ -120,6 +123,9 @@
 		},
 		onSuccess: (result) => {
 			toast.success(`Place ${result.action === 'added' ? 'added to' : 'removed from'} favourites`);
+			queryClient.invalidateQueries({
+				queryKey: ['island', data.slug]
+			});
 			invalidateAll();
 		},
 		onError: (error) => {
@@ -222,82 +228,133 @@
 							loading="lazy"
 						/>
 					</div>
-					<section class="mx-auto mt-20 w-full max-w-7xl rounded-lg border p-4 shadow-sm">
+					<section class="mx-auto mt-20 w-full max-w-7xl rounded-lg border p-4">
 						<!-- Header -->
 						<div class="mb-6 flex items-center justify-between">
 							<div class="flex items-center gap-2">
 								<Star class="size-7 fill-yellow-500 text-yellow-500" />
 								<h2 class="text-2xl font-bold">Popular Places in the {$island.data.name}</h2>
 							</div>
-							<a href="/" class="hover:underline"> View all </a>
+							<a
+								href={`/explore?location=${$island.data.name.toLowerCase()}&minRating=4`}
+								class="hover:underline">View all</a
+							>
 						</div>
 
 						<!-- Popular Places first 2 -->
 						<div class="mb-4 grid grid-cols-1 gap-4 lg:grid-cols-2">
 							{#each mainPopularPlaces as place}
-								<div class="group cursor-pointer overflow-hidden rounded-lg border">
-									<div class="relative aspect-video overflow-hidden">
-										<img
-											src={place.imageUrl.webp.src}
-											alt={place.name}
-											class="object-cover transition-transform duration-300 group-hover:scale-105"
-											srcset={place.imageUrl.srcset}
-										/>
-									</div>
-									<div class="rounded-lg p-4">
-										<div class="flex items-center gap-2">
-											<h3 class="line-clamp-1 text-lg font-semibold">
-												{place.name}
-											</h3>
-											{#if place.isVerified}
-												<BadgeCheck class="fill-primary size-4" />
-											{/if}
-										</div>
-										<div class="text-muted-foreground mb-2 flex items-center gap-3 text-sm">
-											<span>{place.cityName}, {place.regionName}</span>
-											<div class="flex items-center gap-1">
-												<Star class="fill-muted-foreground size-3" />
-												<span>{place.rating}</span>
+								<a href={`/place/${place.slug}`}>
+									<div class="group cursor-pointer overflow-hidden rounded-lg border">
+										<div class="relative aspect-video overflow-hidden">
+											<img
+												src={place.imageUrl.webp.src}
+												alt={place.name}
+												class="object-cover transition-transform duration-300 group-hover:scale-105"
+												srcset={place.imageUrl.srcset}
+											/>
+											<!-- Heart Button -->
+											<div class="absolute right-2 top-2 z-10">
+												<Button
+													variant="ghost"
+													size="icon"
+													class="rounded-full bg-white/80 hover:bg-white"
+													onclick={(e) => {
+														e.preventDefault();
+														e.stopPropagation();
+														handleFavouriteClick(place.id);
+													}}
+												>
+													{#if $favouritePlace.isPending && pendingFavouritePlaceId === place.id}
+														<LoaderCircle class="size-6 animate-spin" />
+													{:else}
+														<Heart
+															class={`size-6 ${place.hasFavourited ? 'fill-rose-500 text-rose-500' : ''}`}
+														/>
+													{/if}
+												</Button>
 											</div>
 										</div>
-										{#if place.description}
-											<p class="text-muted-foreground line-clamp-2 text-sm">{place.description}</p>
-										{/if}
+										<div class="rounded-lg p-4">
+											<div class="flex items-center gap-2">
+												<h3 class="line-clamp-1 text-lg font-semibold">
+													{place.name}
+												</h3>
+												{#if place.isVerified}
+													<BadgeCheck class="fill-primary size-4" />
+												{/if}
+											</div>
+											<div class="text-muted-foreground mb-2 flex items-center gap-3 text-sm">
+												<span>{place.cityName}, {place.regionName}</span>
+												<div class="flex items-center gap-1">
+													<Star class="fill-muted-foreground size-3" />
+													<span>{place.rating}</span>
+												</div>
+											</div>
+											{#if place.description}
+												<p class="text-muted-foreground line-clamp-2 text-sm">
+													{place.description}
+												</p>
+											{/if}
+										</div>
 									</div>
-								</div>
+								</a>
 							{/each}
 						</div>
 
 						<!-- Popular Places -->
 						<div class="grid grid-cols-2 gap-4 md:grid-cols-4">
 							{#each popularPlaces as place}
-								<div class="group cursor-pointer overflow-hidden rounded-md border">
-									<div class="relative aspect-video overflow-hidden">
-										<img
-											src={place.imageUrl.webp.src}
-											alt={place.name}
-											class="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
-											srcset={place.imageUrl.srcset}
-										/>
-									</div>
-									<div class="p-3">
-										<div class="flex items-center gap-2">
-											<h3 class="line-clamp-1 text-lg font-semibold">
-												{place.name}
-											</h3>
-											{#if place.isVerified}
-												<BadgeCheck class="fill-primary size-4" />
-											{/if}
+								<a href={`/place/${place.slug}`}>
+									<div class="group cursor-pointer overflow-hidden rounded-md border">
+										<div class="relative aspect-video overflow-hidden">
+											<img
+												src={place.imageUrl.webp.src}
+												alt={place.name}
+												class="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
+												srcset={place.imageUrl.srcset}
+											/>
+											<!-- Heart Button -->
+											<div class="absolute right-2 top-2 z-10">
+												<Button
+													variant="ghost"
+													size="icon"
+													class="rounded-full bg-white/80 hover:bg-white"
+													onclick={(e) => {
+														e.preventDefault();
+														e.stopPropagation();
+														handleFavouriteClick(place.id);
+													}}
+												>
+													{#if $favouritePlace.isPending && pendingFavouritePlaceId === place.id}
+														<LoaderCircle class="size-6 animate-spin" />
+													{:else}
+														<Heart
+															class={`size-6 ${place.hasFavourited ? 'fill-rose-500 text-rose-500' : ''}`}
+														/>
+													{/if}
+												</Button>
+											</div>
 										</div>
-										<div class="text-muted-foreground flex items-center gap-2 text-xs">
-											<span>{place.cityName}, {place.regionName}</span>
-											<div class="flex items-center gap-1">
-												<Star class="fill-muted-foreground size-3" />
-												<span>{place.rating}</span>
+										<div class="p-3">
+											<div class="flex items-center gap-2">
+												<h3 class="line-clamp-1 text-lg font-semibold">
+													{place.name}
+												</h3>
+												{#if place.isVerified}
+													<BadgeCheck class="fill-primary size-4" />
+												{/if}
+											</div>
+											<div class="text-muted-foreground flex items-center gap-2 text-xs">
+												<span>{place.cityName}, {place.regionName}</span>
+												<div class="flex items-center gap-1">
+													<Star class="fill-muted-foreground size-3" />
+													<span>{place.rating}</span>
+												</div>
 											</div>
 										</div>
 									</div>
-								</div>
+								</a>
 							{/each}
 						</div>
 					</section>
@@ -335,7 +392,10 @@
 									<MapPinHouse />
 									<h2 class="text-2xl font-bold">Places in the {$island.data.name}</h2>
 								</div>
-								<a href="/" class="hover:underline">View all</a>
+								<a
+									href={`/explore?location=${$island.data.name.toLowerCase()}`}
+									class="hover:underline">View all</a
+								>
 							</div>
 							<div class="mb-2 mt-3 flex items-center gap-2">
 								<Button
@@ -374,9 +434,30 @@
 									<PlaceCardSingleImage {place} onFavouriteClick={handleFavouriteClick} />
 								{/each}
 							</div>
-							{#if $islandPlacesAndEvents.data.events.length === 20}
+							{#if $islandPlacesAndEvents.data.places.length === 20}
 								<div class="mb-5 flex w-full items-center justify-center">
-									<Button>View More</Button>
+									{#if currentPlaceFilter === 'popular'}
+										<a
+											href={`/explore?location=${$island.data.name.toLowerCase()}&minRating=4`}
+											class="hover:underline"
+										>
+											<Button>View More</Button>
+										</a>
+									{:else if currentPlaceFilter === 'new'}
+										<a
+											href={`/explore?location=${$island.data.name.toLowerCase()}&isNew=true`}
+											class="hover:underline"
+										>
+											<Button>View More</Button>
+										</a>
+									{:else if currentPlaceFilter === 'verified'}
+										<a
+											href={`/explore?location=${$island.data.name.toLowerCase()}&isVerified=true`}
+											class="hover:underline"
+										>
+											<Button>View More</Button>
+										</a>
+									{/if}
 								</div>
 							{/if}
 						{:else if $islandPlacesAndEvents.isLoading}

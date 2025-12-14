@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { Button } from '$lib/components/ui/button';
 	import { Badge } from '$lib/components/ui/badge';
-	import { Heart, LoaderCircle, Star } from '@lucide/svelte';
+	import { BadgeCheck, Heart, LoaderCircle, Star } from '@lucide/svelte';
 	import type { FilterablePlace, PlaceWithOptimizedImages } from '$lib/types/models';
 	import type { CarouselAPI } from '$lib/components/ui/carousel/context';
 	import * as Carousel from '$lib/components/ui/carousel/index.js';
@@ -67,7 +67,10 @@
 				</div>
 				<div class="space-y-3 py-2">
 					<div class="m-0 flex items-center justify-between">
-						<h3 class="truncate font-medium">{place.name}</h3>
+						<div class="flex items-center gap-1">
+							<h3 class="truncate font-medium">{place.name}</h3>
+							<BadgeCheck class="fill-primary size-4" />
+						</div>
 						<div class="flex items-center gap-1">
 							<Star class="size-3 fill-yellow-500 text-yellow-500" />
 							<span class="text-sm">{Number(place.rating).toFixed(1)}</span>

@@ -1,9 +1,8 @@
 <script lang="ts">
 	import PlaceImageGrid from './../../../lib/components/place-image-grid.svelte';
 	import { api } from '$lib/api/index.js';
-	import { BadgeCheck, LoaderCircle } from '@lucide/svelte';
+	import { BadgeCheck } from '@lucide/svelte';
 	import { createQuery, useQueryClient } from '@tanstack/svelte-query';
-	import MainNavbar from '$lib/components/main-navbar.svelte';
 	import Footer from '$lib/components/footer.svelte';
 	import Breadcrumbs from '$lib/components/breadcrumbs.svelte';
 	import { Button } from '$lib/components/ui/button';
@@ -35,6 +34,7 @@
 		getOrganizationSchema
 	} from '$lib/seo/structured-data';
 	import { getAbsoluteUrl, generateKeywords } from '$lib/seo/metadata';
+	import Navbar from '$lib/components/navbar.svelte';
 
 	interface Props {
 		data: {
@@ -288,7 +288,7 @@
 		/>
 
 		<div class="mx-auto max-w-7xl px-2 sm:px-4 lg:px-8">
-			<MainNavbar {user} currentPlace={$place.data.name} />
+			<Navbar {user} currentPlace={$place.data.name} />
 
 			<div class="py-2 lg:flex lg:items-center lg:justify-between">
 				<div class="min-w-0 flex-1">

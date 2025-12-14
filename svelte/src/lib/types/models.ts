@@ -348,6 +348,7 @@ export type DogAccess = 'indoor' | 'outdoor' | 'both';
 export type Location = {
 	id: string;
 	name: string;
+	slug: string;
 	displayName: string;
 	region: string | null;
 	placeCount: number;
@@ -359,6 +360,8 @@ export type FilterState = {
 	types: string[];
 	dogAccess: DogAccess;
 	minRating: number;
+	isNew: boolean;
+	isVerified: boolean;
 };
 
 export interface ExplorePlace {
@@ -394,13 +397,15 @@ export interface ExplorePlace {
 }
 
 export interface ExplorePlacesRequest {
-	city?: string;
+	location?: string;
 	types?: string[];
 	dogAccess?: 'indoor' | 'outdoor' | 'both';
 	page?: number;
 	limit?: number;
 	minRating?: number;
 	sortBy?: 'rating' | 'recent' | 'name';
+	isNew?: boolean;
+	isVerified?: boolean;
 }
 
 export interface Favourite extends Place {

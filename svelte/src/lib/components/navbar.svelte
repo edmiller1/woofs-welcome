@@ -47,7 +47,7 @@
 </script>
 
 <nav class="bg-background sticky top-0 z-50 w-full border-b">
-	<div class="mx-auto flex h-16 max-w-[1400px] items-center justify-between px-6">
+	<div class="mx-auto flex h-16 max-w-[1400px] items-center justify-between">
 		<div class="flex items-center gap-8">
 			<!-- Logo/Brand -->
 			<a href="/" class="flex items-center gap-2">
