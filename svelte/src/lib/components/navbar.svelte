@@ -42,6 +42,10 @@
 
 	let { user, currentPlace }: Props = $props();
 
+	const signInUrl = $derived(
+		`/sign-in?redirect=${encodeURIComponent(page.url.pathname + page.url.search)}`
+	);
+
 	const isExplorePageOrProfilePage =
 		page.url.pathname.includes('/explore') || page.url.pathname.includes('/profile');
 </script>
@@ -93,7 +97,9 @@
 					<UserNav {user} />
 				</div>
 			{:else}
-				<Button variant="default" class="ml-2">Sign In</Button>
+				<a href={signInUrl}>
+					<Button variant="default" class="ml-2">Sign In</Button>
+				</a>
 			{/if}
 			<!-- Mobile Menu -->
 			{#if !isExplorePageOrProfilePage}

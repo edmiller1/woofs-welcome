@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { redirect } from '@sveltejs/kit';
 	import { goto } from '$app/navigation';
 	import { auth } from '$lib/auth/stores';
 	import { Button } from '$lib/components/ui/button';
@@ -68,9 +69,12 @@
 
 			toast.success('Code verified successfully!');
 			if (result.data.user.name) {
-				goto('/');
+				goto(searchParams.redirect as string);
 			} else {
-				goto('/welcome?email=' + encodeURIComponent(result.data.user.email), { keepFocus: true });
+				goto(
+					`/welcome?email=${encodeURIComponent(result.data.user.email)}&redirect=${searchParams.redirect as string}`,
+					{ keepFocus: true }
+				);
 			}
 		} catch (error) {
 			console.error('OTP verification error: ', error);
@@ -136,7 +140,7 @@
 						<FormField {form} name="pin">
 							<FormControl>
 								{#snippet children({ props })}
-									<InputOTP maxlength={6} {...props} bind:value={$formData.pin}>
+									<InputOTP maxlength={6} {...props} bind:value={$formData.pin} autofocus>
 										{#snippet children({ cells })}
 											<InputOTPGroup>
 												{#each cells.slice(0, 3) as cell}

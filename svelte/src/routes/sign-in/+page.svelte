@@ -1,8 +1,11 @@
 <script lang="ts">
+	import { page } from '$app/state';
 	import { buttonVariants } from '$lib/components/ui/button';
 	import { Dog } from '@lucide/svelte';
 	import fluffs from '$lib/assets/fluffs.jpg';
 	import SignInForm from './components/sign-in-form.svelte';
+
+	const redirectTo = page.url.searchParams.get('redirect') || '/';
 </script>
 
 <svelte:head>
@@ -27,7 +30,7 @@
 		</div>
 		<div class="flex flex-1 items-center justify-center">
 			<div class="w-full max-w-xs">
-				<SignInForm />
+				<SignInForm {redirectTo} />
 			</div>
 		</div>
 	</div>

@@ -6,14 +6,17 @@
 	import { toast } from 'svelte-sonner';
 	import { LoaderCircle } from '@lucide/svelte';
 	import { sessionCache } from '$lib/auth/session-cache';
+	import { page } from '$app/state';
 
 	let status = $state('processing');
+
+	const redirectUrl = page.url.searchParams.get('redirect') || '/';
 
 	onMount(async () => {
 		try {
 			sessionCache.invalidate();
 
-			const success = await auth.handleOAuthCallback();
+			const success = await auth.handleOAuthCallback(redirectUrl);
 
 			if (success) {
 				status = 'success';
@@ -25,7 +28,7 @@
 				if ($needsProfileCompletion) {
 					authModalActions.setStep('welcome');
 					authModalActions.open('sign-in');
-					goto('/');
+					goto(redirectUrl);
 				} else {
 					toast.success('Successfully signed in!');
 					// Redirect handled in handleOAuthCallback
@@ -33,13 +36,13 @@
 			} else {
 				status = 'error';
 				toast.error('Sign in failed');
-				goto('/');
+				goto('/sign-in');
 			}
 		} catch (error) {
 			console.error('OAuth callback error:', error);
 			status = 'error';
 			toast.error('Sign in failed');
-			goto('/');
+			goto('/sign-in');
 		}
 	});
 </script>

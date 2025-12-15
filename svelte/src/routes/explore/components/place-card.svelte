@@ -102,11 +102,11 @@
 								</div>
 							</Carousel.Item>
 						{/each}
-						{#if showArrows}
-							<Carousel.Next onclick={handleNextClick} class="absolute right-2" />
-							<Carousel.Previous onclick={handlePreviousClick} class="absolute left-2" />
-						{/if}
 					</Carousel.Content>
+					{#if showArrows}
+						<Carousel.Next onclick={handleNextClick} class="absolute right-2" />
+						<Carousel.Previous onclick={handlePreviousClick} class="absolute left-2" />
+					{/if}
 
 					<!-- Selected indicator -->
 					{#if isSelected}

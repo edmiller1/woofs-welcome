@@ -60,11 +60,12 @@ export const auth = {
 		window.location.reload();
 	},
 
-	async oAuthSignIn(provider: string) {
-		// Use the Better Auth client method instead of manual redirect
+	async oAuthSignIn(provider: string, redirectTo: string) {
+		const encodedRedirect = encodeURIComponent(redirectTo);
+
 		const result = await authClient.signIn.social({
 			provider,
-			callbackURL: 'http://localhost:5173/auth/callback' // Your SvelteKit callback
+			callbackURL: `http://localhost:5173/auth/callback?redirect=${encodedRedirect}`
 		});
 		return result;
 	},
@@ -72,11 +73,11 @@ export const auth = {
 	async displayOneTap() {
 		if (!browser) return;
 		await authClient.oneTap({
-			callbackURL: 'http://localhost:5173/auth/callback' // Your SvelteKit callback
+			callbackURL: 'http://localhost:5173/auth/callback'
 		});
 	},
 
-	async handleOAuthCallback() {
+	async handleOAuthCallback(redirectTo: string) {
 		if (!browser) return;
 
 		try {
@@ -84,9 +85,8 @@ export const auth = {
 			if (data) {
 				session.set(data);
 
-				const redirectPath = localStorage.getItem('auth_redirect') || '/';
 				localStorage.removeItem('auth_redirect');
-				goto(redirectPath);
+				goto(redirectTo);
 
 				return true;
 			}

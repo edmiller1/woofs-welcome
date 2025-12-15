@@ -25,7 +25,9 @@
 		<a href="/profile">
 			<DropdownMenuItem><CircleUser class="text-foreground" /> Profile</DropdownMenuItem>
 		</a>
-		<DropdownMenuItem><Cog class="text-foreground" />Settings</DropdownMenuItem>
+		<a href="/profile/settings">
+			<DropdownMenuItem><Cog class="text-foreground" />Settings</DropdownMenuItem>
+		</a>
 		<DropdownMenuItem onclick={() => auth.signOut()}
 			><LogOut class="text-foreground" />Sign out</DropdownMenuItem
 		>

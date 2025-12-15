@@ -9,6 +9,12 @@
 	import { LoaderCircle } from '@lucide/svelte';
 	import { toast } from 'svelte-sonner';
 
+	interface Props {
+		redirectTo: string;
+	}
+
+	const { redirectTo }: Props = $props();
+
 	let email = $state<string>('');
 	let loading = $state<boolean>(false);
 	let googleLoading = $state<boolean>(false);
@@ -17,7 +23,7 @@
 		console.log('Google login initiated');
 		try {
 			googleLoading = true;
-			await auth.oAuthSignIn('google');
+			await auth.oAuthSignIn('google', redirectTo);
 		} catch (error) {
 			console.error('Google login error:', error);
 			toast.error('Failed to sign in with Google');
@@ -41,7 +47,7 @@
 
 			// Success - redirect to verification page
 			toast.success('Verification code sent to your email!');
-			goto(`/verify-otp?email=${encodeURIComponent(email)}&type=sign-in`);
+			goto(`/verify-otp?email=${encodeURIComponent(email)}&type=sign-in&redirect=${redirectTo}`);
 		} catch (error) {
 			console.error('Email sign-in error:', error);
 			toast.error('Failed to send verification code');
