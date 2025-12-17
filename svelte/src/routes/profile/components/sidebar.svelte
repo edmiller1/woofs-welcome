@@ -101,7 +101,7 @@
 		<div class="mb-10 flex items-center gap-3">
 			<div class="relative">
 				<Avatar.Root class="h-12 w-12 border-2 border-white shadow-sm">
-					<Avatar.Image src={user.image} alt={user.name} />
+					<Avatar.Image src={user.image} alt={user.name} class="object-cover object-center" />
 					<Avatar.Fallback>{getUserInitials(user.name)}</Avatar.Fallback>
 				</Avatar.Root>
 				<div

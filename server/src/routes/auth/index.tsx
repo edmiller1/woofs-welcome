@@ -15,8 +15,17 @@ import {
   DatabaseError,
   UnauthorizedError,
 } from "../../lib/errors";
-import { validateBody } from "../../middleware/validate";
-import { UpdateProfileInput, updateProfileSchema } from "./schemas";
+import {
+  validateBody,
+  validateParams,
+  validateQuery,
+} from "../../middleware/validate";
+import {
+  GetProfileFavouritesInput,
+  getProfileFavouritesSchema,
+  UpdateProfileInput,
+  updateProfileSchema,
+} from "./schemas";
 import { AuthService } from "../../services/auth.service";
 import { readRateLimiter } from "../../middleware/rate-limit";
 
@@ -179,3 +188,27 @@ authRouter.get("/favourites", readRateLimiter, authMiddleware, async (c) => {
 
   return c.json(result, 200);
 });
+
+authRouter.get(
+  "/favourites/profile",
+  readRateLimiter,
+  authMiddleware,
+  validateQuery(getProfileFavouritesSchema),
+  async (c) => {
+    const auth = c.get("user");
+
+    if (!auth) throw new UnauthorizedError();
+
+    const { limit, offset } = c.get(
+      "validatedQuery"
+    ) as GetProfileFavouritesInput;
+
+    const result = await AuthService.getProfileFavourites(
+      auth.id,
+      limit,
+      offset
+    );
+
+    return c.json(result, 200);
+  }
+);

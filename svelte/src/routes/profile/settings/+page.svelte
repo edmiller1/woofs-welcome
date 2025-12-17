@@ -139,13 +139,13 @@
 			<div class="space-y-4">
 				<div class="flex items-center justify-between border-b border-gray-100 pb-4 last:border-0">
 					<div class="max-w-2xl space-y-1">
+						<div class="space-y-1">
+							<h4 class="text-sm font-medium">Profile Picture</h4>
+						</div>
 						<Avatar.Root class="size-20">
 							<Avatar.Image src={user.image} alt={user.name} class="object-cover object-center" />
 							<Avatar.Fallback>{user.name[0].toUpperCase()}</Avatar.Fallback>
 						</Avatar.Root>
-						<div class="space-y-1">
-							<h4 class="text-sm font-medium">Profile Picture</h4>
-						</div>
 					</div>
 					<Button variant="outline" onclick={() => (avatarDialogOpen = true)}>Change Image</Button>
 				</div>

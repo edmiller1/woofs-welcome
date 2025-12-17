@@ -28,18 +28,12 @@
 	<div class="mx-auto max-w-full px-4 sm:px-6 lg:px-8">
 		<div class="flex h-16 justify-between">
 			<div class="flex">
-				<div class="flex shrink-0 items-center">
-					<img
-						src="https://tailwindcss.com/plus-assets/img/logos/mark.svg?color=indigo&shade=600"
-						alt="Your Company"
-						class="h-8 w-auto dark:hidden"
-					/>
-					<img
-						src="https://tailwindcss.com/plus-assets/img/logos/mark.svg?color=indigo&shade=500"
-						alt="Your Company"
-						class="not-dark:hidden h-8 w-auto"
-					/>
-				</div>
+				<a href="/" class="flex items-center gap-2">
+					<div class="bg-primary flex h-9 w-9 items-center justify-center rounded-lg">
+						<span class="text-primary-foreground text-lg font-bold">🐕</span>
+					</div>
+					<span class="text-foreground text-xl font-bold">Woofs Welcome</span>
+				</a>
 				<div class="hidden sm:ml-6 sm:flex sm:space-x-8">
 					<a
 						href="/"
@@ -67,6 +61,13 @@
 				<a href="/" class={cn(buttonVariants({ variant: 'green' }), 'rounded-full')}
 					>Download the App</a
 				>
+				{#if user}
+					<UserNav {user} />
+				{:else}
+					<a href="/sign-in" class={cn(buttonVariants({ variant: 'default' }), 'rounded-full')}
+						>Sign in</a
+					>
+				{/if}
 			</div>
 			<div class="-mr-2 flex items-center sm:hidden">
 				<!-- Mobile menu button -->

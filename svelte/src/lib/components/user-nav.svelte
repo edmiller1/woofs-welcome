@@ -17,7 +17,12 @@
 <DropdownMenu>
 	<DropdownMenuTrigger class={cn('cursor-pointer', className)}>
 		<Avatar class="ml-auto">
-			<AvatarImage src={user.image} alt={user.name} referrerpolicy="no-referrer" />
+			<AvatarImage
+				src={user.image}
+				alt={user.name}
+				referrerpolicy="no-referrer"
+				class="object-cover object-center"
+			/>
 			<AvatarFallback>{user.name}</AvatarFallback>
 		</Avatar>
 	</DropdownMenuTrigger>

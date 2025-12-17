@@ -4,6 +4,9 @@ import { Favourite, user } from "../db/schema";
 import { Cloudinary } from "../lib/cloudinary";
 import { AppError, DatabaseError, UnauthorizedError } from "../lib/errors";
 import { sanitizePlainText } from "../lib/sanitize";
+import { count } from "drizzle-orm";
+import { optimizePlaceImage } from "../lib/helpers/region";
+import { optimizePlaceImages } from "../lib/helpers";
 
 /**
  * Auth Service
@@ -92,6 +95,58 @@ export class AuthService {
       });
 
       return favourites.map((fav) => fav.place);
+    } catch (error) {
+      console.error("Error fetching favourites:", error);
+      if (error instanceof AppError) {
+        throw error;
+      }
+      throw new DatabaseError("Failed to fetch favourites", {
+        originalError: error,
+      });
+    }
+  }
+
+  static async getProfileFavourites(
+    userId: string,
+    limit: number = 12,
+    offset: number = 0
+  ) {
+    try {
+      const favourites = await db.query.Favourite.findMany({
+        where: eq(Favourite.userId, userId),
+        with: {
+          place: {
+            with: {
+              images: {
+                limit: 1,
+              },
+              city: {
+                with: {
+                  region: true,
+                },
+              },
+            },
+          },
+        },
+        limit: limit,
+        offset: offset,
+        orderBy: [desc(Favourite.createdAt)],
+      });
+
+      const [{ count: totalCount }] = await db
+        .select({ count: count() })
+        .from(Favourite)
+        .where(eq(Favourite.userId, userId));
+
+      const places = favourites.map((fav) => fav.place);
+      const hasMore = offset + places.length < totalCount;
+      const optimizedPlaces = await optimizePlaceImages(places);
+
+      return {
+        data: optimizedPlaces,
+        total: totalCount,
+        hasMore: hasMore,
+      };
     } catch (error) {
       console.error("Error fetching favourites:", error);
       if (error instanceof AppError) {

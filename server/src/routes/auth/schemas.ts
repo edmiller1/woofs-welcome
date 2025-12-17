@@ -38,3 +38,13 @@ export const emailParamSchema = z.object({
 });
 
 export type EmailParam = z.infer<typeof emailParamSchema>;
+
+//Get profile favourites schema
+export const getProfileFavouritesSchema = z.object({
+  limit: z.coerce.number().int().min(1).max(50).default(12),
+  offset: z.coerce.number().int().min(0).default(0),
+});
+
+export type GetProfileFavouritesInput = z.infer<
+  typeof getProfileFavouritesSchema
+>;

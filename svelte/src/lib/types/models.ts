@@ -472,3 +472,36 @@ export interface NotificationPreferencesInput {
 		  }
 		| undefined;
 }
+
+export interface FavouriteWithOptimizedImages extends Place {
+	city: CityWithRegion;
+	images: {
+		id: string;
+		altText: string;
+		caption: string;
+		createdAt: string;
+		displayOrder: number;
+		isApproved: boolean;
+		isPrimary: boolean;
+		source: string;
+		url: string;
+		placeId: string;
+		publicId: string;
+		sizes: string;
+		updatedAt: string;
+		uploadedBy: string;
+		src: string;
+		srcset: string;
+		responsive: {
+			'2xl': string;
+			lg: string;
+			md: string;
+			sm: string;
+			xs: string;
+		};
+		webp: {
+			src: string;
+			srcset: string;
+		};
+	}[];
+}
