@@ -48,3 +48,17 @@ export const getProfileFavouritesSchema = z.object({
 export type GetProfileFavouritesInput = z.infer<
   typeof getProfileFavouritesSchema
 >;
+
+export const getProfileReviewsSchema = z.object({
+  limit: z.coerce.number().int().min(1).max(50).default(12),
+  offset: z.coerce.number().int().min(0).default(0),
+});
+
+export type GetProfileReviewsInput = z.infer<typeof getProfileReviewsSchema>;
+
+export const deleteReviewSchema = z.object({
+  slug: z.string().min(1, "Slug is required"),
+  reviewId: z.string().uuid("Invalid review ID"),
+});
+
+export type DeleteReviewInput = z.infer<typeof deleteReviewSchema>;

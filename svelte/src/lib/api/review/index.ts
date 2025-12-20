@@ -4,6 +4,8 @@ import { getPlaceReviews } from './getPlaceReviews';
 import { getReviewStats } from './getReviewStats';
 import { likeReview } from './likeReview';
 import { reportReview } from './reportReview';
+import { deleteReview } from './deleteReview';
+import { editReview } from './editReview';
 
 export const review = {
 	getBreeds,
@@ -11,5 +13,7 @@ export const review = {
 	getPlaceReviews,
 	getReviewStats,
 	likeReview,
-	reportReview
+	reportReview,
+	deleteReview,
+	editReview
 };

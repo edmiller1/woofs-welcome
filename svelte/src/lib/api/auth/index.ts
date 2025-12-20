@@ -4,6 +4,7 @@ import { welcome } from './welcome';
 import { getFavourites } from './getFavourites';
 import { updateProfile } from './updateProfile';
 import { getProfileFavourites } from './getProfilefavourites';
+import { getProfileReviews } from './getProfileReviews';
 
 export const auth = {
 	createUser,
@@ -11,5 +12,6 @@ export const auth = {
 	welcome,
 	getFavourites,
 	updateProfile,
-	getProfileFavourites
+	getProfileFavourites,
+	getProfileReviews
 };

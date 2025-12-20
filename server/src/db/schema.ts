@@ -629,6 +629,20 @@ export type TagSelect = InferSelectModel<typeof Tag>;
 export type PlaceTagSelect = InferSelectModel<typeof PlaceTag>;
 export type ReviewLikeSelect = InferSelectModel<typeof ReviewLike>;
 export type ReviewReportSelect = InferSelectModel<typeof ReviewReport>;
+export type ReviewImageSelect = InferSelectModel<typeof ReviewImage>;
+
+export type CityWithRegionSelect = CitySelect & {
+  region: RegionSelect;
+};
+
+export type PlaceWithCityAndRegionSelect = PlaceSelect & {
+  city: CityWithRegionSelect | null;
+};
+
+export type UserReviewSelect = ReviewSelect & {
+  place: PlaceWithCityAndRegionSelect;
+  images: ReviewImageSelect[];
+};
 
 export type PlaceWithImagesSelect = PlaceSelect & {
   images: PlaceImageSelect[];

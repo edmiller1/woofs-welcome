@@ -1,20 +1,31 @@
 import { db } from "../db";
-import { and, desc, eq, sql } from "drizzle-orm";
-import { Review, ReviewLike, ReviewReport, Place } from "../db/schema";
+import { and, desc, eq, inArray, sql } from "drizzle-orm";
+import {
+  Review,
+  ReviewLike,
+  ReviewReport,
+  Place,
+  ReviewImage,
+} from "../db/schema";
 import {
   ConflictError,
   NotFoundError,
   BadRequestError,
   DatabaseError,
   AppError,
+  UnauthorizedError,
 } from "../lib/errors";
 import { sanitizePlainText, sanitizeRichText } from "../lib/sanitize";
 import { processReviewImagesInBackground } from "../lib/helpers";
-import type {
-  CreateReviewInput,
-  ReportReviewInput,
-  GetReviewsQuery,
+import {
+  type CreateReviewInput,
+  type ReportReviewInput,
+  type GetReviewsQuery,
+  type EditReviewInput,
+  editReviewSchema,
+  EditReviewRequest,
 } from "../routes/review/schemas";
+import { Cloudinary } from "../lib/cloudinary";
 
 /**
  * Review Service
@@ -110,7 +121,7 @@ export class ReviewService {
         message: "Review created! Images are being processed.",
       };
     } catch (error) {
-      // Re-throw known errors
+      console.log("Error creating review:", error);
       if (
         error instanceof ConflictError ||
         error instanceof NotFoundError ||
@@ -143,6 +154,8 @@ export class ReviewService {
       if (!place) {
         throw new NotFoundError("Place");
       }
+
+      console.log(query);
 
       // 2. Fetch reviews
       const reviews = await db.query.Review.findMany({
@@ -406,6 +419,185 @@ export class ReviewService {
       }
 
       throw new DatabaseError("Failed to report review", {
+        originalError: error,
+      });
+    }
+  }
+
+  static async deleteReview(userId: string, reviewId: string) {
+    try {
+      const reviewImages = await db.query.ReviewImage.findMany({
+        where: eq(ReviewImage.reviewId, reviewId),
+      });
+
+      const review = await db.transaction(async (tx) => {
+        await tx
+          .delete(Review)
+          .where(and(eq(Review.userId, userId), eq(Review.id, reviewId)));
+        await tx.delete(ReviewImage).where(eq(ReviewImage.reviewId, reviewId));
+        await tx.delete(ReviewLike).where(eq(ReviewLike.reviewId, reviewId));
+        await tx
+          .delete(ReviewReport)
+          .where(eq(ReviewReport.reviewId, reviewId));
+
+        const [review] = await tx
+          .select({ id: Review.id })
+          .from(Review)
+          .where(eq(Review.id, reviewId));
+        return review;
+      });
+
+      if (!review) {
+        reviewImages.forEach(async (image) => {
+          await Cloudinary.deleteImage(image.publicId);
+        });
+      }
+
+      return {
+        success: true,
+      };
+    } catch (error) {
+      console.error("Error deleting review:", error);
+      if (error instanceof AppError) {
+        throw error;
+      }
+      throw new DatabaseError("Failed to delete review", {
+        originalError: error,
+      });
+    }
+  }
+
+  static async editReview(
+    userId: string,
+    reviewId: string,
+    data: EditReviewRequest
+  ) {
+    try {
+      const review = await db.query.Review.findFirst({
+        where: eq(Review.id, reviewId),
+        with: {
+          images: true,
+        },
+      });
+
+      if (!review) {
+        throw new NotFoundError("Review");
+      }
+
+      if (review.userId !== userId) {
+        throw new UnauthorizedError("You cannot edit this review");
+      }
+
+      // Validate image count manually
+      const remainingExisting =
+        review.images.length - (data.imagesToDelete?.length || 0);
+      const totalImages = remainingExisting + (data.newImages?.length || 0);
+
+      if (totalImages > 6) {
+        throw new BadRequestError(
+          "Total images cannot exceed 6. Please remove some existing images before adding new ones."
+        );
+      }
+
+      const validationData = {
+        ...data,
+        existingImageCount: review.images.length,
+      };
+
+      const result = editReviewSchema.safeParse(validationData);
+
+      if (!result.success) {
+        throw new BadRequestError("Invalid review data", {
+          details: result.error.message,
+        });
+      }
+
+      const resultData = {
+        ...result.data,
+        title: sanitizePlainText(result.data.title),
+        content: sanitizeRichText(result.data.content),
+        dogBreeds: result.data.dogBreeds.map((breed) =>
+          sanitizePlainText(breed)
+        ),
+      };
+
+      // Get images to delete (for Cloudinary cleanup)
+      let imagesToDeleteFromCloudinary: { publicId: string }[] = [];
+
+      if (data.imagesToDelete && data.imagesToDelete.length > 0) {
+        imagesToDeleteFromCloudinary = await db.query.ReviewImage.findMany({
+          where: inArray(ReviewImage.publicId, data.imagesToDelete),
+          columns: {
+            publicId: true,
+          },
+        });
+      }
+
+      await db.transaction(async (tx) => {
+        // 1. Update the review
+        await tx
+          .update(Review)
+          .set({
+            rating: resultData.rating,
+            title: resultData.title,
+            content: resultData.content,
+            visitDate: new Date(resultData.visitDate),
+            numDogs: resultData.numDogs,
+            dogBreeds: resultData.dogBreeds,
+            timeOfVisit: resultData.timeOfVisit,
+            isFirstVisit: resultData.isFirstVisit,
+            updatedAt: new Date(),
+          })
+          .where(eq(Review.id, reviewId));
+
+        // 2. Delete images from database
+        if (data.imagesToDelete && data.imagesToDelete.length > 0) {
+          await tx
+            .delete(ReviewImage)
+            .where(inArray(ReviewImage.publicId, data.imagesToDelete));
+        }
+      });
+
+      // 3. Delete images from Cloudinary (outside transaction - external service)
+      // If this fails, images will be orphaned in Cloudinary but DB is consistent
+      if (imagesToDeleteFromCloudinary.length > 0) {
+        const deletePromises = imagesToDeleteFromCloudinary.map((img) =>
+          Cloudinary.deleteImage(img.publicId).catch((err) => {
+            console.error(
+              `Failed to delete image ${img.publicId} from Cloudinary:`,
+              err
+            );
+            // Don't throw - log and continue
+          })
+        );
+        await Promise.allSettled(deletePromises);
+      }
+
+      // 4. Process new images in background
+      if (data.newImages && data.newImages.length > 0) {
+        processReviewImagesInBackground(
+          data.newImages,
+          data.placeSlug,
+          reviewId
+        ).catch((err) => {
+          console.error(
+            `Failed to process images for review ${reviewId}:`,
+            err
+          );
+        });
+      }
+
+      return {
+        success: true,
+        message: "Review updated successfully!",
+        reviewId,
+      };
+    } catch (error) {
+      console.error("Error editing review:", error);
+      if (error instanceof AppError) {
+        throw error;
+      }
+      throw new DatabaseError("Failed to edit review", {
         originalError: error,
       });
     }

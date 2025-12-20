@@ -69,7 +69,7 @@ export const Cloudinary = {
       return null;
     }
   },
-  deleteAvatar: async (publicId: string) => {
+  deleteImage: async (publicId: string) => {
     try {
       const result = await cloudinary.uploader.destroy(publicId);
       if (result.result === "ok") {

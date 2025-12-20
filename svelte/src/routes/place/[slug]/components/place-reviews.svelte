@@ -3,8 +3,8 @@
 	import { Badge } from '$lib/components/ui/badge';
 	import { Button, buttonVariants } from '$lib/components/ui/button';
 	import { formatDate, getTimeOfVisitEmoji, getUserInitials } from '$lib/helpers';
-	import type { BAUser, ErrorResponse } from '$lib/types/models';
-	import { Flag, LoaderCircle, Star, ThumbsUp } from '@lucide/svelte';
+	import type { BAUser } from '$lib/types/models';
+	import { Flag, LoaderCircle, SquarePen, Star, ThumbsUp } from '@lucide/svelte';
 	import * as Pagination from '$lib/components/ui/pagination/index.js';
 	import * as Tooltip from '$lib/components/ui/tooltip/index.js';
 	import { cn } from '$lib/utils';
@@ -12,11 +12,11 @@
 	import { api } from '$lib/api';
 	import * as Avatar from '$lib/components/ui/avatar/index.js';
 	import { toast } from 'svelte-sonner';
-	import type { AxiosError } from 'axios';
 	import ReviewImageDialog from './review-image-dialog.svelte';
 	import ReportReviewDialog from './report-review-dialog.svelte';
 	import { goto } from '$app/navigation';
 	import ErrorBoundary from '$lib/components/error-boundary.svelte';
+	import DeleteReviewModal from '$lib/components/delete-review-modal.svelte';
 
 	interface Props {
 		placeName: string;
@@ -32,10 +32,11 @@
 	const queryClient = useQueryClient();
 
 	let open = $state(false);
+	let isDeleteOpen = $state<boolean>(false);
 
 	const reviews = createQuery({
 		queryKey: ['reviews', placeSlug, currentPage],
-		queryFn: () => api.review.getPlaceReviews(placeSlug, currentPage),
+		queryFn: () => api.review.getPlaceReviews(placeSlug, currentPage - 1),
 		enabled: !!placeSlug
 	});
 
@@ -88,6 +89,15 @@
 
 	const nextPage = () => onPageChange(currentPage + 1);
 	const prevPage = () => onPageChange(currentPage - 1);
+
+	// Handle open delete modal
+	const handleDeleteModalOpen = () => {
+		if (isDeleteOpen) {
+			isDeleteOpen = false;
+		} else {
+			isDeleteOpen = true;
+		}
+	};
 </script>
 
 <ErrorBoundary error={$reviews.error}>
@@ -148,6 +158,7 @@
 
 				<div class="space-y-6">
 					{#each $reviews.data.reviews as review}
+						{@const reviewId = review.id}
 						<div class="rounded-lg border p-6 shadow-sm">
 							<div class="mb-4 flex items-start gap-4">
 								<Avatar.Root class="size-12">
@@ -236,6 +247,27 @@
 													{openReportDialog}
 													reportLoading={$reportReview.isPending}
 													{open}
+												/>
+											</div>
+										{:else}
+											<div class="flex items-center gap-2">
+												<Tooltip.Provider>
+													<Tooltip.Root>
+														<Tooltip.Trigger>
+															<Button variant="outline" size="icon">
+																<SquarePen class="size-4" />
+															</Button>
+														</Tooltip.Trigger>
+														<Tooltip.Content>
+															<p>Edit review</p>
+														</Tooltip.Content>
+													</Tooltip.Root>
+												</Tooltip.Provider>
+												<DeleteReviewModal
+													{reviewId}
+													{placeSlug}
+													openModal={handleDeleteModalOpen}
+													open={isDeleteOpen}
 												/>
 											</div>
 										{/if}

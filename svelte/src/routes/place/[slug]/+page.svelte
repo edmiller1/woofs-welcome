@@ -65,12 +65,7 @@
 	let headerElement = $state<HTMLElement>();
 	let showStickyHeader = $state(false);
 	let mapOpen = $state<boolean>(false);
-
-	const currentPage = $derived(() => {
-		const pageParam = searchParams.page;
-		const page = Array.isArray(pageParam) ? pageParam[0] : pageParam;
-		return page ? parseInt(page) : 1;
-	});
+	let currentPage = $state<number>(1);
 
 	const place = createQuery({
 		queryKey: ['place', slug],
@@ -134,9 +129,7 @@
 	});
 
 	const changePage = (newPage: number) => {
-		const url = new URL(window.location.href);
-		url.searchParams.set('page', newPage.toString());
-		goto(url.toString(), { replaceState: false, keepFocus: true });
+		currentPage = newPage;
 	};
 
 	const changeTab = (tab: string) => {
@@ -445,7 +438,7 @@
 							{user}
 							placeName={$place.data.name}
 							placeSlug={$place.data.slug}
-							currentPage={currentPage()}
+							{currentPage}
 							onPageChange={changePage}
 						/>
 					</div>

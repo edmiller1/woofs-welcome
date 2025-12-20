@@ -1,12 +1,12 @@
 import { desc, eq } from "drizzle-orm";
 import { db } from "../db";
-import { Favourite, user } from "../db/schema";
+import { Favourite, Review, user } from "../db/schema";
 import { Cloudinary } from "../lib/cloudinary";
 import { AppError, DatabaseError, UnauthorizedError } from "../lib/errors";
 import { sanitizePlainText } from "../lib/sanitize";
 import { count } from "drizzle-orm";
 import { optimizePlaceImage } from "../lib/helpers/region";
-import { optimizePlaceImages } from "../lib/helpers";
+import { optimizePlaceImages, optimizeReviewImages } from "../lib/helpers";
 
 /**
  * Auth Service
@@ -218,7 +218,7 @@ export class AuthService {
         // Delete old image if exists
         if (userRecord.imagePublicId) {
           try {
-            await Cloudinary.deleteAvatar(userRecord.imagePublicId);
+            await Cloudinary.deleteImage(userRecord.imagePublicId);
           } catch (error) {
             console.error("Failed to delete old avatar:", error);
             // Continue anyway - don't fail the whole update
@@ -268,6 +268,55 @@ export class AuthService {
         throw error;
       }
       throw new DatabaseError("Failed to delete user account", {
+        originalError: error,
+      });
+    }
+  }
+
+  static async getProfileReviews(
+    userId: string,
+    limit: number = 12,
+    offset: number = 0
+  ) {
+    try {
+      const reviews = await db.query.Review.findMany({
+        where: eq(Review.userId, userId),
+        with: {
+          place: {
+            with: {
+              city: {
+                with: {
+                  region: true,
+                },
+              },
+            },
+          },
+          images: true,
+        },
+        limit: limit,
+        offset: offset,
+        orderBy: [desc(Review.createdAt)],
+      });
+
+      const [{ count: totalCount }] = await db
+        .select({ count: count() })
+        .from(Review)
+        .where(eq(Review.userId, userId));
+
+      const hasMore = offset + reviews.length < totalCount;
+      const optimizedReviews = await optimizeReviewImages(reviews);
+
+      return {
+        data: optimizedReviews,
+        total: totalCount,
+        hasMore: hasMore,
+      };
+    } catch (error) {
+      console.error("Error fetching profile reviews:", error);
+      if (error instanceof AppError) {
+        throw error;
+      }
+      throw new DatabaseError("Failed to fetch profile reviews", {
         originalError: error,
       });
     }

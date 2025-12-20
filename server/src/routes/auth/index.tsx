@@ -23,6 +23,8 @@ import {
 import {
   GetProfileFavouritesInput,
   getProfileFavouritesSchema,
+  GetProfileReviewsInput,
+  getProfileReviewsSchema,
   UpdateProfileInput,
   updateProfileSchema,
 } from "./schemas";
@@ -208,6 +210,24 @@ authRouter.get(
       limit,
       offset
     );
+
+    return c.json(result, 200);
+  }
+);
+
+authRouter.get(
+  "/reviews/profile",
+  readRateLimiter,
+  authMiddleware,
+  validateQuery(getProfileReviewsSchema),
+  async (c) => {
+    const auth = c.get("user");
+
+    if (!auth) throw new UnauthorizedError();
+
+    const { limit, offset } = c.get("validatedQuery") as GetProfileReviewsInput;
+
+    const result = await AuthService.getProfileReviews(auth.id, limit, offset);
 
     return c.json(result, 200);
   }

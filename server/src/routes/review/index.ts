@@ -1,32 +1,31 @@
 import { Hono } from "hono";
-import { db } from "../../db";
-import { and, desc, eq, sql } from "drizzle-orm";
 import { authMiddleware, optionalAuthMiddleware } from "../../middleware/auth";
-import { Place, Review, ReviewLike, ReviewReport } from "../../db/schema";
-import { processReviewImagesInBackground } from "../../lib/helpers";
 import {
   reviewRateLimiter,
   readRateLimiter,
   writeRateLimiter,
 } from "../../middleware/rate-limit";
+import { BadRequestError, UnauthorizedError } from "../../lib/errors";
 import {
-  AppError,
-  BadRequestError,
-  ConflictError,
-  DatabaseError,
-  NotFoundError,
-  UnauthorizedError,
-} from "../../lib/errors";
-import { sanitizePlainText, sanitizeRichText } from "../../lib/sanitize";
-import { validateBody, validateQuery } from "../../middleware/validate";
+  validateBody,
+  validateParams,
+  validateQuery,
+} from "../../middleware/validate";
 import {
   createReviewSchema,
   getReviewsQuerySchema,
   type CreateReviewInput,
   type ReportReviewInput,
   type GetReviewsQuery,
+  reviewIdParamSchema,
+  ReviewIdParam,
+  EditReviewInput,
+  editReviewSchema,
+  editReviewRequestSchema,
+  EditReviewRequest,
 } from "./schemas";
 import { ReviewService } from "../../services/review.service";
+import { DeleteReviewInput, deleteReviewSchema } from "../auth/schemas";
 
 export const reviewRouter = new Hono();
 
@@ -146,6 +145,53 @@ reviewRouter.post(
     const reportData = c.get("validatedBody") as ReportReviewInput;
 
     const result = ReviewService.reportReview(user.id, slug, reportData);
+
+    return c.json(result, 200);
+  }
+);
+
+reviewRouter.delete(
+  "/:slug/:reviewId",
+  authMiddleware,
+  writeRateLimiter,
+  validateParams(deleteReviewSchema),
+  async (c) => {
+    const auth = c.get("user");
+
+    if (!auth) {
+      throw new UnauthorizedError("No auth token");
+    }
+
+    const { slug, reviewId } = c.req.param() as DeleteReviewInput;
+
+    if (!slug || !reviewId) {
+      throw new BadRequestError("Slug and review Id are required");
+    }
+
+    const result = await ReviewService.deleteReview(auth.id, reviewId);
+
+    return c.json(result, 200);
+  }
+);
+
+reviewRouter.patch(
+  "/:reviewId",
+  authMiddleware,
+  writeRateLimiter,
+  validateParams(reviewIdParamSchema),
+  validateBody(editReviewRequestSchema),
+  async (c) => {
+    const auth = c.get("user");
+
+    if (!auth) {
+      throw new UnauthorizedError("No auth token");
+    }
+
+    const { reviewId } = c.req.param() as ReviewIdParam;
+
+    const data = c.get("validatedBody") as EditReviewRequest;
+
+    const result = await ReviewService.editReview(auth.id, reviewId, data);
 
     return c.json(result, 200);
   }

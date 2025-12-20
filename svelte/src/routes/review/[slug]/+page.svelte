@@ -153,8 +153,8 @@
 		if (formData.title.length < 10 || formData.title.length > 30) {
 			newErrors.title = 'Title must be between 10-30 characters';
 		}
-		if (formData.content.length < 10 || formData.content.length > 1000) {
-			newErrors.content = 'Review must be between 10-1000 characters';
+		if (formData.content.length < 20) {
+			newErrors.content = 'Review must be greater than 20 characters';
 		}
 		if (!formData.visitDate) {
 			newErrors.visitDate = 'Visit date is required';

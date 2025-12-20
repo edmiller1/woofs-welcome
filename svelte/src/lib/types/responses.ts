@@ -6,12 +6,15 @@ import type {
 	Claim,
 	IslandWithRegions,
 	OptimizedImage,
+	OptimizedReviewImage,
 	Place,
+	PlaceWithCityAndRegion,
 	PlaceWithDistance,
 	PlaceWithOptimizedImages,
 	Region,
 	RegionWithCities,
 	RegionWithIsland,
+	ReviewImage,
 	ReviewWithUserAndImages,
 	Stats
 } from './models';
@@ -235,4 +238,27 @@ export interface SearchLocationsResponse {
 	region: string | null;
 	placeCount: number;
 	type: 'city' | 'region';
+}
+
+export interface ProfileReviewResponse {
+	data: {
+		content: string;
+		createdAt: string;
+		dogBreeds: string[];
+		id: string;
+		images: OptimizedReviewImage[];
+		isFirstVisit: boolean;
+		likesCount: number;
+		numDogs: number;
+		place: PlaceWithCityAndRegion;
+		placeId: string;
+		rating: number;
+		timeOfVisit: string;
+		title: string;
+		updatedAt: string;
+		userId: string;
+		visitDate: string;
+	}[];
+	total: number;
+	hasMore: boolean;
 }

@@ -28,10 +28,12 @@
 
 	const offset = $derived((currentPage - 1) * limit);
 
-	const favourites = createQuery({
-		queryKey: ['profile-favourites', offset],
-		queryFn: () => api.auth.getProfileFavourites(limit, offset)
-	});
+	const favourites = $derived(
+		createQuery({
+			queryKey: ['profile-favourites', offset],
+			queryFn: () => api.auth.getProfileFavourites(limit, offset)
+		})
+	);
 
 	const favouritePlace = createMutation({
 		mutationFn: api.place.favouritePlace,

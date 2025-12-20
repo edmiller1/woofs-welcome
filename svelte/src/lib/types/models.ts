@@ -101,6 +101,10 @@ export interface Place {
 	activeClaim?: Claim | null;
 }
 
+export interface PlaceWithCityAndRegion extends Place {
+	city: CityWithRegion;
+}
+
 export interface PlaceImage {
 	id: string;
 	url: string;
@@ -275,6 +279,26 @@ export interface Review {
 		name: string;
 		image: string;
 	};
+	images: ReviewImage[];
+}
+
+export interface ProfileReview {
+	content: string;
+	createdAt: string;
+	dogBreeds: string[];
+	id: string;
+	images: OptimizedReviewImage[];
+	isFirstVisit: boolean;
+	likesCount: number;
+	numDogs: number;
+	place: PlaceWithCityAndRegion;
+	placeId: string;
+	rating: number;
+	timeOfVisit: string;
+	title: string;
+	updatedAt: string;
+	userId: string;
+	visitDate: string;
 }
 
 export interface ReviewImage {
@@ -285,6 +309,23 @@ export interface ReviewImage {
 	altText: string;
 	createdAt: string;
 	updatedAt: string;
+}
+
+export interface OptimizedReviewImage extends ReviewImage {
+	responsive: {
+		'2xl': string;
+		lg: string;
+		md: string;
+		sm: string;
+		xs: string;
+	};
+	sizes: string;
+	src: string;
+	srcset: string;
+	webp: {
+		src: string;
+		srcset: string;
+	};
 }
 
 export interface ReviewWithUserAndImages extends Review {

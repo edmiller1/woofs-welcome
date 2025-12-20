@@ -11,6 +11,8 @@ import {
   PlaceWithImagesSelect,
   Region,
   ReviewImage,
+  ReviewImageSelect,
+  UserReviewSelect,
   UserSelect,
 } from "../db/schema";
 import { Cloudinary } from "./cloudinary";
@@ -106,6 +108,16 @@ export const optimizePlaceImages = async (places: PlaceWithImagesSelect[]) => {
   return places.map((place) => ({
     ...place,
     images: place.images.map((image: PlaceImageSelect) => ({
+      ...image,
+      ...getResponsiveImageUrls(image.url),
+    })),
+  }));
+};
+
+export const optimizeReviewImages = async (reviews: UserReviewSelect[]) => {
+  return reviews.map((review) => ({
+    ...review,
+    images: review.images.map((image: ReviewImageSelect) => ({
       ...image,
       ...getResponsiveImageUrls(image.url),
     })),
