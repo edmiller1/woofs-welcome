@@ -1,8 +1,8 @@
 import { protectedProcedure } from '$lib/axios';
-import type { Favourite } from '$lib/types/models';
+import type { GetFavouritesResponse } from '$lib/types/user';
 
 export const getFavourites = async () => {
-	const response = await protectedProcedure.get<Favourite[]>('/user/favourites');
+	const response = await protectedProcedure.get<GetFavouritesResponse[]>('/user/favourites');
 
 	return response.data;
 };

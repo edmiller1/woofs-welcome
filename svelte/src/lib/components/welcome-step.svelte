@@ -5,7 +5,6 @@
 	import { Avatar, AvatarImage, AvatarFallback } from '$lib/components/ui/avatar';
 	import { ImagePlus, LoaderCircle, X } from '@lucide/svelte';
 	import { useValidation } from '$lib/hooks/use-validation.svelte';
-	import { profileUpdateSchema } from '$lib/validation/schemas';
 	import ValidationError from '$lib/components/validation-error.svelte';
 	import { createMutation } from '@tanstack/svelte-query';
 	import { api } from '$lib/api';
@@ -15,6 +14,7 @@
 	import { getFileBase64, getUserInitials } from '$lib/helpers';
 	import { auth } from '$lib/auth/stores';
 	import confetti from 'canvas-confetti';
+	import { profileUpdateSchema } from '$lib/schemas/user';
 
 	interface Props {
 		onComplete: () => void;

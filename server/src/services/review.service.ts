@@ -16,7 +16,10 @@ import {
   UnauthorizedError,
 } from "../lib/errors";
 import { sanitizePlainText, sanitizeRichText } from "../lib/sanitize";
-import { processReviewImagesInBackground } from "../lib/helpers";
+import {
+  optimizeReviewImages,
+  processReviewImagesInBackground,
+} from "../lib/helpers";
 import {
   type CreateReviewInput,
   type ReportReviewInput,
@@ -155,8 +158,6 @@ export class ReviewService {
         throw new NotFoundError("Place");
       }
 
-      console.log(query);
-
       // 2. Fetch reviews
       const reviews = await db.query.Review.findMany({
         where: eq(Review.placeId, place.id),
@@ -177,9 +178,11 @@ export class ReviewService {
         },
       });
 
+      const optimizedReviews = await optimizeReviewImages(reviews);
+
       // 3. Add user-specific data if authenticated
       if (userId) {
-        return reviews.map((review) => ({
+        return optimizedReviews.map((review) => ({
           ...review,
           hasLiked: review.likes.some((like) => like.userId === userId),
           hasReported: review.reports.some(
@@ -190,7 +193,7 @@ export class ReviewService {
         }));
       }
 
-      return reviews;
+      return optimizedReviews;
     } catch (error) {
       if (error instanceof NotFoundError) {
         throw error;

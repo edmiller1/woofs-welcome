@@ -1,7 +1,6 @@
 <script lang="ts">
 	import { auth } from '$lib/auth/stores';
 	import { Avatar, AvatarFallback, AvatarImage } from '$lib/components/ui/avatar';
-	import { type BAUser } from '$lib/types/models';
 	import { cn } from '$lib/utils';
 	import { CircleUser, Cog, LogOut } from '@lucide/svelte';
 	import {
@@ -10,6 +9,7 @@
 		DropdownMenuItem,
 		DropdownMenuTrigger
 	} from './ui/dropdown-menu';
+	import type { BAUser } from '$lib/types/user';
 
 	const { user, className }: { user: BAUser; className?: string } = $props();
 </script>

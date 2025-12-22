@@ -1,5 +1,8 @@
 import { protectedProcedure } from '$lib/axios';
-import type { NotificationPreferences, NotificationPreferencesInput } from '$lib/types/models';
+import type {
+	NotificationPreferences,
+	NotificationPreferencesInput
+} from '$lib/types/notification';
 
 export const updateNotificationPreferences = async (updates: NotificationPreferencesInput) => {
 	const response = await protectedProcedure.patch<{ updatedPrefs: NotificationPreferences }>(

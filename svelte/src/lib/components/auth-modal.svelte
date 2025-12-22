@@ -12,9 +12,10 @@
 	import { api } from '$lib/api';
 	import WelcomeStep from '$lib/components/welcome-step.svelte';
 	import { useValidation } from '$lib/hooks/use-validation.svelte';
-	import { emailSchema } from '$lib/validation/schemas';
 	import ValidationError from './validation-error.svelte';
 	import { cn } from '$lib/utils';
+	import { page } from '$app/state';
+	import { emailSchema } from '$lib/schemas/user';
 
 	let email = $state<string>('');
 	let otp = $state<string>('');
@@ -104,7 +105,7 @@
 	const handleGoogleLogin = async () => {
 		googleLoading = true;
 		try {
-			await auth.oAuthSignIn('google');
+			await auth.oAuthSignIn('google', page.url.href);
 		} catch (error) {
 			console.error('Google login error:', error);
 			toast.error('Failed to sign in with Google');

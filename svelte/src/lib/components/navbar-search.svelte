@@ -1,7 +1,6 @@
 <script lang="ts">
 	import { Search, Clock, X, LoaderCircle, Star } from '@lucide/svelte';
 	import { api } from '$lib/api';
-	import type { PlaceWithOptimizedImages } from '$lib/types/models';
 	import { goto } from '$app/navigation';
 	import { onMount } from 'svelte';
 	import {
@@ -11,12 +10,13 @@
 		removeFromSearchHistory,
 		type SearchHistoryItem
 	} from '$lib/utils/search-history';
+	import type { GetPlaceResponse } from '$lib/types/place';
 
 	//state
 	let searchQuery = $state<string>('');
 	let isOpen = $state<boolean>(false);
 	let isLoading = $state<boolean>(false);
-	let suggestions = $state<PlaceWithOptimizedImages[]>([]);
+	let suggestions = $state<GetPlaceResponse[]>([]);
 	let searchHistory = $state<SearchHistoryItem[]>([]);
 	let selectedIndex = $state(-1);
 	let searchInputRef: HTMLInputElement;
@@ -104,7 +104,7 @@
 	}
 
 	// Handle suggestion click
-	function handleSuggestionClick(suggestion: PlaceWithOptimizedImages) {
+	function handleSuggestionClick(suggestion: GetPlaceResponse) {
 		addSearchHistory(suggestion.name);
 		searchQuery = '';
 		suggestions = [];

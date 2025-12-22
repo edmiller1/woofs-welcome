@@ -1,5 +1,5 @@
 import { protectedProcedure } from '$lib/axios';
-import type { GetNearbyPlacesResponse } from '$lib/types/responses';
+import type { GetNearbyPlacesResponse } from '$lib/types/place';
 
 export const getNearbyPlaces = async (data: {
 	slug: string;

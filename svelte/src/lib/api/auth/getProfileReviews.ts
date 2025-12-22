@@ -1,10 +1,13 @@
 import { protectedProcedure } from '$lib/axios';
-import type { ProfileReviewResponse } from '$lib/types/responses';
+import type { GetProfileReviewsResponse } from '$lib/types/user';
 
 export const getProfileReviews = async (limit: number = 12, offset: number = 0) => {
-	const response = await protectedProcedure.get<ProfileReviewResponse>('/user/reviews/profile', {
-		params: { limit, offset }
-	});
+	const response = await protectedProcedure.get<GetProfileReviewsResponse>(
+		'/user/reviews/profile',
+		{
+			params: { limit, offset }
+		}
+	);
 
 	return response.data;
 };

@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { AlertCircle } from '@lucide/svelte';
+	import { CircleAlert } from '@lucide/svelte';
 	import { cn } from '$lib/utils';
 
 	interface Props {
@@ -15,7 +15,7 @@
 
 {#if error}
 	<div class={cn('flex items-center gap-2 text-sm text-red-600', className)}>
-		<AlertCircle class="h-4 w-4" />
+		<CircleAlert class="h-4 w-4" />
 		<span>{error}</span>
 	</div>
 {/if}

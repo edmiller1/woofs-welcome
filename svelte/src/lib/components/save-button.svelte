@@ -3,8 +3,8 @@
 	import { createMutation, useQueryClient } from '@tanstack/svelte-query';
 	import { toast } from 'svelte-sonner';
 	import { Button } from './ui/button';
-	import type { BAUser } from '$lib/types/models.js';
-	import { Heart, Loader2, LoaderCircle } from '@lucide/svelte';
+	import { Heart, LoaderCircle } from '@lucide/svelte';
+	import type { BAUser } from '$lib/types/user';
 
 	interface Props {
 		user: BAUser | null;

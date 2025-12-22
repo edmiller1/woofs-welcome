@@ -17,6 +17,7 @@ import {
   calculateDistance,
   checkIsFavourited,
   getBoundingBox,
+  optimizeImagesForPlace,
   optimizePlaceImages,
 } from "../lib/helpers";
 import {
@@ -136,10 +137,15 @@ export class PlaceService {
         isFavourited = await checkIsFavourited(userId, place.id);
       }
 
-      return {
+      const optimizedImages = await optimizeImagesForPlace(place.images);
+
+      const result = {
         ...place,
+        ...(place.images.length > 0 && { images: optimizedImages }),
         isFavourited,
       };
+
+      return result;
     } catch (error) {
       if (error instanceof AppError) {
         throw error;
@@ -311,8 +317,10 @@ export class PlaceService {
         isFavourited = await checkIsFavourited(userId, place.id);
       }
 
+      const optimizedPlaces = await optimizePlaceImages(placesWithDistance);
+
       return {
-        places: placesWithDistance.map((p) => ({ ...p, isFavourited })),
+        places: optimizedPlaces.map((p) => ({ ...p, isFavourited })),
         center: { lat, lng },
         radius,
       };

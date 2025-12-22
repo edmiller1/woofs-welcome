@@ -1,5 +1,5 @@
 import { protectedProcedure } from '$lib/axios';
-import type { ReportReviewResponse } from '$lib/types/responses';
+import type { ReportReviewResponse } from '$lib/types/review';
 
 export const reportReview = async (
 	slug: string,

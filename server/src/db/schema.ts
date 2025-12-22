@@ -631,17 +631,23 @@ export type ReviewLikeSelect = InferSelectModel<typeof ReviewLike>;
 export type ReviewReportSelect = InferSelectModel<typeof ReviewReport>;
 export type ReviewImageSelect = InferSelectModel<typeof ReviewImage>;
 
+export type FavouriteWithPlaceSelect = FavouriteSelect & {
+  place: PlaceWithImagesSelect | null;
+};
+
 export type CityWithRegionSelect = CitySelect & {
   region: RegionSelect;
 };
 
 export type PlaceWithCityAndRegionSelect = PlaceSelect & {
   city: CityWithRegionSelect | null;
+  images: PlaceImageSelect[];
 };
 
 export type UserReviewSelect = ReviewSelect & {
-  place: PlaceWithCityAndRegionSelect;
   images: ReviewImageSelect[];
+  likes: ReviewLikeSelect[];
+  reports: ReviewReportSelect[];
 };
 
 export type PlaceWithImagesSelect = PlaceSelect & {

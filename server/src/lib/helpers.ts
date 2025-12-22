@@ -103,7 +103,14 @@ export const checkIsFavourited = async (userId: string, placeId: string) => {
   return !!favourite;
 };
 
-// Multiple images
+export const optimizeImagesForPlace = async (images: PlaceImageSelect[]) => {
+  return images.map((image: PlaceImageSelect) => ({
+    ...image,
+    ...getResponsiveImageUrls(image.url),
+  }));
+};
+
+// Multiple images multiple places
 export const optimizePlaceImages = async (places: PlaceWithImagesSelect[]) => {
   return places.map((place) => ({
     ...place,
@@ -119,7 +126,7 @@ export const optimizeReviewImages = async (reviews: UserReviewSelect[]) => {
     ...review,
     images: review.images.map((image: ReviewImageSelect) => ({
       ...image,
-      ...getResponsiveImageUrls(image.url),
+      ...getResponsiveImageUrls(image.publicId),
     })),
   }));
 };

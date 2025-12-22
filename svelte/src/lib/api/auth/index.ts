@@ -1,4 +1,3 @@
-import { createUser } from './createUser';
 import { checkEmails } from './checkEmails';
 import { welcome } from './welcome';
 import { getFavourites } from './getFavourites';
@@ -7,7 +6,6 @@ import { getProfileFavourites } from './getProfilefavourites';
 import { getProfileReviews } from './getProfileReviews';
 
 export const auth = {
-	createUser,
 	checkEmails,
 	welcome,
 	getFavourites,

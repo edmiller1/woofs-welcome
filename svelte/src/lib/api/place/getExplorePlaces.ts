@@ -1,6 +1,5 @@
 import { protectedProcedure } from '$lib/axios';
-import type { ExplorePlacesRequest } from '$lib/types/models';
-import type { GetExplorePlacesResponse } from '$lib/types/responses';
+import type { ExplorePlacesRequest, GetExplorePlacesResponse } from '$lib/types/place';
 
 export const getExplorePlaces = async (query: ExplorePlacesRequest) => {
 	// Filter out undefined, null, empty strings, and false booleans

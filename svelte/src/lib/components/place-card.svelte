@@ -1,10 +1,10 @@
 <script lang="ts">
 	import * as Carousel from '$lib/components/ui/carousel/index.js';
-	import type { Place } from '$lib/types/models';
 	import { Heart, Star } from '@lucide/svelte';
 	import Button from './ui/button/button.svelte';
 	import type { CarouselAPI } from './ui/carousel/context';
 	import { Badge } from './ui/badge';
+	import type { Place } from '$lib/types/place';
 
 	interface Props {
 		place: Place;
@@ -42,7 +42,7 @@
 								<div
 									class="relative aspect-[4/3] transition-transform duration-200 group-hover:scale-105"
 								>
-									<img src={image.url} alt={image.altText} class="h-full w-full object-cover" />
+									<img src={image.webp.src} alt={place.name} class="h-full w-full object-cover" />
 								</div>
 							</Carousel.Item>
 						{/each}

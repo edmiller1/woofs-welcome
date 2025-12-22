@@ -1,5 +1,5 @@
 <script lang="ts">
-	import type { PlaceImage } from '$lib/types/models';
+	import type { PlaceImage } from '$lib/types/place';
 	import GoogleBadge from './google-badge.svelte';
 	import { Button } from './ui/button';
 

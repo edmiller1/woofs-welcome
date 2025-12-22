@@ -1,5 +1,4 @@
 <script lang="ts">
-	import type { BAUser } from '$lib/types/models';
 	import { Button, buttonVariants } from '$lib/components/ui/button';
 	import {
 		Bell,
@@ -21,6 +20,7 @@
 	import FavouriteSheet from '$lib/components/favourite-sheet.svelte';
 	import * as Sheet from '$lib/components/ui/sheet/index.js';
 	import { page } from '$app/state';
+	import type { BAUser } from '$lib/types/user';
 
 	interface Props {
 		user: BAUser | null;

@@ -1,9 +1,8 @@
 import { publicProcedure } from '$lib/axios';
-import type { Breed } from '$lib/types/models';
-import type { GetBreedsResponse } from '$lib/types/responses';
+import type { GetDogBreedsResponse } from '$lib/types/review';
 
 export const getBreeds = async () => {
-	const response = await publicProcedure.get<GetBreedsResponse>('/review/breeds');
+	const response = await publicProcedure.get<GetDogBreedsResponse>('/review/breeds');
 
 	return response.data;
 };

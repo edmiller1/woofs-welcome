@@ -1,11 +1,11 @@
 import { protectedProcedure } from '$lib/axios';
-import type { getCityPlacesResponse } from '$lib/types/responses';
+import type { GetCityPlacesResponse } from '$lib/types/city';
 
 export const getCityPlacesAndEvents = async (
 	slug: string,
 	filters: { placeSort?: string; eventSort?: string }
 ) => {
-	const response = await protectedProcedure.get<getCityPlacesResponse>(`city/${slug}/places`, {
+	const response = await protectedProcedure.get<GetCityPlacesResponse>(`city/${slug}/places`, {
 		params: filters
 	});
 

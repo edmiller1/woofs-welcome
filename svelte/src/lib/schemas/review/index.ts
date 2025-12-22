@@ -29,24 +29,6 @@ export const reviewFormSchema = z.object({
 export type ReviewFormData = z.infer<typeof reviewFormSchema>;
 
 /**
- * Email Schema
- */
-export const emailSchema = z.object({
-	email: z.string().email('Invalid email address')
-});
-
-/**
- * Profile Update Schema
- */
-export const profileUpdateSchema = z.object({
-	name: z
-		.string()
-		.min(2, 'Name must be at least 2 characters')
-		.max(50, 'Name must be less than 50 characters'),
-	image: z.string().optional()
-});
-
-/**
  * Report Review Schema
  */
 export const reportReviewSchema = z.object({

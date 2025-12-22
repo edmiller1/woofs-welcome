@@ -2,9 +2,11 @@ import { and, desc, eq, gte, or, sql } from "drizzle-orm";
 import { db } from "../../db";
 import {
   City,
+  FavouriteWithPlaceSelect,
   Island,
   Place,
   PlaceImage,
+  PlaceWithCityAndRegionSelect,
   Region,
   RegionPlaceWithSingleImageSelect,
 } from "../../db/schema";
@@ -184,5 +186,14 @@ export const optimizePlaceImage = async (
   return places.map((place) => ({
     ...place,
     imageUrl: getResponsiveImageUrls(place.imageUrl!),
+  }));
+};
+
+export const optimizeImageForPlace = async (
+  places: FavouriteWithPlaceSelect[]
+) => {
+  return places.map((place) => ({
+    ...place,
+    images: getResponsiveImageUrls(place.place?.images[0].publicId!),
   }));
 };

@@ -24,20 +24,22 @@
 	} from '@internationalized/date';
 	import { generateUID, getFileBase64 } from '$lib/helpers';
 	import { toast } from 'svelte-sonner';
-	import { reviewFormSchema } from '$lib/schemas.js';
 	import type { AxiosError } from 'axios';
-	import type { Breed, ErrorResponse, ProfileReview, Review } from '$lib/types/models';
 	import ValidationError from '$lib/components/validation-error.svelte';
 	import { useValidation } from '$lib/hooks/use-validation.svelte.js';
-	import { place } from '$lib/api/place';
+	import type { DogBreed, Review } from '$lib/types/review';
+	import type { GetProfileReviewsResponse } from '$lib/types/user';
+	import type { GetPlaceReviewsResponse } from '$lib/types/place';
+	import { reviewFormSchema } from '$lib/schemas/review';
+	import type { ErrorResponse } from '$lib/types/types';
 
 	interface Props {
-		review: Review | ProfileReview;
+		review: GetPlaceReviewsResponse['reviews'][0] | GetProfileReviewsResponse['data'][0];
 		placeName: string;
 		placeSlug: string;
 		open: boolean;
 		openModal: () => void;
-		breeds: Breed[];
+		breeds: DogBreed[];
 	}
 
 	type TimeOfVisit = 'morning' | 'afternoon' | 'evening';
@@ -112,7 +114,7 @@
 
 	// Track UI state
 	let hoveredRating = $state<number>(0);
-	let filteredBreeds = $state<Breed[]>([]);
+	let filteredBreeds = $state<DogBreed[]>([]);
 	let search = $state<string>('');
 
 	// Time options (same as create form)

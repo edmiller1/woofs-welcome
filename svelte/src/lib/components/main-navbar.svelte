@@ -16,8 +16,8 @@
 		Waves
 	} from '@lucide/svelte';
 	import { Button, buttonVariants } from './ui/button';
-	import type { BAUser } from '$lib/types/models';
 	import UserNav from './user-nav.svelte';
+	import type { BAUser } from '$lib/types/user';
 
 	interface Props {
 		user: BAUser | null;

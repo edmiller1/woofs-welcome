@@ -1,5 +1,5 @@
 import { protectedProcedure } from '$lib/axios';
-import type { NotificationPreferences } from '$lib/types/models';
+import type { NotificationPreferences } from '$lib/types/notification';
 
 export const resetNotificationPreferences = async () => {
 	const response = await protectedProcedure.delete<{

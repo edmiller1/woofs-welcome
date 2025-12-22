@@ -1,8 +1,8 @@
 import { publicProcedure } from '$lib/axios';
-import type { SearchLocationsResponse } from '$lib/types/responses';
+import type { SearchLocationsresponse } from '$lib/types/types';
 
 export const searchLocations = async (query: string) => {
-	const response = await publicProcedure.get<SearchLocationsResponse[]>(
+	const response = await publicProcedure.get<SearchLocationsresponse[]>(
 		`/location/search?query=${query}`
 	);
 

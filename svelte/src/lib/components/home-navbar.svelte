@@ -2,12 +2,12 @@
 	import { Button, buttonVariants } from '$lib/components/ui/button';
 	import * as NavigationMenu from '$lib/components/ui/navigation-menu/index.js';
 	import { Sheet, SheetContent, SheetTrigger } from '$lib/components/ui/sheet';
-	import type { BAUser } from '$lib/types/models';
 	import { cn } from '$lib/utils';
 	import { Dog, Menu } from '@lucide/svelte';
 	import { Avatar, AvatarFallback, AvatarImage } from './ui/avatar';
 	import UserNav from './user-nav.svelte';
 	import { slide } from 'svelte/transition';
+	import type { BAUser } from '$lib/types/user';
 
 	const { user }: { user: BAUser | null } = $props();
 

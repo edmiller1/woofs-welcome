@@ -5,7 +5,10 @@ import { Cloudinary } from "../lib/cloudinary";
 import { AppError, DatabaseError, UnauthorizedError } from "../lib/errors";
 import { sanitizePlainText } from "../lib/sanitize";
 import { count } from "drizzle-orm";
-import { optimizePlaceImage } from "../lib/helpers/region";
+import {
+  optimizeImageForPlace,
+  optimizePlaceImage,
+} from "../lib/helpers/region";
 import { optimizePlaceImages, optimizeReviewImages } from "../lib/helpers";
 
 /**
@@ -94,7 +97,9 @@ export class AuthService {
         orderBy: [desc(Favourite.createdAt)],
       });
 
-      return favourites.map((fav) => fav.place);
+      const optimizedFavourites = await optimizeImageForPlace(favourites);
+
+      return optimizedFavourites.map((fav) => fav.place);
     } catch (error) {
       console.error("Error fetching favourites:", error);
       if (error instanceof AppError) {
@@ -304,6 +309,7 @@ export class AuthService {
         .where(eq(Review.userId, userId));
 
       const hasMore = offset + reviews.length < totalCount;
+      // @ts-ignore
       const optimizedReviews = await optimizeReviewImages(reviews);
 
       return {
