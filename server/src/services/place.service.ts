@@ -17,7 +17,6 @@ import {
   calculateDistance,
   checkIsFavourited,
   getBoundingBox,
-  optimizeImagesForPlace,
   optimizePlaceImages,
 } from "../lib/helpers";
 import {
@@ -137,7 +136,7 @@ export class PlaceService {
         isFavourited = await checkIsFavourited(userId, place.id);
       }
 
-      const optimizedImages = await optimizeImagesForPlace(place.images);
+      const optimizedImages = await optimizePlaceImages(place.images);
 
       const result = {
         ...place,
@@ -224,7 +223,9 @@ export class PlaceService {
         },
       });
 
-      const optimizedPlaces = await optimizePlaceImages(places);
+      const optimizedPlaces = await optimizePlaceImages(
+        places.flatMap((p) => p.images)
+      );
 
       return optimizedPlaces;
     } catch (error) {
@@ -317,7 +318,9 @@ export class PlaceService {
         isFavourited = await checkIsFavourited(userId, place.id);
       }
 
-      const optimizedPlaces = await optimizePlaceImages(placesWithDistance);
+      const optimizedPlaces = await optimizePlaceImages(
+        placesWithDistance.flatMap((p) => p.images)
+      );
 
       return {
         places: optimizedPlaces.map((p) => ({ ...p, isFavourited })),
@@ -509,7 +512,9 @@ export class PlaceService {
         .where(conditions.length > 0 ? and(...conditions) : undefined);
 
       // Optimize images
-      const optimizedPlaces = await optimizePlaceImages(places);
+      const optimizedPlaces = await optimizePlaceImages(
+        places.flatMap((p) => p.images)
+      );
 
       // Check favorites if user is logged in
       let placesWithFavourites = optimizedPlaces;
@@ -588,7 +593,9 @@ export class PlaceService {
       });
 
       // Optimize images
-      const optimizedPlaces = await optimizePlaceImages(places);
+      const optimizedPlaces = await optimizePlaceImages(
+        places.flatMap((p) => p.images)
+      );
 
       let placesWithFavourites = optimizedPlaces;
 

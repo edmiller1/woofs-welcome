@@ -103,31 +103,27 @@ export const checkIsFavourited = async (userId: string, placeId: string) => {
   return !!favourite;
 };
 
-export const optimizeImagesForPlace = async (images: PlaceImageSelect[]) => {
+// Optimize multiple place images
+export const optimizePlaceImages = async (images: PlaceImageSelect[]) => {
   return images.map((image: PlaceImageSelect) => ({
     ...image,
     ...getResponsiveImageUrls(image.url),
   }));
 };
 
-// Multiple images multiple places
-export const optimizePlaceImages = async (places: PlaceWithImagesSelect[]) => {
-  return places.map((place) => ({
-    ...place,
-    images: place.images.map((image: PlaceImageSelect) => ({
-      ...image,
-      ...getResponsiveImageUrls(image.url),
-    })),
-  }));
+// Optimize a single place image
+export const optimizePlaceImage = async (image: PlaceImageSelect) => {
+  return {
+    ...image,
+    ...getResponsiveImageUrls(image.url),
+  };
 };
 
-export const optimizeReviewImages = async (reviews: UserReviewSelect[]) => {
-  return reviews.map((review) => ({
-    ...review,
-    images: review.images.map((image: ReviewImageSelect) => ({
-      ...image,
-      ...getResponsiveImageUrls(image.publicId),
-    })),
+// Optimize multiple review images
+export const optimizeReviewImages = async (images: ReviewImageSelect[]) => {
+  return images.map((image: ReviewImageSelect) => ({
+    ...image,
+    ...getResponsiveImageUrls(image.publicId),
   }));
 };
 
