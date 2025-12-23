@@ -257,7 +257,7 @@
 		</Tooltip.Provider>
 	</Dialog.Trigger>
 	<Dialog.Content
-		class="max-h-[90vh] min-w-[900px] overflow-y-auto"
+		class="z-[999] max-h-[90vh] min-w-[900px] overflow-y-auto"
 		onInteractOutside={(e) => {
 			e.preventDefault();
 		}}
@@ -588,7 +588,9 @@
 		</div>
 
 		<Dialog.Footer>
-			<Button variant="outline" onclick={openModal}>Cancel</Button>
+			<Dialog.Close>
+				<Button variant="outline" onclick={openModal}>Cancel</Button>
+			</Dialog.Close>
 			<Button onclick={handleSubmit} disabled={$updateReview.isPending}>
 				{#if $updateReview.isPending}
 					<LoaderCircle class="mr-2 h-4 w-4 animate-spin" />

@@ -99,9 +99,10 @@ export interface GetPlaceResponse {
 	images: OptimizedPlaceImage[];
 	indoorAllowed: boolean;
 	isFavourited: boolean;
+	hasFavourited: boolean;
 	isFeatured: boolean;
 	isVerified: boolean;
-	latitide: string;
+	latitude: string;
 	longitude: string;
 	name: string;
 	outdoorAllowed: boolean;
@@ -126,7 +127,7 @@ export interface GetPlaceReviewsResponse {
 		createdAt: string;
 		dogBreeds: string[];
 		hasLiked: boolean;
-		hasReported: string;
+		hasReported: boolean;
 		id: string;
 		images: OptimizedPlaceImage[];
 		isFirstVisit: boolean;
@@ -139,6 +140,11 @@ export interface GetPlaceReviewsResponse {
 		updatedAt: string;
 		userId: string;
 		visitDate: string;
+		user: {
+			id: string;
+			name: string;
+			image?: string | null;
+		};
 	}[];
 }
 

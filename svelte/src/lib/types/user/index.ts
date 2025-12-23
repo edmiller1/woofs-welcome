@@ -102,3 +102,22 @@ export interface GetProfileReviewsResponse {
 	total: number;
 	hasMore: boolean;
 }
+
+export interface ProfileReview {
+	content: string;
+	createdAt: string;
+	dogBreeds: string[];
+	id: string;
+	images: OptimizedReviewImage[];
+	isFirstVisit: boolean;
+	likesCount: number;
+	numDogs: number;
+	place: GetPlaceResponse;
+	placeId: string;
+	rating: number;
+	timeOfVisit: string;
+	title: string;
+	updatedAt: string;
+	userId: string;
+	visitDate: string;
+}

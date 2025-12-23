@@ -18,12 +18,10 @@
 	import ShareButton from '$lib/components/share-button.svelte';
 	import { page } from '$app/state';
 	import SaveButton from '$lib/components/save-button.svelte';
-	import type { BAUser, Tab } from '$lib/types/models';
 	import { classNames } from '$lib/helpers';
 	import StickyHeader from './components/sticky-header.svelte';
 	import { onMount } from 'svelte';
 	import { toast } from 'svelte-sonner';
-	import { goto } from '$app/navigation';
 	import PlaceMapDialog from './components/place-map-dialog.svelte';
 	import ErrorBoundary from '$lib/components/error-boundary.svelte';
 	import LoadingSpinner from '$lib/components/loading-spinner.svelte';
@@ -35,6 +33,8 @@
 	} from '$lib/seo/structured-data';
 	import { getAbsoluteUrl, generateKeywords } from '$lib/seo/metadata';
 	import Navbar from '$lib/components/navbar.svelte';
+	import type { Tab } from '$lib/types/types';
+	import type { BAUser } from '$lib/types/user';
 
 	interface Props {
 		data: {
@@ -70,6 +70,11 @@
 	const place = createQuery({
 		queryKey: ['place', slug],
 		queryFn: () => api.place.getPlace(slug)
+	});
+
+	const breeds = createQuery({
+		queryKey: ['breeds'],
+		queryFn: () => api.review.getBreeds()
 	});
 
 	const coordinates = $derived(() => {
@@ -267,7 +272,7 @@
 		<!-- Sticky Header -->
 		<StickyHeader
 			placeName={$place.data.name}
-			placeClaim={$place.data.claim}
+			placeClaim={$place.data.activeClaim}
 			placeId={$place.data.id}
 			{user}
 			{openAuthModal}
@@ -297,7 +302,7 @@
 							<h2 class="text-2xl/7 font-bold sm:truncate sm:text-4xl sm:tracking-tight">
 								{$place.data.name}
 							</h2>
-							{#if $place.data.claim}
+							{#if $place.data.activeClaim}
 								<BadgeCheck
 									class="hidden size-8 text-white sm:inline-block"
 									fill="oklch(0.63 0.17 149)"
@@ -306,7 +311,7 @@
 						</div>
 						<div class="flex items-center gap-4">
 							<ShareButton link={page.url.href} name={$place.data.name} />
-							{#if !$place.data.claim}
+							{#if !$place.data.activeClaim}
 								<Button
 									class="rounded-full"
 									onclick={user
@@ -358,14 +363,14 @@
 								<!-- Main details -->
 								<PlaceDetails
 									address={$place.data.address}
-									website={$place.data.website}
+									website={$place.data.website ?? ''}
 									email={$place.data.email}
-									phone={$place.data.phone}
+									phone={$place.data.phone ?? ''}
 								/>
 								<!-- Description -->
 								<PlaceDescription
 									description={$place.data.description}
-									claim={$place.data.claim}
+									claim={$place.data.activeClaim}
 									{user}
 									{openAuthModal}
 								/>
@@ -440,6 +445,7 @@
 							placeSlug={$place.data.slug}
 							{currentPage}
 							onPageChange={changePage}
+							dogBreeds={$breeds.data?.breeds}
 						/>
 					</div>
 				</div>

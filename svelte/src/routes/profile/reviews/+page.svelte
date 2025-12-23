@@ -1,7 +1,6 @@
 <script lang="ts">
 	import { api } from '$lib/api';
 	import { Separator } from '$lib/components/ui/separator';
-	import type { BAUser, ProfileReview, Review } from '$lib/types/models';
 	import { LoaderCircle } from '@lucide/svelte';
 	import { createQuery } from '@tanstack/svelte-query';
 	import * as Avatar from '$lib/components/ui/avatar/index.js';
@@ -13,6 +12,8 @@
 	import ReviewImageDialog from '../../place/[slug]/components/review-image-dialog.svelte';
 	import DeleteReviewModal from '$lib/components/delete-review-modal.svelte';
 	import EditReviewDialog from '$lib/components/edit-review-dialog.svelte';
+	import type { BAUser, ProfileReview } from '$lib/types/user';
+	import type { Review } from '$lib/types/review';
 
 	interface Props {
 		data: {

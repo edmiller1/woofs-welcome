@@ -2,7 +2,6 @@
 	import { goto, invalidateAll } from '$app/navigation';
 	import { page as pageStore, navigating } from '$app/state';
 	import { authModalActions } from '$lib/auth/auth-modal-store';
-	import type { BAUser, FilterState, PlaceType, PlaceWithOptimizedImages } from '$lib/types/models';
 	import { createMutation } from '@tanstack/svelte-query';
 	import FilterSidebar from './components/filter-sidebar.svelte';
 	import Navbar from '../../lib/components/navbar.svelte';
@@ -14,6 +13,9 @@
 	import PlaceDetailPanel from './components/place-detail-panel.svelte';
 	import PlaceDetailSkeleton from './components/place-detail-skeleton.svelte';
 	import { toast } from 'svelte-sonner';
+	import type { GetPlaceResponse } from '$lib/types/place';
+	import type { BAUser } from '$lib/types/user';
+	import type { FilterState, PlaceType } from '$lib/types/types';
 
 	interface Props {
 		data: {
@@ -21,7 +23,7 @@
 				[key: string]: string | string[] | undefined;
 			};
 			user: BAUser | null;
-			initialPlaces: PlaceWithOptimizedImages[];
+			initialPlaces: GetPlaceResponse[];
 			pagination: any;
 		};
 	}
@@ -29,7 +31,7 @@
 	let { data }: Props = $props();
 
 	// Places state
-	let additionalPlaces = $state<PlaceWithOptimizedImages[]>([]);
+	let additionalPlaces = $state<GetPlaceResponse[]>([]);
 	let isLoadingMore = $state(false);
 	let isLoadingFilters = $state(false);
 	let isPanelManuallyOpen = $state(false);
@@ -173,7 +175,7 @@
 	}
 
 	// Use goto with options to prevent page reload but maintain reactivity
-	function handleCardClick(place: PlaceWithOptimizedImages) {
+	function handleCardClick(place: GetPlaceResponse) {
 		isPanelManuallyOpen = true;
 		isPanelLoading = true;
 		const params = new URLSearchParams(pageStore.url.searchParams);

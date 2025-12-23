@@ -2,14 +2,14 @@
 	import { Button } from '$lib/components/ui/button';
 	import { Badge } from '$lib/components/ui/badge';
 	import { BadgeCheck, Heart, LoaderCircle, Star } from '@lucide/svelte';
-	import type { PlaceWithOptimizedImages } from '$lib/types/models';
 	import type { CarouselAPI } from '$lib/components/ui/carousel/context';
 	import * as Carousel from '$lib/components/ui/carousel/index.js';
 	import { page } from '$app/state';
+	import type { GetPlaceResponse } from '$lib/types/place';
 
 	interface Props {
-		place: PlaceWithOptimizedImages;
-		onCardClick: (place: PlaceWithOptimizedImages) => void;
+		place: GetPlaceResponse;
+		onCardClick: (place: GetPlaceResponse) => void;
 		onFavouriteClick: (placeId: string) => void;
 		favouritePending?: boolean;
 	}

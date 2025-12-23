@@ -17,6 +17,7 @@ import {
   calculateDistance,
   checkIsFavourited,
   getBoundingBox,
+  optimizeImagesForPlace,
   optimizePlaceImages,
 } from "../lib/helpers";
 import {
@@ -136,7 +137,7 @@ export class PlaceService {
         isFavourited = await checkIsFavourited(userId, place.id);
       }
 
-      const optimizedImages = await optimizePlaceImages(place.images);
+      const optimizedImages = await optimizeImagesForPlace(place.images);
 
       const result = {
         ...place,
@@ -223,9 +224,7 @@ export class PlaceService {
         },
       });
 
-      const optimizedPlaces = await optimizePlaceImages(
-        places.flatMap((p) => p.images)
-      );
+      const optimizedPlaces = await optimizePlaceImages(places);
 
       return optimizedPlaces;
     } catch (error) {
@@ -318,12 +317,10 @@ export class PlaceService {
         isFavourited = await checkIsFavourited(userId, place.id);
       }
 
-      const optimizedPlaces = await optimizePlaceImages(
-        placesWithDistance.flatMap((p) => p.images)
-      );
+      const optimizedPlaces = await optimizePlaceImages(placesWithDistance);
 
       return {
-        places: optimizedPlaces.map((p) => ({ ...p, isFavourited })),
+        places: placesWithDistance.map((p) => ({ ...p, isFavourited })),
         center: { lat, lng },
         radius,
       };
@@ -512,9 +509,7 @@ export class PlaceService {
         .where(conditions.length > 0 ? and(...conditions) : undefined);
 
       // Optimize images
-      const optimizedPlaces = await optimizePlaceImages(
-        places.flatMap((p) => p.images)
-      );
+      const optimizedPlaces = await optimizePlaceImages(places);
 
       // Check favorites if user is logged in
       let placesWithFavourites = optimizedPlaces;
@@ -593,9 +588,7 @@ export class PlaceService {
       });
 
       // Optimize images
-      const optimizedPlaces = await optimizePlaceImages(
-        places.flatMap((p) => p.images)
-      );
+      const optimizedPlaces = await optimizePlaceImages(places);
 
       let placesWithFavourites = optimizedPlaces;
 

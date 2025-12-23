@@ -3,8 +3,7 @@
 	import { Badge } from '$lib/components/ui/badge';
 	import { Button, buttonVariants } from '$lib/components/ui/button';
 	import { formatDate, getTimeOfVisitEmoji, getUserInitials } from '$lib/helpers';
-	import type { BAUser } from '$lib/types/models';
-	import { Flag, LoaderCircle, SquarePen, Star, ThumbsUp } from '@lucide/svelte';
+	import { Flag, LoaderCircle, Star, ThumbsUp } from '@lucide/svelte';
 	import * as Pagination from '$lib/components/ui/pagination/index.js';
 	import * as Tooltip from '$lib/components/ui/tooltip/index.js';
 	import { cn } from '$lib/utils';
@@ -17,6 +16,10 @@
 	import { goto } from '$app/navigation';
 	import ErrorBoundary from '$lib/components/error-boundary.svelte';
 	import DeleteReviewModal from '$lib/components/delete-review-modal.svelte';
+	import EditReviewDialog from '$lib/components/edit-review-dialog.svelte';
+	import type { BAUser, ProfileReview } from '$lib/types/user';
+	import { place } from '$lib/api/place';
+	import type { DogBreed, Review } from '$lib/types/review';
 
 	interface Props {
 		placeName: string;
@@ -25,14 +28,18 @@
 		user: BAUser | null;
 		currentPage: number;
 		onPageChange: (page: number) => void;
+		dogBreeds?: DogBreed[];
 	}
 
-	const { openAuthModal, user, placeName, placeSlug, currentPage, onPageChange }: Props = $props();
+	const { openAuthModal, user, placeName, placeSlug, currentPage, onPageChange, dogBreeds }: Props =
+		$props();
 
 	const queryClient = useQueryClient();
 
 	let open = $state(false);
 	let isDeleteOpen = $state<boolean>(false);
+	let isEditOpen = $state<boolean>(false);
+	let editingReview = $state<Review | ProfileReview | null>(null);
 
 	const reviews = createQuery({
 		queryKey: ['reviews', placeSlug, currentPage],
@@ -96,6 +103,16 @@
 			isDeleteOpen = false;
 		} else {
 			isDeleteOpen = true;
+		}
+	};
+
+	const handleEditModalOpen = (review?: Review | ProfileReview) => {
+		if (review) {
+			editingReview = review;
+			isEditOpen = true;
+		} else {
+			isEditOpen = false;
+			editingReview = null;
 		}
 	};
 </script>
@@ -251,18 +268,14 @@
 											</div>
 										{:else}
 											<div class="flex items-center gap-2">
-												<Tooltip.Provider>
-													<Tooltip.Root>
-														<Tooltip.Trigger>
-															<Button variant="outline" size="icon">
-																<SquarePen class="size-4" />
-															</Button>
-														</Tooltip.Trigger>
-														<Tooltip.Content>
-															<p>Edit review</p>
-														</Tooltip.Content>
-													</Tooltip.Root>
-												</Tooltip.Provider>
+												<EditReviewDialog
+													{review}
+													{placeName}
+													{placeSlug}
+													open={isEditOpen}
+													openModal={handleEditModalOpen}
+													breeds={dogBreeds!}
+												/>
 												<DeleteReviewModal
 													{reviewId}
 													{placeSlug}

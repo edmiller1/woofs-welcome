@@ -13,6 +13,12 @@ export interface Review {
 	likesCount: number;
 	createdAt: string;
 	updatedAt: string;
+	user: {
+		id: string;
+		name: string;
+		image?: string | null;
+	};
+	images: OptimizedReviewImage[];
 }
 
 export interface ReviewImage {
