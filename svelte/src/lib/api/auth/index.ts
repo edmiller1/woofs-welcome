@@ -4,6 +4,7 @@ import { getFavourites } from './getFavourites';
 import { updateProfile } from './updateProfile';
 import { getProfileFavourites } from './getProfilefavourites';
 import { getProfileReviews } from './getProfileReviews';
+import { getProfileStats } from './getProfileStats';
 
 export const auth = {
 	checkEmails,
@@ -11,5 +12,6 @@ export const auth = {
 	getFavourites,
 	updateProfile,
 	getProfileFavourites,
-	getProfileReviews
+	getProfileReviews,
+	getProfileStats
 };

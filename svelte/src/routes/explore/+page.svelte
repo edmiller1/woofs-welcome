@@ -2,7 +2,7 @@
 	import { goto, invalidateAll } from '$app/navigation';
 	import { page as pageStore, navigating } from '$app/state';
 	import { authModalActions } from '$lib/auth/auth-modal-store';
-	import { createMutation } from '@tanstack/svelte-query';
+	import { createMutation, useQueryClient } from '@tanstack/svelte-query';
 	import FilterSidebar from './components/filter-sidebar.svelte';
 	import Navbar from '../../lib/components/navbar.svelte';
 	import { api } from '$lib/api';
@@ -29,6 +29,8 @@
 	}
 
 	let { data }: Props = $props();
+
+	const queryClient = useQueryClient();
 
 	// Places state
 	let additionalPlaces = $state<GetPlaceResponse[]>([]);
@@ -68,7 +70,9 @@
 		},
 		onSuccess: (result) => {
 			toast.success(`Place ${result.action === 'added' ? 'added to' : 'removed from'} favourites`);
-			invalidateAll();
+			queryClient.invalidateQueries({
+				queryKey: ['profile-favourites']
+			});
 		},
 		onError: (error) => {
 			toast.error(`Operation failed: ${error.message}`);

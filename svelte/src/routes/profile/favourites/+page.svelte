@@ -1,12 +1,13 @@
 <script lang="ts">
 	import { api } from '$lib/api';
 	import Separator from '$lib/components/ui/separator/separator.svelte';
-	import type { BAUser } from '$lib/types/models';
+
 	import { LoaderCircle } from '@lucide/svelte';
 	import PlaceCard from './components/place-card.svelte';
 	import { createMutation, createQuery, useQueryClient } from '@tanstack/svelte-query';
 	import { toast } from 'svelte-sonner';
 	import * as Pagination from '$lib/components/ui/pagination/index.js';
+	import type { BAUser } from '$lib/types/user';
 
 	interface Props {
 		data: {

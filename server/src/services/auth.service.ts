@@ -327,4 +327,39 @@ export class AuthService {
       });
     }
   }
+
+  static async getProfileStats(userId: string, requestingUserId?: string) {
+    try {
+      const [reviewCount] = await db
+        .select({ count: count() })
+        .from(Review)
+        .where(eq(Review.userId, userId));
+
+      const [favouriteCount] = await db
+        .select({ count: count() })
+        .from(Favourite)
+        .where(eq(Favourite.userId, userId));
+
+      const userRecord = await db.query.user.findFirst({
+        where: eq(user.id, userId),
+        columns: {
+          createdAt: true,
+        },
+      });
+
+      return {
+        reviewCount: reviewCount.count,
+        favouriteCount: favouriteCount.count,
+        memberSince: userRecord?.createdAt,
+      };
+    } catch (error) {
+      console.error("Error fetching user stats:", error);
+      if (error instanceof AppError) {
+        throw error;
+      }
+      throw new DatabaseError("Failed to fetch user stats", {
+        originalError: error,
+      });
+    }
+  }
 }

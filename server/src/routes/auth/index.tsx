@@ -7,7 +7,6 @@ import { authMiddleware } from "../../middleware/auth";
 import { CreateProfileInput, createProfileSchema } from "./types";
 import { zValidator } from "@hono/zod-validator";
 import { user } from "../../db/schema";
-import { Cloudinary } from "../../lib/cloudinary";
 import { env } from "../../config/env";
 import {
   AppError,
@@ -15,11 +14,7 @@ import {
   DatabaseError,
   UnauthorizedError,
 } from "../../lib/errors";
-import {
-  validateBody,
-  validateParams,
-  validateQuery,
-} from "../../middleware/validate";
+import { validateBody, validateQuery } from "../../middleware/validate";
 import {
   GetProfileFavouritesInput,
   getProfileFavouritesSchema,
@@ -228,6 +223,23 @@ authRouter.get(
     const { limit, offset } = c.get("validatedQuery") as GetProfileReviewsInput;
 
     const result = await AuthService.getProfileReviews(auth.id, limit, offset);
+
+    return c.json(result, 200);
+  }
+);
+
+authRouter.get(
+  "/stats/:userId?",
+  readRateLimiter,
+  authMiddleware,
+  async (c) => {
+    const auth = c.get("user");
+
+    if (!auth) throw new UnauthorizedError();
+
+    const userId = c.req.param("userId") || auth.id;
+
+    const result = await AuthService.getProfileStats(userId);
 
     return c.json(result, 200);
   }

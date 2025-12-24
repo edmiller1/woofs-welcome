@@ -62,3 +62,9 @@ export const deleteReviewSchema = z.object({
 });
 
 export type DeleteReviewInput = z.infer<typeof deleteReviewSchema>;
+
+export const getUserSchema = z.object({
+  userId: z.string().optional(),
+});
+
+export type GetUserInput = z.infer<typeof getUserSchema>;

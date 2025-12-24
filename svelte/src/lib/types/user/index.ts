@@ -121,3 +121,9 @@ export interface ProfileReview {
 	userId: string;
 	visitDate: string;
 }
+
+export interface ProfileStats {
+	reviewCount: number;
+	favouriteCount: number;
+	memberSince: string;
+}
