@@ -2,7 +2,12 @@ import { desc, eq } from "drizzle-orm";
 import { db } from "../db";
 import { Favourite, Review, user } from "../db/schema";
 import { Cloudinary } from "../lib/cloudinary";
-import { AppError, DatabaseError, UnauthorizedError } from "../lib/errors";
+import {
+  AppError,
+  DatabaseError,
+  NotFoundError,
+  UnauthorizedError,
+} from "../lib/errors";
 import { sanitizePlainText } from "../lib/sanitize";
 import { count } from "drizzle-orm";
 import {
@@ -358,6 +363,34 @@ export class AuthService {
         throw error;
       }
       throw new DatabaseError("Failed to fetch user stats", {
+        originalError: error,
+      });
+    }
+  }
+
+  static async updatePrivacySettings(userId: string, isProfilePublic: boolean) {
+    try {
+      const userRecord = await db.query.user.findFirst({
+        where: eq(user.id, userId),
+      });
+
+      if (!userRecord) {
+        throw new NotFoundError("User not found");
+      }
+
+      await db.update(user).set({
+        isProfilePublic,
+        updatedAt: new Date(),
+      });
+
+      return {
+        success: true,
+      };
+    } catch (error) {
+      if (error instanceof AppError) {
+        throw error;
+      }
+      throw new DatabaseError("Failed to update privacy settings", {
         originalError: error,
       });
     }

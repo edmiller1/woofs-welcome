@@ -5,6 +5,8 @@ import { updateProfile } from './updateProfile';
 import { getProfileFavourites } from './getProfilefavourites';
 import { getProfileReviews } from './getProfileReviews';
 import { getProfileStats } from './getProfileStats';
+import { updatePrivacy } from './updatePrivacy';
+import { deleteAccount } from './deleteAccount';
 
 export const auth = {
 	checkEmails,
@@ -13,5 +15,7 @@ export const auth = {
 	updateProfile,
 	getProfileFavourites,
 	getProfileReviews,
-	getProfileStats
+	getProfileStats,
+	updatePrivacy,
+	deleteAccount
 };

@@ -10,6 +10,8 @@ export interface BAUser {
 	createdAt: string | Date;
 	updatedAt: string | Date;
 	image?: string | null;
+	provider: string;
+	isProfilePublic: boolean;
 }
 
 export interface User {

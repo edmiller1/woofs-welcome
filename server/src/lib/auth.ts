@@ -1,6 +1,6 @@
 import { betterAuth } from "better-auth";
 import { drizzleAdapter } from "better-auth/adapters/drizzle";
-import { emailOTP, oneTap } from "better-auth/plugins";
+import { customSession, emailOTP, oneTap } from "better-auth/plugins";
 import { db } from "../db";
 import { resend } from "./resend";
 import { createOtpEmailHtml } from "../emails/create-otp-email";
@@ -9,6 +9,7 @@ import { eq } from "drizzle-orm";
 import { user } from "../db/schema";
 import * as schema from "../db/schema";
 import { env } from "../config/env";
+import { getUserPrivacySettings, getUserProvider } from "./helpers";
 
 export const auth = betterAuth({
   database: drizzleAdapter(db, {
@@ -36,6 +37,18 @@ export const auth = betterAuth({
     },
   },
   plugins: [
+    customSession(async ({ user, session }) => {
+      const provider = await getUserProvider(user.id);
+      const isProfilePublic = await getUserPrivacySettings(user.id);
+      return {
+        user: {
+          ...user,
+          provider: provider || "google",
+          isProfilePublic: isProfilePublic ?? true,
+        },
+        session,
+      };
+    }),
     oneTap(),
     emailOTP({
       sendVerificationOnSignUp: true,
@@ -70,6 +83,12 @@ export const auth = betterAuth({
   databaseHooks: {
     user: {
       additionalFields: {
+        isProfilePublic: {
+          type: "boolean",
+          required: false,
+          defaultValue: true,
+          returned: true,
+        },
         firstName: {
           type: "string",
           required: false,
@@ -81,7 +100,8 @@ export const auth = betterAuth({
         provider: {
           type: "string",
           required: false,
-          default: "google", // Default to google if not provided
+          default: "google",
+          returned: true,
         },
         businessName: {
           type: "string",

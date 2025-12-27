@@ -66,6 +66,7 @@ export const user = pgTable(
     verified: boolean("is_verified").default(false),
     subscriptionTier: text("subscription_tier"),
     subscriptionExpiresAt: timestamp("subscription_expires_at"),
+    isProfilePublic: boolean("is_profile_public").default(true),
     createdAt: timestamp("created_at")
       .$defaultFn(() => /* @__PURE__ */ new Date())
       .notNull(),

@@ -20,6 +20,8 @@ import {
   getProfileFavouritesSchema,
   GetProfileReviewsInput,
   getProfileReviewsSchema,
+  UpdatePrivacySettingsInput,
+  updatePrivacySettingsSchema,
   UpdateProfileInput,
   updateProfileSchema,
 } from "./schemas";
@@ -244,3 +246,35 @@ authRouter.get(
     return c.json(result, 200);
   }
 );
+
+authRouter.patch(
+  "/privacy",
+  authMiddleware,
+  validateBody(updatePrivacySettingsSchema),
+  async (c) => {
+    const auth = c.get("user");
+
+    if (!auth) throw new UnauthorizedError();
+
+    const { isProfilePublic } = c.get(
+      "validatedBody"
+    ) as UpdatePrivacySettingsInput;
+
+    const result = await AuthService.updatePrivacySettings(
+      auth.id,
+      isProfilePublic
+    );
+
+    return c.json(result, 200);
+  }
+);
+
+authRouter.delete("/account", authMiddleware, async (c) => {
+  const auth = c.get("user");
+
+  if (!auth) throw new UnauthorizedError();
+
+  const result = await AuthService.deleteAccount(auth.id);
+
+  return c.json(result, 200);
+});

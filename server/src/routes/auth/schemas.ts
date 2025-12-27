@@ -68,3 +68,11 @@ export const getUserSchema = z.object({
 });
 
 export type GetUserInput = z.infer<typeof getUserSchema>;
+
+export const updatePrivacySettingsSchema = z.object({
+  isProfilePublic: z.boolean(),
+});
+
+export type UpdatePrivacySettingsInput = z.infer<
+  typeof updatePrivacySettingsSchema
+>;

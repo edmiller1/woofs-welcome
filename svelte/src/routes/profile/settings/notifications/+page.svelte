@@ -5,9 +5,10 @@
 	import { createMutation, createQuery, useQueryClient } from '@tanstack/svelte-query';
 	import { api } from '$lib/api/index.js';
 	import { LoaderCircle } from '@lucide/svelte';
-	import type { ErrorResponse, NotificationPreferencesInput } from '$lib/types/models';
 	import { toast } from 'svelte-sonner';
 	import type { AxiosError } from 'axios';
+	import type { NotificationPreferencesInput } from '$lib/types/notification';
+	import type { ErrorResponse } from '$lib/types/types';
 
 	type EmailPreferenceKey =
 		| 'reviewReplies'

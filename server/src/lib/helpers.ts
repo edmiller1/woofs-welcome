@@ -12,6 +12,7 @@ import {
   Region,
   ReviewImage,
   ReviewImageSelect,
+  user,
   UserReviewSelect,
   UserSelect,
 } from "../db/schema";
@@ -269,4 +270,30 @@ export const validateEventFilter = (filter?: string): "new" | "upcoming" => {
     return filter as "new" | "upcoming";
   }
   return "new"; // default
+};
+
+export const getUserProvider = async (
+  userId: string
+): Promise<string | null> => {
+  const userRecord = await db.query.user.findFirst({
+    where: eq(user.id, userId),
+  });
+
+  if (!userRecord) {
+    return null;
+  }
+
+  return userRecord.provider;
+};
+
+export const getUserPrivacySettings = async (userId: string) => {
+  const userRecord = await db.query.user.findFirst({
+    where: eq(user.id, userId),
+  });
+
+  if (!userRecord) {
+    return null;
+  }
+
+  return userRecord.isProfilePublic;
 };
