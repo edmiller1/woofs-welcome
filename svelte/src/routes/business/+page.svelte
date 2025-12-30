@@ -10,8 +10,11 @@
 </script>
 
 <svelte:head>
-	<title>Business</title>
-	<meta name="description" content="Create or claim your dog-friendly business." />
+	<title>Business Accounts | Woofs Welcome</title>
+	<meta
+		name="description"
+		content="Reach dog owners across New Zealand. Claim your dog-friendly business and get priority placement in search results."
+	/>
 </svelte:head>
 
 <HomeNavbar {user} />

@@ -22,6 +22,7 @@ import { errorHandler } from "./middleware/error-handler";
 import { sitemapRouter } from "./routes/sitemap";
 import { locationRouter } from "./routes/location";
 import { notificationRouter } from "./routes/notification";
+import { businessRouter } from "./routes/business";
 
 validateEnv();
 
@@ -57,6 +58,7 @@ app.use("/api/user", authMiddleware);
 // custom routes
 app.route("/api/auth", betterAuthRouter);
 app.route("/api/user", authRouter);
+app.route("/api/business", businessRouter);
 app.route("/api/place", placeRouter);
 app.route("/api/region", regionRouter);
 app.route("/api/city", cityRouter);

@@ -12,6 +12,7 @@ export interface BAUser {
 	image?: string | null;
 	provider: string;
 	isProfilePublic: boolean;
+	isBusinessAccount: boolean;
 }
 
 export interface User {

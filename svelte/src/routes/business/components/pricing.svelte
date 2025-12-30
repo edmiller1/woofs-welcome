@@ -1,70 +1,128 @@
 <script lang="ts">
 	import { Button } from '$lib/components/ui/button';
-	import { CheckIcon } from '@lucide/svelte';
+	import { CheckIcon, Sparkles } from '@lucide/svelte';
 
 	const INCLUDED_FEATURES = [
 		'Priority placement in search results',
-		'Manage multiple business locations',
-		'Add and update business information',
-		'Access to analytics and insights'
+		'Claim and manage unlimited locations',
+		'Full access to business dashboard',
+		'Respond to customer reviews',
+		'Upload and manage photos',
+		'Update hours and amenities',
+		'Analytics and insights (coming soon)',
+		'Email support'
 	];
 </script>
 
-<div class="bg-background py-24 sm:py-32">
-	<div class="mx-auto h-full w-full max-w-screen-xl px-2.5 md:px-20">
-		<div class="mx-auto max-w-2xl sm:text-center">
-			<h1 class="text-primary text-center font-semibold">Simple one price for all</h1>
-			<p class="mt-6 max-w-prose text-pretty text-center text-base/7 text-gray-600">
-				Our business plan is designed to be straightforward and affordable, ensuring you can focus
-				on what matters most—growing your dog-friendly business. Enjoy all the features without any
-				hidden fees or complex pricing tiers.
+<div id="pricing" class="bg-white py-24 sm:py-32">
+	<div class="mx-auto max-w-7xl px-6 lg:px-8">
+		<!-- Header -->
+		<div class="mx-auto max-w-2xl text-center">
+			<h2 class="text-primary text-base font-semibold leading-7">Pricing</h2>
+			<p class="mt-2 text-4xl font-bold tracking-tight text-gray-900 sm:text-5xl">
+				Simple, transparent pricing
+			</p>
+			<p class="mt-6 text-lg leading-8 text-gray-600">
+				No hidden fees, no surprises. Start with a free trial and upgrade when you're ready.
 			</p>
 		</div>
 
-		<div
-			class="mx-auto mt-16 max-w-2xl rounded-3xl ring-1 ring-gray-200 sm:mt-20 lg:mx-0 lg:flex lg:max-w-none"
-		>
-			<div class="p-8 sm:p-10 lg:flex-auto">
-				<h3 class="font-heading text-3xl font-semibold tracking-tight">Premium</h3>
-				<p class="text-muted-foreground mt-6 text-base/7">
-					Reach dog-lovers all throughout New Zealand with our premium plan. appear at the top of
-					search results and gain more visibility on our homepage. Customise your business profile
-					to match your brand and more.
-				</p>
-				<div class="mt-10 flex items-center gap-x-4">
-					<h4 class="text-brand-600 flex-none text-sm font-semibold leading-6">What's included</h4>
-					<div class="h-px flex-auto bg-gray-100"></div>
-				</div>
-				<ul class="mt-8 grid grid-cols-1 gap-4 text-sm/6 text-gray-600 sm:grid-cols-2 sm:gap-6">
-					{#each INCLUDED_FEATURES as feature}
-						<li class="flex gap-3">
+		<!-- Pricing Cards -->
+		<div class="mx-auto mt-16 grid max-w-5xl grid-cols-1 gap-8 lg:grid-cols-2">
+			<!-- Free Tier -->
+			<div class="relative flex flex-col rounded-3xl bg-gray-50 p-8 ring-1 ring-gray-200">
+				<div class="flex-1">
+					<h3 class="text-2xl font-bold tracking-tight text-gray-900">Free</h3>
+					<p class="mt-4 text-sm leading-6 text-gray-600">
+						Perfect for getting started and testing the platform.
+					</p>
+					<p class="mt-6 flex items-baseline gap-x-1">
+						<span class="text-5xl font-bold tracking-tight text-gray-900">$0</span>
+						<span class="text-sm font-semibold leading-6 text-gray-600">/month</span>
+					</p>
+
+					<ul class="mt-8 space-y-3 text-sm leading-6 text-gray-600">
+						<li class="flex gap-x-3">
 							<CheckIcon class="text-primary h-6 w-5 flex-none" />
-							{feature}
+							Claim one location
 						</li>
-					{/each}
-				</ul>
+						<li class="flex gap-x-3">
+							<CheckIcon class="text-primary h-6 w-5 flex-none" />
+							Basic business profile
+						</li>
+						<li class="flex gap-x-3">
+							<CheckIcon class="text-primary h-6 w-5 flex-none" />
+							View and respond to reviews
+						</li>
+						<li class="flex gap-x-3">
+							<CheckIcon class="text-primary h-6 w-5 flex-none" />
+							Standard search listing
+						</li>
+					</ul>
+				</div>
+
+				<a href="/sign-in?business=true" class="mt-8">
+					<Button variant="outline" size="lg" class="w-full">Start Free</Button>
+				</a>
 			</div>
 
-			<div class="-mt-2 p-2 lg:mt-0 lg:w-full lg:max-w-md lg:flex-shrink-0">
-				<div
-					class="rounded-2xl bg-gray-50 py-10 text-center ring-1 ring-inset ring-gray-900/5 lg:flex lg:flex-col lg:justify-center lg:py-16"
-				>
-					<div class="mx-auto max-w-xs py-8">
-						<p class="text-base font-semibold text-gray-600">For only</p>
-						<p class="mt-6 flex items-baseline justify-center gap-x-2">
-							<span class="text-5xl font-bold tracking-tight text-gray-900"> $24 </span>
-							<span class="text-sm font-semibold leading-6 tracking-wide text-gray-600">
-								/Month
-							</span>
-						</p>
+			<!-- Premium Tier -->
+			<div
+				class="from-primary/5 ring-primary relative flex flex-col rounded-3xl bg-gradient-to-br to-amber-50 p-8 ring-2"
+			>
+				<!-- Popular badge -->
+				<div class="absolute -top-4 left-1/2 -translate-x-1/2">
+					<span
+						class="bg-primary inline-flex items-center gap-1 rounded-full px-4 py-1 text-sm font-semibold text-white"
+					>
+						<Sparkles class="h-4 w-4" />
+						Most Popular
+					</span>
+				</div>
 
-						<Button class="mt-6 px-20">Get Started</Button>
-						<p class="mt-6 text-xs leading-5 text-gray-600">
-							Secure payment. Start reaching in minutes.
-						</p>
+				<div class="flex-1">
+					<h3 class="text-2xl font-bold tracking-tight text-gray-900">Premium</h3>
+					<p class="mt-4 text-sm leading-6 text-gray-600">
+						Everything you need to stand out and grow your business.
+					</p>
+					<p class="mt-6 flex items-baseline gap-x-1">
+						<span class="text-5xl font-bold tracking-tight text-gray-900">$24</span>
+						<span class="text-sm font-semibold leading-6 text-gray-600">/month</span>
+					</p>
+					<p class="mt-2 text-sm text-gray-500">
+						or $240/year <span class="text-primary font-semibold">(save $48)</span>
+					</p>
+
+					<div class="mt-8">
+						<p class="text-sm font-semibold text-gray-900">Everything in Free, plus:</p>
+						<ul class="mt-4 space-y-3 text-sm leading-6 text-gray-600">
+							{#each INCLUDED_FEATURES.slice(0, 6) as feature}
+								<li class="flex gap-x-3">
+									<CheckIcon class="text-primary h-6 w-5 flex-none" />
+									{feature}
+								</li>
+							{/each}
+						</ul>
 					</div>
 				</div>
+
+				<a href="/sign-up?business=true" class="mt-8">
+					<Button size="lg" class="w-full">Start Free Trial</Button>
+				</a>
+				<p class="mt-4 text-center text-xs text-gray-600">
+					14-day free trial • No credit card required
+				</p>
 			</div>
+		</div>
+
+		<!-- FAQ or additional info -->
+		<div class="mx-auto mt-16 max-w-2xl text-center">
+			<p class="text-sm text-gray-600">
+				Need help choosing? <a
+					href="mailto:support@woofswelcome.nz"
+					class="text-primary font-semibold hover:underline">Contact our team</a
+				> for personalized guidance.
+			</p>
 		</div>
 	</div>
 </div>

@@ -1,6 +1,7 @@
 import { and, desc, eq, gte, or, sql } from "drizzle-orm";
 import { db } from "../db";
 import {
+  Business,
   City,
   Favourite,
   Island,
@@ -296,4 +297,35 @@ export const getUserPrivacySettings = async (userId: string) => {
   }
 
   return userRecord.isProfilePublic;
+};
+
+export const getUserBusiness = async (userId: string) => {
+  const business = await db.query.Business.findFirst({
+    where: eq(Business.ownerId, userId),
+  });
+
+  if (!business) {
+    return false;
+  }
+
+  return true;
+};
+
+export const getBusiness = async (userId: string) => {
+  const business = await db.query.Business.findFirst({
+    where: eq(Business.ownerId, userId),
+    columns: {
+      id: true,
+      name: true,
+      email: true,
+      logoUrl: true,
+      verified: true,
+    },
+  });
+
+  if (!business) {
+    return null;
+  }
+
+  return business;
 };

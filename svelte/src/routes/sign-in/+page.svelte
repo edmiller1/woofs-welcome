@@ -4,8 +4,16 @@
 	import { Dog } from '@lucide/svelte';
 	import fluffs from '$lib/assets/fluffs.jpg';
 	import SignInForm from './components/sign-in-form.svelte';
+	import { onMount } from 'svelte';
 
-	const redirectTo = page.url.searchParams.get('redirect') || '/';
+	const redirectTo = $derived(page.url.searchParams.get('redirect') || '/');
+	const isBusiness = $derived(page.url.searchParams.get('business') === 'true');
+
+	onMount(() => {
+		if (isBusiness) {
+			sessionStorage.setItem('onboarding_type', 'business');
+		}
+	});
 </script>
 
 <svelte:head>
@@ -24,13 +32,13 @@
 				</div>
 				Woofs Welcome
 			</a>
-			<a href="/business/sign-up" class={buttonVariants({ variant: 'link' })}>
+			<a href="/sign-in?business=true" class={buttonVariants({ variant: 'link' })}>
 				Create a business account
 			</a>
 		</div>
 		<div class="flex flex-1 items-center justify-center">
 			<div class="w-full max-w-xs">
-				<SignInForm {redirectTo} />
+				<SignInForm {redirectTo} {isBusiness} />
 			</div>
 		</div>
 	</div>

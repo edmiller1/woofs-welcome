@@ -9,7 +9,12 @@ import { eq } from "drizzle-orm";
 import { user } from "../db/schema";
 import * as schema from "../db/schema";
 import { env } from "../config/env";
-import { getUserPrivacySettings, getUserProvider } from "./helpers";
+import {
+  getBusiness,
+  getUserBusiness,
+  getUserPrivacySettings,
+  getUserProvider,
+} from "./helpers";
 
 export const auth = betterAuth({
   database: drizzleAdapter(db, {
@@ -40,11 +45,15 @@ export const auth = betterAuth({
     customSession(async ({ user, session }) => {
       const provider = await getUserProvider(user.id);
       const isProfilePublic = await getUserPrivacySettings(user.id);
+      const isBusinessAccount = await getUserBusiness(user.id);
+      const userBusiness = await getBusiness(user.id);
       return {
         user: {
           ...user,
           provider: provider || "google",
           isProfilePublic: isProfilePublic ?? true,
+          isBusinessAccount,
+          business: userBusiness,
         },
         session,
       };

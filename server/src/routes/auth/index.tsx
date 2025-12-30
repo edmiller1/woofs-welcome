@@ -70,10 +70,6 @@ authRouter.post(
           image: auth.image ?? "",
           provider: provider ?? "Google",
           isAdmin: false,
-          isBusinessAccount: isBusinessAccount ?? false,
-          businessName: businessName ?? "",
-          businessEmail: businessEmail ?? "",
-          businessPhone: businessPhone ?? "",
           createdAt: new Date(),
         });
 

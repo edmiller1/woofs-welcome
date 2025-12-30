@@ -66,6 +66,8 @@ export class PlaceService {
             place.city?.name
           );
 
+          console.log(placesData);
+
           const images = await Google.getPlacePhotos(placesData[0].place_id);
 
           if (!images || images.length === 0) {

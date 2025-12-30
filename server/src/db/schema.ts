@@ -56,22 +56,12 @@ export const user = pgTable(
     imagePublicId: text("image_public_id"),
     provider: varchar("provider", { length: 255 }),
     isAdmin: boolean("is_admin").default(false),
-    isBusinessAccount: boolean("is_business_account").default(false),
-    businessName: text("business_name"),
-    businessEmail: text("business_email"),
-    businessPhone: text("business_phone"),
-    website: text("website"),
-    businessDescription: text("business_description"),
-    logoUrl: text("logo_url"),
-    verified: boolean("is_verified").default(false),
-    subscriptionTier: text("subscription_tier"),
-    subscriptionExpiresAt: timestamp("subscription_expires_at"),
     isProfilePublic: boolean("is_profile_public").default(true),
     createdAt: timestamp("created_at")
-      .$defaultFn(() => /* @__PURE__ */ new Date())
+      .$defaultFn(() => new Date())
       .notNull(),
     updatedAt: timestamp("updated_at")
-      .$defaultFn(() => /* @__PURE__ */ new Date())
+      .$defaultFn(() => new Date())
       .notNull(),
     deletedAt: timestamp("deleted_at"),
     notificationPreferences: jsonb("notification_preferences")
@@ -153,6 +143,85 @@ export const verification = pgTable("verification", {
     () => /* @__PURE__ */ new Date()
   ),
 });
+
+export const Business = pgTable(
+  "business",
+  {
+    id: text("id").primaryKey(),
+    ownerId: text("owner_id")
+      .notNull()
+      .references(() => user.id, { onDelete: "cascade" }),
+
+    // Business identity
+    name: text("name").notNull(),
+    email: text("email"),
+    phone: text("phone"),
+    website: text("website"),
+    description: text("description"),
+
+    // Branding
+    logoUrl: text("logo_url"),
+    logoPublicId: text("logo_public_id"),
+
+    // Verification & subscription
+    verified: boolean("verified").default(false).notNull(),
+    verifiedAt: timestamp("verified_at"),
+    subscriptionTier: text("subscription_tier").default("free"), // 'free', 'basic', 'premium'
+    subscriptionExpiresAt: timestamp("subscription_expires_at"),
+
+    // Timestamps
+    createdAt: timestamp("created_at")
+      .$defaultFn(() => new Date())
+      .notNull(),
+    updatedAt: timestamp("updated_at")
+      .$defaultFn(() => new Date())
+      .notNull(),
+  },
+  (table) => ({
+    ownerIdx: index("business_owner_idx").on(table.ownerId),
+    emailIdx: index("business_email_idx").on(table.email),
+  })
+);
+
+export const BusinessPlace = pgTable(
+  "business_place",
+  {
+    id: text("id").primaryKey(),
+    businessId: text("business_id")
+      .notNull()
+      .references(() => Business.id, { onDelete: "cascade" }),
+    placeId: uuid("place_id")
+      .notNull()
+      .references(() => Place.id, { onDelete: "cascade" }),
+
+    // Claim workflow
+    claimStatus: text("claim_status").default("pending").notNull(), // 'pending', 'approved', 'rejected'
+    claimedAt: timestamp("claimed_at")
+      .$defaultFn(() => new Date())
+      .notNull(),
+    verifiedAt: timestamp("verified_at"),
+
+    // Optional: admin notes
+    rejectionReason: text("rejection_reason"),
+
+    createdAt: timestamp("created_at")
+      .$defaultFn(() => new Date())
+      .notNull(),
+  },
+  (table) => ({
+    // Ensure a business can only claim a place once
+    businessPlaceIdx: uniqueIndex("business_place_unique_idx").on(
+      table.businessId,
+      table.placeId
+    ),
+    // For querying all places by business
+    businessIdx: index("bp_business_idx").on(table.businessId),
+    // For checking if a place is claimed
+    placeIdx: index("bp_place_idx").on(table.placeId),
+    // For admin reviewing pending claims
+    statusIdx: index("bp_status_idx").on(table.claimStatus),
+  })
+);
 
 export const Island = pgTable(
   "island",
@@ -462,12 +531,35 @@ export const DogBreed = pgTable("dog_breed", {
 });
 
 // Define relationships
-export const usersRelations = relations(user, ({ many }) => ({
+export const usersRelations = relations(user, ({ many, one }) => ({
   reviews: many(Review),
   favorites: many(Favourite),
   placeClaims: many(Claim),
   session: many(session),
+  business: one(Business),
 }));
+
+export const businessRelations = {
+  owner: {
+    fields: [Business.ownerId],
+    references: [user.id],
+  },
+  places: {
+    fields: [Business.id],
+    references: [BusinessPlace.businessId],
+  },
+};
+
+export const businessPlaceRelations = {
+  business: {
+    fields: [BusinessPlace.businessId],
+    references: [Business.id],
+  },
+  place: {
+    fields: [BusinessPlace.placeId],
+    references: [Place.id],
+  },
+};
 
 export const sessionRelations = relations(session, ({ one }) => ({
   user: one(user, {
@@ -618,6 +710,8 @@ export function generateSlug(name: string): string {
 }
 
 export type UserSelect = InferSelectModel<typeof user>;
+export type BusinessSelect = InferSelectModel<typeof Business>;
+export type NewBusiness = typeof Business.$inferInsert;
 export type PlaceSelect = InferSelectModel<typeof Place>;
 export type PlaceImageSelect = InferSelectModel<typeof PlaceImage>;
 export type ReviewSelect = InferSelectModel<typeof Review>;
@@ -631,6 +725,15 @@ export type PlaceTagSelect = InferSelectModel<typeof PlaceTag>;
 export type ReviewLikeSelect = InferSelectModel<typeof ReviewLike>;
 export type ReviewReportSelect = InferSelectModel<typeof ReviewReport>;
 export type ReviewImageSelect = InferSelectModel<typeof ReviewImage>;
+
+export type BusinessWithOwner = BusinessSelect & {
+  owner: {
+    id: string;
+    name: string;
+    email: string;
+    image: string | null;
+  };
+};
 
 export type FavouriteWithPlaceSelect = FavouriteSelect & {
   place: PlaceWithImagesSelect | null;

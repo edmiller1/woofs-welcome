@@ -11,9 +11,10 @@
 
 	interface Props {
 		redirectTo: string;
+		isBusiness?: boolean;
 	}
 
-	const { redirectTo }: Props = $props();
+	const { redirectTo, isBusiness }: Props = $props();
 
 	let email = $state<string>('');
 	let loading = $state<boolean>(false);
@@ -47,7 +48,23 @@
 
 			// Success - redirect to verification page
 			toast.success('Verification code sent to your email!');
-			goto(`/verify-otp?email=${encodeURIComponent(email)}&type=sign-in&redirect=${redirectTo}`);
+
+			const params = new URLSearchParams({
+				email: email,
+				type: 'sign-in'
+			});
+
+			if (isBusiness) {
+				params.set('isBusiness', 'true');
+
+				sessionStorage.setItem('onboarding_type', 'business');
+			}
+
+			if (redirectTo && redirectTo !== '/') {
+				params.set('redirect', redirectTo);
+			}
+
+			goto(`/verify-otp?${params.toString()}`);
 		} catch (error) {
 			console.error('Email sign-in error:', error);
 			toast.error('Failed to send verification code');
@@ -107,10 +124,6 @@
 					Sign in with Google
 				{/if}
 			</Button>
-			<div class="text-center text-sm">
-				Don't have an account?
-				<a href="/sign-up" class="underline-offset-4 hover:underline"> Sign up </a>
-			</div>
 		</div>
 	</CardContent>
 </Card>

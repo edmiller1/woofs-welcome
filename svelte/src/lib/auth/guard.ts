@@ -1,5 +1,6 @@
 import { redirect } from '@sveltejs/kit';
 import { sessionCache } from './session-cache';
+import type { BAUser } from '$lib/types/user';
 
 export async function requireAuth() {
 	const { data } = await sessionCache.getSession();
@@ -24,5 +25,20 @@ export async function getUser() {
 	if (!data?.user) {
 		return null;
 	}
-	return data.user;
+	return data.user as BAUser;
+}
+
+export async function requireBusinessUser() {
+	const { data } = await sessionCache.getSession();
+	if (!data?.user) {
+		redirect(302, '/sign-in');
+	}
+
+	const user = data.user as BAUser;
+
+	if (!user.isBusinessAccount) {
+		redirect(302, '/');
+	}
+
+	return user;
 }

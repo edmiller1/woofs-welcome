@@ -10,7 +10,6 @@
 		DropdownMenuTrigger
 	} from './ui/dropdown-menu';
 	import type { BAUser } from '$lib/types/user';
-	import { getUserInitials } from '$lib/helpers';
 
 	const { user, className }: { user: BAUser; className?: string } = $props();
 </script>
@@ -24,14 +23,14 @@
 				referrerpolicy="no-referrer"
 				class="object-cover object-center"
 			/>
-			<AvatarFallback>{getUserInitials(user.name)}</AvatarFallback>
+			<AvatarFallback>{user.name}</AvatarFallback>
 		</Avatar>
 	</DropdownMenuTrigger>
 	<DropdownMenuContent align="end" class="mt-2">
-		<a href="/profile">
-			<DropdownMenuItem><CircleUser class="text-foreground" /> Profile</DropdownMenuItem>
+		<a href="/business/dashboard">
+			<DropdownMenuItem><CircleUser class="text-foreground" /> Dashboard</DropdownMenuItem>
 		</a>
-		<a href="/profile/settings">
+		<a href="/business/dashboard/settings">
 			<DropdownMenuItem><Cog class="text-foreground" />Settings</DropdownMenuItem>
 		</a>
 		<DropdownMenuItem onclick={() => auth.signOut()}

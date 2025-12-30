@@ -5,43 +5,8 @@
     {
       "idx": 0,
       "version": "7",
-      "when": 1752448566633,
-      "tag": "0000_nebulous_silver_centurion",
-      "breakpoints": true
-    },
-    {
-      "idx": 1,
-      "version": "7",
-      "when": 1752709214308,
-      "tag": "0001_damp_tyrannus",
-      "breakpoints": true
-    },
-    {
-      "idx": 2,
-      "version": "7",
-      "when": 1755641503886,
-      "tag": "0002_colorful_harpoon",
-      "breakpoints": true
-    },
-    {
-      "idx": 3,
-      "version": "7",
-      "when": 1756257977264,
-      "tag": "0003_glorious_patriot",
-      "breakpoints": true
-    },
-    {
-      "idx": 4,
-      "version": "7",
-      "when": 1763769732924,
-      "tag": "0004_marvelous_runaways",
-      "breakpoints": true
-    },
-    {
-      "idx": 5,
-      "version": "7",
-      "when": 1766569481784,
-      "tag": "0005_jazzy_pretty_boy",
+      "when": 1766875831251,
+      "tag": "0000_next_emma_frost",
       "breakpoints": true
     }
   ]

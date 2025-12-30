@@ -3,8 +3,6 @@
 	import { defaults, superForm } from 'sveltekit-superforms';
 	import { zod4 } from 'sveltekit-superforms/adapters';
 	import { toast } from 'svelte-sonner';
-	import type { BAUser, ErrorResponse } from '$lib/types/models';
-	import { user } from '$lib/auth/stores';
 	import { goto } from '$app/navigation';
 	import * as Form from '$lib/components/ui/form/index.js';
 	import { Input } from '$lib/components/ui/input/index.js';
@@ -16,6 +14,7 @@
 	import { api } from '$lib/api';
 	import { auth } from '$lib/auth/stores';
 	import confetti from 'canvas-confetti';
+	import type { BAUser } from '$lib/types/user';
 
 	interface Props {
 		searchParams: {
@@ -24,9 +23,13 @@
 		user: BAUser | null;
 	}
 
+	const { user, searchParams }: Props = $props();
+
 	if (!user) {
 		goto('/sign-in');
 	}
+
+	const isBusiness = $derived(searchParams?.isBusiness === 'true');
 
 	const updateProfile = createMutation({
 		mutationFn: async (profileData: { name: string; image?: string }) =>
@@ -39,11 +42,13 @@
 				origin: { y: 0.6 }
 			});
 			await auth.initialize();
-			goto('/');
+			if (isBusiness) {
+				goto('/business/setup');
+			} else {
+				goto('/explore');
+			}
 		}
 	});
-
-	let { searchParams }: Props = $props();
 
 	const formSchema = z.object({
 		name: z
@@ -115,7 +120,7 @@
 </script>
 
 <svelte:head>
-	<title>Welcome - Woofs</title>
+	<title>Welcome - Woofs Welcome</title>
 	<meta
 		name="description"
 		content="Welcome to Woofs! Let's get started by setting up your profile."
@@ -137,8 +142,13 @@
 			class="not-dark:hidden mx-auto h-10 w-auto"
 		/>
 		<h2 class="mt-10 text-center text-lg font-bold tracking-tight text-gray-900 dark:text-white">
-			Let's finish setting up your profile
+			{isBusiness ? "First, let's set up your profile" : "Let's finish setting up your profile"}
 		</h2>
+		<p>
+			{isBusiness
+				? 'Before we set up your business, tell us a bit about yourself'
+				: 'Tell us a bit about yourself'}
+		</p>
 	</div>
 
 	<div class="mt-10 sm:mx-auto sm:w-full sm:max-w-sm">

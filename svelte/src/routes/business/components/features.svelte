@@ -1,139 +1,207 @@
-<script lang="ts"></script>
+<script lang="ts">
+	import { MapPin, Star, TrendingUp, Calendar, Shield, Users } from '@lucide/svelte';
+</script>
 
 <div class="bg-gray-50 py-24 sm:py-32">
 	<div class="mx-auto max-w-2xl px-6 lg:max-w-7xl lg:px-8">
-		<h2 class="text-primary text-center text-base/7 font-semibold">Business Accounts</h2>
-		<p
-			class="mx-auto mt-2 max-w-lg text-balance text-center text-4xl font-semibold tracking-tight sm:text-5xl"
-		>
-			Everything you need to have your business seen by dog owners
-		</p>
+		<div class="text-center">
+			<h2 class="text-primary text-base font-semibold leading-7">Business Features</h2>
+			<p class="mt-2 text-4xl font-bold tracking-tight text-gray-900 sm:text-5xl">
+				Everything you need to grow your dog-friendly business
+			</p>
+		</div>
+
 		<div class="mt-10 grid gap-4 sm:mt-16 lg:grid-cols-3 lg:grid-rows-2">
-			<!-- Priority -->
+			<!-- Feature 1: Claim & Manage -->
 			<div class="relative lg:row-span-2">
-				<div class="lg:rounded-l-4xl absolute inset-px rounded-lg bg-white"></div>
+				<div class="absolute inset-px rounded-lg bg-white lg:rounded-l-[2rem]"></div>
 				<div
-					class="relative flex h-full flex-col overflow-hidden rounded-[calc(var(--radius-lg)+1px)] lg:rounded-l-[calc(2rem+1px)]"
+					class="relative flex h-full flex-col overflow-hidden rounded-[calc(theme(borderRadius.lg)+1px)] lg:rounded-l-[calc(2rem+1px)]"
 				>
 					<div class="px-8 pb-3 pt-8 sm:px-10 sm:pb-0 sm:pt-10">
-						<p class="mt-2 text-lg font-medium tracking-tight max-lg:text-center">
-							Priority Placement
+						<div class="bg-primary/10 flex h-12 w-12 items-center justify-center rounded-lg">
+							<MapPin class="text-primary h-6 w-6" />
+						</div>
+						<p class="mt-4 text-lg font-medium tracking-tight text-gray-950">
+							Claim or Create Places
 						</p>
-						<p class="mt-2 max-w-lg text-sm/6 text-gray-600 max-lg:text-center">
-							Have your business show up first in search results and gain more visibility on our
-							homepage.
+						<p class="mt-2 max-w-lg text-sm leading-6 text-gray-600">
+							Take control of your business profile. Claim existing places or create new ones for
+							all your locations. Update photos, hours, and dog-friendly amenities.
 						</p>
 					</div>
-					<div class="@container min-h-120 relative w-full grow max-lg:mx-auto max-lg:max-w-sm">
+					<div class="relative min-h-[30rem] w-full grow">
 						<div
-							class="absolute inset-x-10 bottom-0 top-10 overflow-hidden rounded-t-[12cqw] border-x-[3cqw] border-t-[3cqw] border-gray-700 bg-gray-900 shadow-2xl"
+							class="from-primary/10 absolute bottom-0 left-10 right-0 top-10 overflow-hidden rounded-tl-xl bg-gradient-to-br to-amber-100 shadow-2xl"
 						>
-							<img
-								class="size-full object-cover object-top"
-								src="https://tailwindcss.com/plus-assets/img/component-images/bento-03-mobile-friendly.png"
-								alt=""
-							/>
+							<!-- Mockup of business dashboard -->
+							<div class="flex h-full flex-col p-6">
+								<div class="space-y-3">
+									<div class="h-20 rounded-lg bg-white shadow-sm ring-1 ring-gray-900/5"></div>
+									<div class="h-20 rounded-lg bg-white shadow-sm ring-1 ring-gray-900/5"></div>
+									<div class="h-20 rounded-lg bg-white shadow-sm ring-1 ring-gray-900/5"></div>
+								</div>
+							</div>
 						</div>
 					</div>
 				</div>
 				<div
-					class="lg:rounded-l-4xl pointer-events-none absolute inset-px rounded-lg shadow-sm ring-1 ring-black/5"
+					class="pointer-events-none absolute inset-px rounded-lg shadow ring-1 ring-black/5 lg:rounded-l-[2rem]"
 				></div>
 			</div>
-			<!-- Claim -->
+
+			<!-- Feature 2: Priority Placement -->
 			<div class="relative max-lg:row-start-1">
-				<div class="max-lg:rounded-t-4xl absolute inset-px rounded-lg bg-white"></div>
+				<div class="absolute inset-px rounded-lg bg-white max-lg:rounded-t-[2rem]"></div>
 				<div
-					class="relative flex h-full flex-col overflow-hidden rounded-[calc(var(--radius-lg)+1px)] max-lg:rounded-t-[calc(2rem+1px)]"
+					class="relative flex h-full flex-col overflow-hidden rounded-[calc(theme(borderRadius.lg)+1px)] max-lg:rounded-t-[calc(2rem+1px)]"
 				>
 					<div class="px-8 pt-8 sm:px-10 sm:pt-10">
-						<p class="mt-2 text-lg font-medium tracking-tight text-gray-950 max-lg:text-center">
-							Claim or create
-						</p>
-						<p class="mt-2 max-w-lg text-sm/6 text-gray-600 max-lg:text-center">
-							Claim or create your business profile and start managing your business information,
-							photos, and events.
+						<div class="bg-primary/10 flex h-12 w-12 items-center justify-center rounded-lg">
+							<TrendingUp class="text-primary h-6 w-6" />
+						</div>
+						<p class="mt-4 text-lg font-medium tracking-tight text-gray-950">Priority Placement</p>
+						<p class="mt-2 max-w-lg text-sm leading-6 text-gray-600">
+							Stand out in search results. Premium members appear first when dog owners search for
+							venues in your area.
 						</p>
 					</div>
 					<div
 						class="flex flex-1 items-center justify-center px-8 max-lg:pb-12 max-lg:pt-10 sm:px-10 lg:pb-2"
 					>
-						<img
-							class="w-full max-lg:max-w-xs"
-							src="https://tailwindcss.com/plus-assets/img/component-images/bento-03-performance.png"
-							alt=""
-						/>
-					</div>
-				</div>
-				<div
-					class="max-lg:rounded-t-4xl pointer-events-none absolute inset-px rounded-lg shadow-sm ring-1 ring-black/5"
-				></div>
-			</div>
-			<!-- Multiple -->
-			<div class="relative max-lg:row-start-3 lg:col-start-2 lg:row-start-2">
-				<div class="absolute inset-px rounded-lg bg-white"></div>
-				<div
-					class="relative flex h-full flex-col overflow-hidden rounded-[calc(var(--radius-lg)+1px)]"
-				>
-					<div class="px-8 pt-8 sm:px-10 sm:pt-10">
-						<p class="mt-2 text-lg font-medium tracking-tight text-gray-950 max-lg:text-center">
-							Multiple business locations
-						</p>
-						<p class="mt-2 max-w-lg text-sm/6 text-gray-600 max-lg:text-center">
-							Manage all your business locations in one place. Add, update, and remove locations as
-							needed.
-						</p>
-					</div>
-					<div class="@container flex flex-1 items-center max-lg:py-6 lg:pb-2">
-						<img
-							class="h-[min(152px,40cqw)] object-cover"
-							src="https://tailwindcss.com/plus-assets/img/component-images/bento-03-security.png"
-							alt=""
-						/>
-					</div>
-				</div>
-				<div
-					class="pointer-events-none absolute inset-px rounded-lg shadow-sm ring-1 ring-black/5"
-				></div>
-			</div>
-			<!-- Events -->
-			<div class="relative lg:row-span-2">
-				<div
-					class="max-lg:rounded-b-4xl lg:rounded-r-4xl absolute inset-px rounded-lg bg-white"
-				></div>
-				<div
-					class="relative flex h-full flex-col overflow-hidden rounded-[calc(var(--radius-lg)+1px)] max-lg:rounded-b-[calc(2rem+1px)] lg:rounded-r-[calc(2rem+1px)]"
-				>
-					<div class="px-8 pb-3 pt-8 sm:px-10 sm:pb-0 sm:pt-10">
-						<p class="mt-2 text-lg font-medium tracking-tight text-gray-950 max-lg:text-center">
-							Events and promotions
-						</p>
-						<p class="mt-2 max-w-lg text-sm/6 text-gray-600 max-lg:text-center">
-							Create and advertise events and promotions.
-						</p>
-					</div>
-					<div class="min-h-120 relative w-full grow">
-						<div
-							class="absolute bottom-0 left-10 right-0 top-10 overflow-hidden rounded-tl-xl bg-gray-900 shadow-2xl"
-						>
-							<div class="flex bg-gray-800/40 ring-1 ring-white/5">
-								<div class="-mb-px flex text-sm/6 font-medium text-gray-400">
-									<div
-										class="border-b border-r border-b-white/20 border-r-white/10 bg-white/5 px-4 py-2 text-white"
-									>
-										NotificationSetting.jsx
-									</div>
-									<div class="border-r border-gray-600/10 px-4 py-2">App.jsx</div>
-								</div>
+						<!-- Visual representation of priority placement -->
+						<div class="w-full space-y-2">
+							<div
+								class="border-primary bg-primary/5 flex items-center gap-2 rounded-lg border-2 p-3"
+							>
+								<Star class="fill-primary text-primary h-5 w-5" />
+								<span class="text-sm font-medium">Your Business</span>
 							</div>
-							<div class="px-6 pb-14 pt-6">
-								<!-- {/* Your code example */} -->
+							<div class="rounded-lg bg-gray-100 p-3 opacity-50">
+								<span class="text-sm text-gray-600">Competitor</span>
+							</div>
+							<div class="rounded-lg bg-gray-100 p-3 opacity-50">
+								<span class="text-sm text-gray-600">Competitor</span>
 							</div>
 						</div>
 					</div>
 				</div>
 				<div
-					class="max-lg:rounded-b-4xl lg:rounded-r-4xl pointer-events-none absolute inset-px rounded-lg shadow-sm ring-1 ring-black/5"
+					class="pointer-events-none absolute inset-px rounded-lg shadow ring-1 ring-black/5 max-lg:rounded-t-[2rem]"
+				></div>
+			</div>
+
+			<!-- Feature 3: Multiple Locations -->
+			<div class="relative max-lg:row-start-3 lg:col-start-2 lg:row-start-2">
+				<div class="absolute inset-px rounded-lg bg-white"></div>
+				<div
+					class="relative flex h-full flex-col overflow-hidden rounded-[calc(theme(borderRadius.lg)+1px)]"
+				>
+					<div class="px-8 pt-8 sm:px-10 sm:pt-10">
+						<div class="bg-primary/10 flex h-12 w-12 items-center justify-center rounded-lg">
+							<Users class="text-primary h-6 w-6" />
+						</div>
+						<p class="mt-4 text-lg font-medium tracking-tight text-gray-950">Multiple Locations</p>
+						<p class="mt-2 max-w-lg text-sm leading-6 text-gray-600">
+							Manage all your venues from one dashboard. Perfect for chains and multi-location
+							businesses.
+						</p>
+					</div>
+					<div class="flex flex-1 items-center px-8 max-lg:py-6 sm:px-10 lg:pb-2">
+						<div class="w-full space-y-2">
+							<div
+								class="flex items-center justify-between rounded-lg border bg-white p-3 shadow-sm"
+							>
+								<span class="text-sm">Auckland CBD</span>
+								<span class="rounded-full bg-green-100 px-2 py-1 text-xs text-green-700"
+									>Active</span
+								>
+							</div>
+							<div
+								class="flex items-center justify-between rounded-lg border bg-white p-3 shadow-sm"
+							>
+								<span class="text-sm">Ponsonby</span>
+								<span class="rounded-full bg-green-100 px-2 py-1 text-xs text-green-700"
+									>Active</span
+								>
+							</div>
+							<div
+								class="flex items-center justify-between rounded-lg border bg-white p-3 shadow-sm"
+							>
+								<span class="text-sm">Newmarket</span>
+								<span class="rounded-full bg-amber-100 px-2 py-1 text-xs text-amber-700"
+									>Pending</span
+								>
+							</div>
+						</div>
+					</div>
+				</div>
+				<div
+					class="pointer-events-none absolute inset-px rounded-lg shadow ring-1 ring-black/5"
+				></div>
+			</div>
+
+			<!-- Feature 4: Analytics & Insights -->
+			<div class="relative lg:row-span-2">
+				<div
+					class="absolute inset-px rounded-lg bg-white max-lg:rounded-b-[2rem] lg:rounded-r-[2rem]"
+				></div>
+				<div
+					class="relative flex h-full flex-col overflow-hidden rounded-[calc(theme(borderRadius.lg)+1px)] max-lg:rounded-b-[calc(2rem+1px)] lg:rounded-r-[calc(2rem+1px)]"
+				>
+					<div class="px-8 pb-3 pt-8 sm:px-10 sm:pb-0 sm:pt-10">
+						<div class="bg-primary/10 flex h-12 w-12 items-center justify-center rounded-lg">
+							<Star class="text-primary h-6 w-6" />
+						</div>
+						<p class="mt-4 text-lg font-medium tracking-tight text-gray-950">
+							Reviews & Reputation
+						</p>
+						<p class="mt-2 max-w-lg text-sm leading-6 text-gray-600">
+							Build trust with dog owners. Respond to reviews, showcase your best feedback, and
+							track your reputation over time.
+						</p>
+					</div>
+					<div class="relative min-h-[30rem] w-full grow">
+						<div
+							class="absolute bottom-0 left-10 right-0 top-10 overflow-hidden rounded-tl-xl bg-white shadow-2xl ring-1 ring-gray-900/10"
+						>
+							<!-- Review mockup -->
+							<div class="p-6">
+								<div class="mb-4 flex items-center justify-between">
+									<div>
+										<div class="text-3xl font-bold">4.8</div>
+										<div class="text-sm text-gray-600">Average rating</div>
+									</div>
+									<div class="flex gap-1">
+										<Star class="h-5 w-5 fill-amber-400 text-amber-400" />
+										<Star class="h-5 w-5 fill-amber-400 text-amber-400" />
+										<Star class="h-5 w-5 fill-amber-400 text-amber-400" />
+										<Star class="h-5 w-5 fill-amber-400 text-amber-400" />
+										<Star class="h-5 w-5 fill-gray-300 text-gray-300" />
+									</div>
+								</div>
+								<div class="space-y-3">
+									<div class="rounded-lg bg-gray-50 p-3">
+										<div class="mb-1 flex items-center gap-2">
+											<div class="h-6 w-6 rounded-full bg-gray-300"></div>
+											<div class="text-xs font-medium">Sarah & Max</div>
+										</div>
+										<div class="text-xs text-gray-600">"Perfect spot for coffee with my pup!"</div>
+									</div>
+									<div class="rounded-lg bg-gray-50 p-3">
+										<div class="mb-1 flex items-center gap-2">
+											<div class="h-6 w-6 rounded-full bg-gray-300"></div>
+											<div class="text-xs font-medium">James & Bella</div>
+										</div>
+										<div class="text-xs text-gray-600">"Water bowls and treats provided!"</div>
+									</div>
+								</div>
+							</div>
+						</div>
+					</div>
+				</div>
+				<div
+					class="pointer-events-none absolute inset-px rounded-lg shadow ring-1 ring-black/5 max-lg:rounded-b-[2rem] lg:rounded-r-[2rem]"
 				></div>
 			</div>
 		</div>

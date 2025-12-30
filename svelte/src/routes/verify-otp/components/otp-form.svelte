@@ -1,5 +1,4 @@
 <script lang="ts">
-	import { redirect } from '@sveltejs/kit';
 	import { goto } from '$app/navigation';
 	import { auth } from '$lib/auth/stores';
 	import { Button } from '$lib/components/ui/button';
@@ -28,6 +27,8 @@
 
 	let loading = $state<boolean>(false);
 	let cooldownSeconds = $state<number>(0);
+	const isBusiness = searchParams.isBusiness === 'true';
+	const redirect = searchParams.redirect || '/';
 
 	const formSchema = z.object({
 		pin: z
@@ -68,13 +69,12 @@
 			}
 
 			toast.success('Code verified successfully!');
-			if (result.data.user.name) {
-				goto(searchParams.redirect as string);
+
+			if (isBusiness) {
+				sessionStorage.setItem('onboarding_type', 'business');
+				goto('/onboarding?business=true', { replaceState: true });
 			} else {
-				goto(
-					`/welcome?email=${encodeURIComponent(result.data.user.email)}&redirect=${searchParams.redirect as string}`,
-					{ keepFocus: true }
-				);
+				goto('/onboarding', { replaceState: true });
 			}
 		} catch (error) {
 			console.error('OTP verification error: ', error);
