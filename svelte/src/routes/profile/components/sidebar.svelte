@@ -1,8 +1,10 @@
 <script lang="ts">
 	import { page } from '$app/state';
 	import * as Avatar from '$lib/components/ui/avatar/index.js';
+	import Button from '$lib/components/ui/button/button.svelte';
+	import * as Card from '$lib/components/ui/card/index.js';
 	import { getUserInitials } from '$lib/helpers';
-	import type { BAUser } from '$lib/types/models';
+	import type { BAUser } from '$lib/types/user';
 	import { ChevronDown, CircleUser, Heart, Settings, UserStar } from '@lucide/svelte';
 
 	interface Props {
@@ -20,6 +22,8 @@
 	}
 
 	const { user }: Props = $props();
+
+	const isBusinessAccount = $derived(user.isBusinessAccount);
 
 	const navItems = [
 		{
@@ -101,7 +105,11 @@
 		<div class="mb-10 flex items-center gap-3">
 			<div class="relative">
 				<Avatar.Root class="h-12 w-12 border-2 border-white shadow-sm">
-					<Avatar.Image src={user.image} alt={user.name} class="object-cover object-center" />
+					<Avatar.Image
+						src={user.image?.responsive.sm}
+						alt={user.name}
+						class="object-cover object-center"
+					/>
 					<Avatar.Fallback>{getUserInitials(user.name)}</Avatar.Fallback>
 				</Avatar.Root>
 				<div
@@ -170,5 +178,18 @@
 				</div>
 			{/each}
 		</nav>
+		<div class="flex flex-col items-start justify-end">
+			<Card.Root class="gap-2 py-4 shadow-none">
+				<Card.Header class="px-4">
+					<Card.Title class="text-sm">Have a dog friendly business?</Card.Title>
+					<Card.Description>Reach thousands of dog owners across New Zealand.</Card.Description>
+				</Card.Header>
+				<Card.Content class="px-4">
+					<a href="/business/setup">
+						<Button class="w-full shadow-none" size="sm">Create business account</Button>
+					</a>
+				</Card.Content>
+			</Card.Root>
+		</div>
 	</div>
 </aside>

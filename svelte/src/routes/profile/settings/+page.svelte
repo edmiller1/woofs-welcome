@@ -2,7 +2,6 @@
 	import { formatDate, getFileBase64 } from '$lib/helpers';
 	import { Button } from '$lib/components/ui/button';
 	import Separator from '$lib/components/ui/separator/separator.svelte';
-	import type { BAUser, ErrorResponse } from '$lib/types/models';
 	import * as Avatar from '$lib/components/ui/avatar/index.js';
 	import * as Dialog from '$lib/components/ui/dialog/index.js';
 	import { Input } from '$lib/components/ui/input';
@@ -13,6 +12,8 @@
 	import { createMutation } from '@tanstack/svelte-query';
 	import { api } from '$lib/api';
 	import { auth } from '$lib/auth/stores';
+	import type { BAUser } from '$lib/types/user';
+	import type { ErrorResponse } from '$lib/types/types';
 
 	interface Props {
 		data: {
@@ -143,7 +144,11 @@
 							<h4 class="text-sm font-medium">Profile Picture</h4>
 						</div>
 						<Avatar.Root class="size-20">
-							<Avatar.Image src={user.image} alt={user.name} class="object-cover object-center" />
+							<Avatar.Image
+								src={user.image?.webp.src}
+								alt={user.name}
+								class="object-cover object-center"
+							/>
 							<Avatar.Fallback>{user.name[0].toUpperCase()}</Avatar.Fallback>
 						</Avatar.Root>
 					</div>
@@ -163,7 +168,7 @@
 				<div class="flex items-start justify-between border-b border-gray-100 pb-4 last:border-0">
 					<div class="max-w-2xl space-y-1">
 						<h4 class="text-sm font-medium">
-							Joined on {formatDate(user.createdAt.toISOString())}
+							Joined on {formatDate(user.createdAt.toString())}
 						</h4>
 					</div>
 				</div>

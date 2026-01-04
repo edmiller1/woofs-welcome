@@ -21,6 +21,7 @@
 	import * as Sheet from '$lib/components/ui/sheet/index.js';
 	import { page } from '$app/state';
 	import type { BAUser } from '$lib/types/user';
+	import BusinessNav from './business-nav.svelte';
 
 	interface Props {
 		user: BAUser | null;
@@ -90,11 +91,22 @@
 			<!-- User Section -->
 			{#if user}
 				<div class="ml-2 flex items-center gap-3 border-l pl-3">
-					<div class="hidden flex-col items-end md:flex">
-						<span class="text-sm font-semibold">{user.name || 'User'}</span>
-						<span class="text-muted-foreground text-xs">{user.email}</span>
-					</div>
-					<UserNav {user} />
+					{#if user.activeContext === 'personal'}
+						<div class="hidden flex-col items-end md:flex">
+							<span class="text-sm font-semibold">{user.name || 'User'}</span>
+							<span class="text-muted-foreground text-xs">{user.email}</span>
+						</div>
+					{:else}
+						<div class="hidden flex-col items-end md:flex">
+							<span class="text-sm font-semibold">{user.business.name}</span>
+							<span class="text-muted-foreground text-xs">{user.business.email}</span>
+						</div>
+					{/if}
+					{#if user.activeContext === 'personal'}
+						<UserNav {user} />
+					{:else}
+						<BusinessNav {user} />
+					{/if}
 				</div>
 			{:else}
 				<a href={signInUrl}>

@@ -51,7 +51,11 @@
 			<div class="flex items-start gap-6">
 				<div class="flex-shrink-0">
 					<Avatar.Root class="size-24">
-						<Avatar.Image src={user.image} alt="Profile image" class="object-cover object-center" />
+						<Avatar.Image
+							src={user.image?.webp.src}
+							alt="Profile image"
+							class="object-cover object-center"
+						/>
 						<Avatar.Fallback>{getUserInitials(user.name)}</Avatar.Fallback>
 					</Avatar.Root>
 				</div>

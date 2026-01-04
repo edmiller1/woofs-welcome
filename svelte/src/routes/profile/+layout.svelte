@@ -1,8 +1,8 @@
 <script lang="ts">
 	import Navbar from '$lib/components/navbar.svelte';
-	import type { BAUser } from '$lib/types/models';
 	import type { Snippet } from 'svelte';
 	import Sidebar from './components/sidebar.svelte';
+	import type { BAUser } from '$lib/types/user';
 
 	interface Props {
 		data: {

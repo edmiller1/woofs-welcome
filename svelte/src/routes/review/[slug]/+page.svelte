@@ -11,7 +11,6 @@
 	import Calendar from '$lib/components/ui/calendar/calendar.svelte';
 	import { Textarea } from '$lib/components/ui/textarea';
 	import * as Select from '$lib/components/ui/select/index.js';
-	import type { Breed, ErrorResponse } from '$lib/types/models.js';
 	import { Badge } from '$lib/components/ui/badge';
 	import * as Popover from '$lib/components/ui/popover/index.js';
 	import { cn } from '$lib/utils';
@@ -25,12 +24,14 @@
 	} from '@internationalized/date';
 	import { generateUID, getFileBase64 } from '$lib/helpers';
 	import { toast } from 'svelte-sonner';
-	import { reviewFormSchema, type ReviewFormData } from '$lib/schemas.js';
 	import { goto } from '$app/navigation';
 	import type { AxiosError } from 'axios';
 	import ErrorBoundary from '$lib/components/error-boundary.svelte';
 	import { useValidation } from '$lib/hooks/use-validation.svelte.js';
 	import ValidationError from '$lib/components/validation-error.svelte';
+	import { reviewFormSchema, type ReviewFormData } from '$lib/schemas/review/index.js';
+	import type { ErrorResponse } from '$lib/types/types.js';
+	import type { DogBreed } from '$lib/types/review/index.js';
 
 	let { data } = $props();
 	const user = $derived(data.user);
@@ -105,7 +106,7 @@
 
 	let errors = $state<Record<string, string>>({});
 	let hoveredRating: number = $state(0);
-	let filteredBreeds = $state<Breed[] | undefined>([]);
+	let filteredBreeds = $state<DogBreed[] | undefined>([]);
 	let search = $state<string>('');
 
 	const timeOptions = [
@@ -244,8 +245,6 @@
 				images: formData.images.map((image) => image.base64Value)
 			});
 			$createReview.mutate(reviewData);
-			// Handle form submission here
-			// You would typically call your API endpoint here
 		}
 	}
 

@@ -21,20 +21,21 @@ export async function requireGuest(): Promise<void> {
 }
 
 export async function getUser() {
-	const { data } = await sessionCache.getSession();
-	if (!data?.user) {
+	const session = await sessionCache.getSession();
+	if (!session.data) {
 		return null;
 	}
-	return data.user as BAUser;
+	return session.data.user as BAUser;
 }
 
-export async function requireBusinessUser() {
-	const { data } = await sessionCache.getSession();
-	if (!data?.user) {
-		redirect(302, '/sign-in');
+export async function getBusinessUser() {
+	const session = await sessionCache.getSession();
+
+	if (!session.data) {
+		return null;
 	}
 
-	const user = data.user as BAUser;
+	const user = session.data.user as BAUser;
 
 	if (!user.isBusinessAccount) {
 		redirect(302, '/');

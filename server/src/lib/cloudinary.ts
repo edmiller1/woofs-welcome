@@ -23,6 +23,28 @@ export const Cloudinary = {
       url: res.secure_url,
     };
   },
+  uploadBusinessLogo: async (
+    image: string,
+    businessName: string,
+    businessId: string
+  ) => {
+    try {
+      const result = await cloudinary.uploader.upload(image, {
+        folder: `ww-business-assets/${businessName}-${businessId}`,
+      });
+
+      return {
+        publicId: result.public_id,
+        url: result.secure_url,
+      };
+    } catch (error) {
+      console.error(
+        `❌ Failed to upload image logo for business: ${businessName}:`,
+        error
+      );
+      return null;
+    }
+  },
   uploadGoogleImage: async (
     googleImage: string,
     placeSlug: string,

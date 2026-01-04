@@ -15,6 +15,7 @@ import {
 } from "../lib/errors";
 import { CreateBusinessBody } from "../routes/business/schemas";
 import { randomUUID } from "crypto";
+import { Cloudinary } from "../lib/cloudinary";
 
 export class BusinessService {
   /**
@@ -47,16 +48,30 @@ export class BusinessService {
 
   static async createBusiness(userId: string, data: CreateBusinessBody) {
     try {
+      const businessId: string = randomUUID();
+      let logoData: {
+        publicId: string;
+        url: string;
+      } | null = { publicId: "", url: "" };
+
+      if (data.logo) {
+        logoData = await Cloudinary.uploadBusinessLogo(
+          data.logo,
+          data.name,
+          businessId
+        );
+      }
+
       const businessData = {
-        id: randomUUID(),
+        id: businessId,
         name: data.name,
         email: data.email,
         phone: data.phone,
         website: data.website,
         description: data.description,
         ownerId: userId,
-        logoUrl: null,
-        logoPublicId: null,
+        logoUrl: logoData?.url || null,
+        logoPublicId: logoData?.publicId || null,
         verified: false,
         verifiedAt: null,
         subscriptionTier: "free",

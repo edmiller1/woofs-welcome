@@ -8,6 +8,7 @@ export const load: Load = async () => {
 
 	return {
 		user,
-		places
+		places,
+		activeContext: user?.activeContext || 'personal'
 	};
 };

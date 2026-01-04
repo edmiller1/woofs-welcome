@@ -9,6 +9,10 @@ export const load = async ({ url }) => {
 			const redirectTo = url.pathname;
 			throw redirect(307, `/sign-in?redirect=${encodeURIComponent(redirectTo)}`);
 		}
+
+		if (user.activeContext === 'business') {
+			throw redirect(307, `/business/dashboard`);
+		}
 	}
 
 	return {

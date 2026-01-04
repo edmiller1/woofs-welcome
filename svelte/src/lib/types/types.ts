@@ -132,3 +132,5 @@ export type FilterState = {
 	isNew: boolean;
 	isVerified: boolean;
 };
+
+export type Context = 'personal' | 'business';

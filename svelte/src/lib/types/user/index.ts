@@ -1,18 +1,28 @@
 import type { NotificationPreferences } from '../notification';
 import type { GetPlaceResponse } from '../place';
 import type { OptimizedReviewImage } from '../review';
+import type { OptimizedImage } from '../types';
 
 export interface BAUser {
 	id: string;
 	name: string;
 	emailVerified: boolean;
 	email: string;
-	createdAt: string | Date;
+	createdAt: string;
 	updatedAt: string | Date;
-	image?: string | null;
+	image?: OptimizedImage | null;
 	provider: string;
 	isProfilePublic: boolean;
 	isBusinessAccount: boolean;
+	activeContext: 'business' | 'personal';
+	business: {
+		email: string;
+		id: string;
+		logoUrl: OptimizedImage | null;
+		logoPublicId: string;
+		name: string;
+		verified: boolean;
+	};
 }
 
 export interface User {

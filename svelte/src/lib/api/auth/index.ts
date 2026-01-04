@@ -7,6 +7,7 @@ import { getProfileReviews } from './getProfileReviews';
 import { getProfileStats } from './getProfileStats';
 import { updatePrivacy } from './updatePrivacy';
 import { deleteAccount } from './deleteAccount';
+import { switchContext } from './switchContext';
 
 export const auth = {
 	checkEmails,
@@ -17,5 +18,6 @@ export const auth = {
 	getProfileReviews,
 	getProfileStats,
 	updatePrivacy,
-	deleteAccount
+	deleteAccount,
+	switchContext
 };

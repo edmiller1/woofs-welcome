@@ -20,6 +20,16 @@ export const needsProfileCompletion = derived(user, ($user) => {
 });
 
 export const auth = {
+	async checkAuth() {
+		if (!browser) return;
+
+		const session = await authClient.getSession();
+		if (session && session.data) {
+			return session.data.user;
+		}
+		return null;
+	},
+
 	async signIn(email: string) {
 		const result = await authClient.emailOtp.sendVerificationOtp({ email, type: 'sign-in' });
 		return result;

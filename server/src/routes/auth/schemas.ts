@@ -76,3 +76,8 @@ export const updatePrivacySettingsSchema = z.object({
 export type UpdatePrivacySettingsInput = z.infer<
   typeof updatePrivacySettingsSchema
 >;
+
+export const switchContextSchema = z.object({
+  context: z.enum(["personal", "business"]).default("personal"),
+});
+export type SwitchContextInput = z.infer<typeof switchContextSchema>;

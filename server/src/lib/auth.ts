@@ -11,9 +11,11 @@ import * as schema from "../db/schema";
 import { env } from "../config/env";
 import {
   getBusiness,
+  getContext,
   getUserBusiness,
   getUserPrivacySettings,
   getUserProvider,
+  optimizeImage,
 } from "./helpers";
 
 export const auth = betterAuth({
@@ -47,13 +49,16 @@ export const auth = betterAuth({
       const isProfilePublic = await getUserPrivacySettings(user.id);
       const isBusinessAccount = await getUserBusiness(user.id);
       const userBusiness = await getBusiness(user.id);
+      const context = await getContext(user.id);
       return {
         user: {
           ...user,
+          image: user.image ? await optimizeImage(user.image) : null,
           provider: provider || "google",
           isProfilePublic: isProfilePublic ?? true,
           isBusinessAccount,
           business: userBusiness,
+          activeContext: context || "personal",
         },
         session,
       };

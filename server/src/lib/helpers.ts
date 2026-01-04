@@ -133,6 +133,10 @@ export const optimizeReviewImages = async (reviews: UserReviewSelect[]) => {
   }));
 };
 
+export const optimizeImage = async (image: string) => {
+  return getResponsiveImageUrls(image);
+};
+
 export const processReviewImagesInBackground = async (
   images: string[],
   placeSlug: string,
@@ -319,6 +323,7 @@ export const getBusiness = async (userId: string) => {
       name: true,
       email: true,
       logoUrl: true,
+      logoPublicId: true,
       verified: true,
     },
   });
@@ -327,5 +332,24 @@ export const getBusiness = async (userId: string) => {
     return null;
   }
 
-  return business;
+  if (!business.logoUrl) {
+    return business;
+  }
+
+  return {
+    ...business,
+    logoUrl: getResponsiveImageUrls(business.logoUrl),
+  };
+};
+
+export const getContext = async (userId: string) => {
+  const userRecord = await db.query.user.findFirst({
+    where: eq(user.id, userId),
+  });
+
+  if (!userRecord) {
+    return null;
+  }
+
+  return userRecord.activeContext || "personal";
 };

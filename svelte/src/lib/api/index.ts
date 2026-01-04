@@ -6,9 +6,11 @@ import { city } from './city';
 import { review } from './review';
 import { location } from './location';
 import { notification } from './notification';
+import { business } from './business';
 
 export const api = {
 	auth,
+	business,
 	place,
 	region,
 	island,

@@ -5,7 +5,7 @@ export const load: Load = async () => {
 	const user = await getUser();
 
 	if (!user) {
-		return redirect(302, '/sign-in?business=true');
+		throw redirect(302, '/sign-in?business=true');
 	}
 
 	return {

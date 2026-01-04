@@ -1,6 +1,6 @@
 <script lang="ts">
 	import '../app.css';
-	import { onMount } from 'svelte';
+	import { onMount, type Snippet } from 'svelte';
 	import { auth, loading } from '$lib/auth/stores';
 	import { Toaster } from '$lib/components/ui/sonner/index.js';
 	import { LoaderCircle } from '@lucide/svelte';
@@ -10,6 +10,8 @@
 	import AuthModal from '$lib/components/auth-modal.svelte';
 	import 'mapbox-gl/dist/mapbox-gl.css';
 	import { handleQueryError } from '$lib/hooks/use-query-error';
+	import { contextStore } from '$lib/stores/context';
+	import type { BAUser } from '$lib/types/user';
 
 	const queryClient = new QueryClient({
 		defaultOptions: {
@@ -34,10 +36,13 @@
 		}
 	});
 
-	let { children } = $props();
+	let { children, user }: { children: Snippet<[]>; user: BAUser | null } = $props();
 
 	onMount(() => {
 		auth.initialize();
+		if (user) {
+			contextStore.set(user.activeContext);
+		}
 	});
 </script>
 

@@ -57,6 +57,7 @@ export const user = pgTable(
     provider: varchar("provider", { length: 255 }),
     isAdmin: boolean("is_admin").default(false),
     isProfilePublic: boolean("is_profile_public").default(true),
+    activeContext: text("active_context").default("personal"), // 'personal' | 'business'
     createdAt: timestamp("created_at")
       .$defaultFn(() => new Date())
       .notNull(),

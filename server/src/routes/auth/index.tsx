@@ -20,6 +20,8 @@ import {
   getProfileFavouritesSchema,
   GetProfileReviewsInput,
   getProfileReviewsSchema,
+  SwitchContextInput,
+  switchContextSchema,
   UpdatePrivacySettingsInput,
   updatePrivacySettingsSchema,
   UpdateProfileInput,
@@ -274,3 +276,24 @@ authRouter.delete("/account", authMiddleware, async (c) => {
 
   return c.json(result, 200);
 });
+
+authRouter.patch(
+  "/context",
+  authMiddleware,
+  validateBody(switchContextSchema),
+  async (c) => {
+    const auth = c.get("user");
+
+    if (!auth) throw new UnauthorizedError();
+
+    const { context } = c.get("validatedBody") as SwitchContextInput;
+
+    if (!["personal", "business"].includes(context)) {
+      throw new BadRequestError("Invalid context");
+    }
+
+    const result = await AuthService.switchContext(auth.id, context);
+
+    return c.json(result, 200);
+  }
+);

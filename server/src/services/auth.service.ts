@@ -16,6 +16,8 @@ import {
 } from "../lib/helpers/region";
 import { optimizePlaceImages, optimizeReviewImages } from "../lib/helpers";
 
+type Context = "personal" | "business";
+
 /**
  * Auth Service
  *
@@ -391,6 +393,39 @@ export class AuthService {
         throw error;
       }
       throw new DatabaseError("Failed to update privacy settings", {
+        originalError: error,
+      });
+    }
+  }
+
+  static async switchContext(userId: string, context: Context) {
+    try {
+      const userRecord = await db.query.user.findFirst({
+        where: eq(user.id, userId),
+      });
+
+      if (!userRecord) {
+        throw new NotFoundError("User not found");
+      }
+
+      if (!["personal", "business"].includes(context)) {
+        throw new AppError("Invalid context");
+      }
+
+      await db
+        .update(user)
+        .set({ activeContext: context, updatedAt: new Date() })
+        .where(eq(user.id, userId));
+
+      return {
+        success: true,
+        context,
+      };
+    } catch (error) {
+      if (error instanceof AppError) {
+        throw error;
+      }
+      throw new DatabaseError("Failed to switch context", {
         originalError: error,
       });
     }

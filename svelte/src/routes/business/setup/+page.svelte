@@ -5,6 +5,7 @@
 	import { Input } from '$lib/components/ui/input';
 	import { Textarea } from '$lib/components/ui/textarea';
 	import { Label } from '$lib/components/ui/label';
+	import { Alert, AlertDescription } from '$lib/components/ui/alert';
 	import {
 		Card,
 		CardContent,
@@ -20,10 +21,18 @@
 		Globe,
 		FileText,
 		Check,
-		Lightbulb
+		Upload,
+		X
 	} from '@lucide/svelte';
 	import { toast } from 'svelte-sonner';
 	import type { BAUser } from '$lib/types/user';
+	import { getFileBase64 } from '$lib/helpers';
+	import { createMutation } from '@tanstack/svelte-query';
+	import { createBusinessSchema, type CreateBusinessBody } from '$lib/schemas/business';
+	import { api } from '$lib/api';
+	import type { AxiosError } from 'axios';
+	import type { ErrorResponse } from '$lib/types/types';
+	import { contextStore } from '$lib/stores/context';
 
 	interface Props {
 		data: {
@@ -35,8 +44,7 @@
 
 	const { user } = data;
 
-	// Form state
-	let isSubmitting = $state(false);
+	//Form state
 	let currentStep = $state(1);
 
 	let formData = $state({
@@ -44,7 +52,29 @@
 		email: user.email || '', // Pre-fill with user's email
 		phone: '',
 		website: '',
-		description: ''
+		description: '',
+		logo: ''
+	});
+	let logoPreview = $state<string | null>(null);
+	let errors = $state<Record<string, string>>({});
+
+	const createBusiness = createMutation({
+		mutationFn: (data: CreateBusinessBody) => api.business.createBusiness(data),
+		onSuccess: () => {
+			toast.success('Business account created!');
+			// Switch Context
+			contextStore.setContext('business');
+			goto('/business/dashboard');
+		},
+
+		onError: (error: AxiosError<ErrorResponse>) => {
+			console.log(error);
+			if (error.response?.data.error) {
+				toast.error(error.response.data.error);
+			} else {
+				toast.error('Failed to create business. Please try again.');
+			}
+		}
 	});
 
 	// Clear onboarding flag when component mounts
@@ -54,30 +84,33 @@
 
 	// Validation
 	const isStep1Valid = $derived(formData.name.trim().length > 0);
-	const isStep2Valid = $derived(true); // Contact info is optional
 
 	async function handleSubmit(e: Event) {
 		e.preventDefault();
-		if (!formData.name.trim()) {
-			toast.error('Business name is required');
-			return;
-		}
 
-		isSubmitting = true;
+		if (validateForm()) {
+			const businessData = createBusinessSchema.parse(formData);
 
-		try {
-			// Call API to create business account
-
-			toast.success('Business account created!');
-
-			// Redirect to dashboard
-			await goto('/business/dashboard');
-		} catch (error) {
-			toast.error(error instanceof Error ? error.message : 'Something went wrong');
-		} finally {
-			isSubmitting = false;
+			$createBusiness.mutate(businessData);
 		}
 	}
+
+	const validateForm = () => {
+		const newErrors: Record<string, string> = {};
+
+		if (formData.name.trim().length === 0) {
+			newErrors.name = 'Business name is required';
+		}
+		if (formData.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
+			newErrors.email = 'Invalid email address';
+		}
+		if (formData.website && !/^https?:\/\/[^\s$.?#].[^\s]*$/.test(formData.website)) {
+			newErrors.website = 'Invalid URL';
+		}
+
+		errors = newErrors;
+		return Object.keys(newErrors).length === 0;
+	};
 
 	function nextStep() {
 		if (currentStep === 1 && !isStep1Valid) {
@@ -91,9 +124,65 @@
 		currentStep--;
 	}
 
-	function skipSetup() {
-		goto('/');
+	const handleDragOver = (e: HTMLElementEventMap['dragover']) => {
+		e.preventDefault();
+	};
+
+	const handleDrop = async (e: HTMLElementEventMap['drop']) => {
+		e.preventDefault();
+		e.stopPropagation();
+
+		const file = e.dataTransfer?.files[0];
+		if (!file) return;
+
+		if (file.size > 5 * 1024 * 1024) {
+			toast.error('Image must be less than 5MB');
+			return;
+		}
+
+		const base64String = await getFileBase64(file);
+		const url = URL.createObjectURL(file);
+
+		logoPreview = url;
+		formData.logo = base64String;
+	};
+
+	async function handleLogoUpload(e: Event) {
+		e.preventDefault();
+		e.stopPropagation();
+
+		const input = e.target as HTMLInputElement;
+		const file = input.files?.[0];
+
+		if (file) {
+			// Validate file type
+			if (!file.type.startsWith('image/')) {
+				toast.error('Please upload an image file');
+				return;
+			}
+
+			// Validate file size (max 5MB)
+			if (file.size > 5 * 1024 * 1024) {
+				toast.error('Image must be less than 5MB');
+				return;
+			}
+
+			const base64String = await getFileBase64(file);
+			const url = URL.createObjectURL(file);
+
+			formData.logo = base64String;
+			logoPreview = url;
+		}
 	}
+
+	function removeLogo() {
+		formData.logo = '';
+		logoPreview = null;
+	}
+
+	const cancelCreation = () => {
+		goto('/profile');
+	};
 </script>
 
 <svelte:head>
@@ -236,6 +325,11 @@
 								<p class="text-xs text-gray-500">
 									This will be displayed on your business profile and listings
 								</p>
+								{#if errors.name}
+									<Alert variant="destructive">
+										<AlertDescription>{errors.name}</AlertDescription>
+									</Alert>
+								{/if}
 							</div>
 
 							<!-- Description -->
@@ -262,15 +356,62 @@
 					<!-- Step 2: Contact Details -->
 					{#if currentStep === 2}
 						<div class="space-y-6">
-							<p class="text-sm text-gray-600">
-								Add contact information to help customers reach you. All fields are optional.
-							</p>
+							<!-- Logo Upload -->
+							<div class="space-y-2">
+								<Label class="flex items-center gap-2">
+									<Building2 class="h-4 w-4 text-gray-500" />
+									Business Logo
+								</Label>
+
+								{#if !logoPreview}
+									<div class="flex items-center gap-4">
+										<label
+											for="logo-upload"
+											class="hover:border-primary hover:bg-primary/5 flex w-full cursor-pointer items-center gap-2 rounded-lg border-2 border-dashed border-gray-300 px-4 py-8 text-center transition"
+											ondragover={handleDragOver}
+											ondrop={handleDrop}
+											aria-label="Drag and drop files here, or click to select files"
+										>
+											<input
+												id="logo-upload"
+												type="file"
+												accept="image/*"
+												class="hidden"
+												onchange={handleLogoUpload}
+											/>
+											<div class="mx-auto">
+												<Upload class="mx-auto h-8 w-8 text-gray-400" />
+												<p class="mt-2 text-sm font-medium text-gray-700">Upload Logo</p>
+												<p class="mt-1 text-xs text-gray-500">PNG, JPG up to 5MB</p>
+											</div>
+										</label>
+									</div>
+								{:else}
+									<div class="relative inline-block">
+										<img
+											src={logoPreview}
+											alt="Logo preview"
+											class="h-32 w-32 rounded-lg border-2 border-gray-200 object-cover"
+										/>
+										<button
+											type="button"
+											onclick={removeLogo}
+											class="absolute -right-2 -top-2 flex h-6 w-6 items-center justify-center rounded-full bg-red-500 text-white transition hover:bg-red-600"
+										>
+											<X class="h-4 w-4" />
+										</button>
+									</div>
+								{/if}
+								<p class="text-xs text-gray-500">Your logo will appear on your business profile</p>
+							</div>
+
+							<p class="text-sm text-gray-600">Add contact information.</p>
 
 							<!-- Email -->
 							<div class="space-y-2">
 								<Label for="email" class="flex items-center gap-2">
 									<Mail class="h-4 w-4 text-gray-500" />
-									Business Email
+									Business Email <span class="text-red-500">*</span>
 								</Label>
 								<Input
 									id="email"
@@ -280,6 +421,11 @@
 									class="text-base"
 								/>
 								<p class="text-xs text-gray-500">Public email for customer inquiries</p>
+								{#if errors.email}
+									<Alert variant="destructive">
+										<AlertDescription>{errors.email}</AlertDescription>
+									</Alert>
+								{/if}
 							</div>
 
 							<!-- Phone -->
@@ -304,7 +450,7 @@
 							<div class="space-y-2">
 								<Label for="website" class="flex items-center gap-2">
 									<Globe class="h-4 w-4 text-gray-500" />
-									Website
+									Website <span class="text-red-500">*</span>
 								</Label>
 								<Input
 									id="website"
@@ -314,6 +460,11 @@
 									class="text-base"
 								/>
 								<p class="text-xs text-gray-500">Your business website or social media page</p>
+								{#if errors.website}
+									<Alert variant="destructive">
+										<AlertDescription>{errors.website}</AlertDescription>
+									</Alert>
+								{/if}
 							</div>
 						</div>
 					{/if}
@@ -378,8 +529,7 @@
 
 							<div class="rounded-lg bg-blue-50 p-4">
 								<p class=" text-sm text-blue-800">
-									You can update all of this information later from your business dashboard
-									settings.
+									You can update this information later from your business dashboard settings.
 								</p>
 							</div>
 						</div>
@@ -393,11 +543,12 @@
 									type="button"
 									variant="outline"
 									onclick={previousStep}
-									disabled={isSubmitting}
+									disabled={$createBusiness.isPending}
 								>
 									← Back
 								</Button>
-						
+							{:else}
+								<Button type="button" variant="outline" onclick={cancelCreation}>← Cancel</Button>
 							{/if}
 						</div>
 
@@ -405,13 +556,13 @@
 							{#if currentStep < 3}
 								<Button
 									type="submit"
-									disabled={isSubmitting || (currentStep === 1 && !isStep1Valid)}
+									disabled={$createBusiness.isPending || (currentStep === 1 && !isStep1Valid)}
 								>
 									Continue →
 								</Button>
 							{:else}
-								<Button type="submit" disabled={isSubmitting} class="min-w-40">
-									{#if isSubmitting}
+								<Button type="submit" disabled={$createBusiness.isPending} class="min-w-40">
+									{#if $createBusiness.isPending}
 										<LoaderCircle class="mr-2 h-4 w-4 animate-spin" />
 										Creating...
 									{:else}

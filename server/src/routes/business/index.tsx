@@ -50,5 +50,7 @@ businessRouter.post(
     const validatedData = c.get("validatedBody") as CreateBusinessBody;
 
     const result = await BusinessService.createBusiness(auth.id, validatedData);
+
+    return c.json(result, 201);
   }
 );
