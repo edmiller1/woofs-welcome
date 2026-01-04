@@ -1,13 +1,10 @@
 <script lang="ts">
-	import { Button, buttonVariants } from '$lib/components/ui/button';
-	import * as NavigationMenu from '$lib/components/ui/navigation-menu/index.js';
-	import { Sheet, SheetContent, SheetTrigger } from '$lib/components/ui/sheet';
+	import { buttonVariants } from '$lib/components/ui/button';
 	import { cn } from '$lib/utils';
-	import { Dog, Menu } from '@lucide/svelte';
-	import { Avatar, AvatarFallback, AvatarImage } from './ui/avatar';
 	import UserNav from './user-nav.svelte';
 	import { slide } from 'svelte/transition';
 	import type { BAUser } from '$lib/types/user';
+	import BusinessNav from './business-nav.svelte';
 
 	const { user }: { user: BAUser | null } = $props();
 
@@ -62,7 +59,11 @@
 					>Download the App</a
 				>
 				{#if user}
-					<UserNav {user} />
+					{#if user.activeContext === 'personal'}
+						<UserNav {user} />
+					{:else}
+						<BusinessNav {user} />
+					{/if}
 				{:else}
 					<a href="/sign-in" class={cn(buttonVariants({ variant: 'default' }), 'rounded-full')}
 						>Sign in</a

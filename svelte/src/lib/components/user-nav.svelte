@@ -28,9 +28,8 @@
 		mutationFn: async (context: Context) => api.auth.switchContext(context),
 		onSuccess: () => {
 			toast.success('Switched to account ' + user.business.name);
-			if (page.url.pathname.startsWith('/profile')) {
-				goto('/business/dashboard');
-			} else {
+			if (page.url.pathname.includes('/profile')) {
+				console.log('Redirecting to business dashboard');
 				window.location.reload();
 			}
 		},

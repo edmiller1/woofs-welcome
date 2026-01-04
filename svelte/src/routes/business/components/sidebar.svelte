@@ -5,7 +5,14 @@
 	import * as Card from '$lib/components/ui/card/index.js';
 	import { getUserInitials } from '$lib/helpers';
 	import type { BAUser } from '$lib/types/user';
-	import { ChevronDown, CircleUser, Heart, Settings, UserStar } from '@lucide/svelte';
+	import {
+		ChevronDown,
+		Heart,
+		LayoutDashboard,
+		MapPinHouse,
+		Settings,
+		UserStar
+	} from '@lucide/svelte';
 
 	interface Props {
 		user: BAUser;
@@ -23,38 +30,41 @@
 
 	const { user }: Props = $props();
 
+	const business = $derived(user.business);
+
 	const navItems = [
 		{
-			name: 'Profile',
-			href: '/profile',
-			icon: CircleUser
+			name: 'Dashboard',
+			href: '/dashboard',
+			icon: LayoutDashboard
+		},
+		{
+			name: 'Places',
+			href: '/dashboard/places',
+			icon: MapPinHouse
 		},
 		{
 			name: 'Favourites',
-			href: '/profile/favourites',
+			href: '/business/dashboard/favourites',
 			icon: Heart
 		},
 		{
 			name: 'Reviews',
-			href: '/profile/reviews',
+			href: '/business/dashboard/reviews',
 			icon: UserStar
 		},
 		{
 			name: 'Settings',
-			href: '/profile/settings',
+			href: '/business/dashboard/settings',
 			icon: Settings,
 			children: [
 				{
 					name: 'Account',
-					href: '/profile/settings'
+					href: '/business/dashboard/settings'
 				},
 				{
 					name: 'Notifications',
-					href: '/profile/settings/notifications'
-				},
-				{
-					name: 'Privacy',
-					href: '/profile/settings/privacy'
+					href: '/business/dashboard/settings/notifications'
 				}
 			]
 		}
@@ -104,11 +114,11 @@
 			<div class="relative">
 				<Avatar.Root class="h-12 w-12 border-2 border-white shadow-sm">
 					<Avatar.Image
-						src={user.image?.responsive.sm}
-						alt={user.name}
+						src={business.logoUrl?.responsive.sm}
+						alt={business.name}
 						class="object-cover object-center"
 					/>
-					<Avatar.Fallback>{getUserInitials(user.name)}</Avatar.Fallback>
+					<Avatar.Fallback>{getUserInitials(business.name)}</Avatar.Fallback>
 				</Avatar.Root>
 				<div
 					class="absolute bottom-0 right-0 h-3 w-3 rounded-full border-2 border-white bg-teal-500"
@@ -116,9 +126,9 @@
 			</div>
 			<div>
 				<h3 class="truncate text-sm font-bold">
-					{user.name}
+					{business.name}
 				</h3>
-				<span class="text-muted-foreground text-xs">{user.email}</span>
+				<span class="text-muted-foreground text-xs">{business.email}</span>
 			</div>
 		</div>
 
@@ -176,18 +186,5 @@
 				</div>
 			{/each}
 		</nav>
-		<div class="flex flex-col items-start justify-end">
-			<Card.Root class="gap-2 py-4 shadow-none">
-				<Card.Header class="px-4">
-					<Card.Title class="text-sm">Have a dog friendly business?</Card.Title>
-					<Card.Description>Reach thousands of dog owners across New Zealand.</Card.Description>
-				</Card.Header>
-				<Card.Content class="px-4">
-					<a href="/business/setup">
-						<Button class="w-full shadow-none" size="sm">Create business account</Button>
-					</a>
-				</Card.Content>
-			</Card.Root>
-		</div>
 	</div>
 </aside>

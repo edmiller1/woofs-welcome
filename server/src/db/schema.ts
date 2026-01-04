@@ -72,10 +72,6 @@ export const user = pgTable(
           reviewReplies: true,
           reviewLikes: true,
           newReviewsOnFavourites: true,
-          // Business/Admin
-          placeUpdates: true,
-          claimStatus: true,
-          reportStatus: true,
           // Digest
           weeklyDigest: true,
           // Marketing
@@ -90,8 +86,6 @@ export const user = pgTable(
           // Discovery
           nearbyPlaces: false,
           favourites: true,
-          // Business/Admin
-          claimStatus: true,
         },
       })
       .$type<NotificationPreferences>(),
@@ -169,6 +163,37 @@ export const Business = pgTable(
     verifiedAt: timestamp("verified_at"),
     subscriptionTier: text("subscription_tier").default("free"), // 'free', 'basic', 'premium'
     subscriptionExpiresAt: timestamp("subscription_expires_at"),
+
+    notificationPreferences: jsonb("notification_preferences")
+      .default({
+        email: {
+          // Engagement
+          reviewReplies: true,
+          reviewLikes: true,
+          newReviewsOnFavourites: true,
+          // Business/Admin
+          placeUpdates: true,
+          claimStatus: true,
+          reportStatus: true,
+          // Digest
+          weeklyDigest: true,
+          // Marketing
+          marketing: false,
+          newsletter: false,
+        },
+        push: {
+          // Engagement
+          reviewReplies: true,
+          reviewLikes: true,
+          newReviewsOnFavourites: true,
+          // Discovery
+          nearbyPlaces: false,
+          favourites: true,
+          // Business/Admin
+          claimStatus: true,
+        },
+      })
+      .$type<NotificationPreferences>(),
 
     // Timestamps
     createdAt: timestamp("created_at")
@@ -314,6 +339,7 @@ export const Place = pgTable(
     isFeatured: boolean("is_featured").default(false),
     createdAt: timestamp("created_at").defaultNow().notNull(),
     updatedAt: timestamp("updated_at").defaultNow().notNull(),
+    ownerId: text("owner_id").references(() => Business.id),
   },
   (table) => ({
     slugIdx: index("place_slug_idx").on(table.slug),
@@ -369,6 +395,7 @@ export const Review = pgTable(
     userId: text("user_id")
       .notNull()
       .references(() => user.id, { onDelete: "cascade" }),
+    businessId: text("business_id").references(() => Business.id),
     rating: integer("rating").notNull(),
     title: text("title").notNull(),
     content: text("content"),
@@ -428,6 +455,7 @@ export const ReviewLike = pgTable(
     userId: text("user_id")
       .notNull()
       .references(() => user.id, { onDelete: "cascade" }),
+    businessId: text("business_id").references(() => Business.id),
     createdAt: timestamp("created_at").defaultNow().notNull(),
   },
   (table) => ({
@@ -480,9 +508,7 @@ export const Claim = pgTable(
     placeId: uuid("place_id")
       .notNull()
       .references(() => Place.id, { onDelete: "cascade" }),
-    userId: text("user_id")
-      .notNull()
-      .references(() => user.id, { onDelete: "cascade" }),
+    businessId: text("business_id").references(() => Business.id),
     status: text("status").notNull().default("pending"), // pending, approved, rejected
     proof: text("proof"), // Document/evidence for ownership
     approvedAt: timestamp("approved_at"),
@@ -493,7 +519,7 @@ export const Claim = pgTable(
   (table) => {
     return {
       // A user can only claim a place once
-      userPlaceUnique: unique().on(table.userId, table.placeId),
+      businessPlaceUnique: unique().on(table.businessId, table.placeId),
     };
   }
 );
@@ -535,21 +561,16 @@ export const DogBreed = pgTable("dog_breed", {
 export const usersRelations = relations(user, ({ many, one }) => ({
   reviews: many(Review),
   favorites: many(Favourite),
-  placeClaims: many(Claim),
   session: many(session),
   business: one(Business),
 }));
 
-export const businessRelations = {
-  owner: {
-    fields: [Business.ownerId],
-    references: [user.id],
-  },
-  places: {
-    fields: [Business.id],
-    references: [BusinessPlace.businessId],
-  },
-};
+export const businessRelations = relations(Business, ({ many }) => ({
+  places: many(BusinessPlace),
+  favourites: many(Favourite),
+  reviews: many(Review),
+  placeClaims: many(Claim),
+}));
 
 export const businessPlaceRelations = {
   business: {
@@ -624,6 +645,10 @@ export const reviewRelations = relations(Review, ({ one, many }) => ({
     fields: [Review.userId],
     references: [user.id],
   }),
+  business: one(Business, {
+    fields: [Review.businessId],
+    references: [Business.id],
+  }),
   images: many(ReviewImage),
   likes: many(ReviewLike),
   reports: many(ReviewReport),
@@ -644,6 +669,10 @@ export const reviewLikeRelations = relations(ReviewLike, ({ one }) => ({
   user: one(user, {
     fields: [ReviewLike.userId],
     references: [user.id],
+  }),
+  business: one(Business, {
+    fields: [ReviewLike.businessId],
+    references: [Business.id],
   }),
 }));
 
@@ -678,9 +707,9 @@ export const claimRelations = relations(Claim, ({ one }) => ({
     fields: [Claim.placeId],
     references: [Place.id],
   }),
-  user: one(user, {
-    fields: [Claim.userId],
-    references: [user.id],
+  business: one(Business, {
+    fields: [Claim.businessId],
+    references: [Business.id],
   }),
   approver: one(user, {
     fields: [Claim.approvedBy],

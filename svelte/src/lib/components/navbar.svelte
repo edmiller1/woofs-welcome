@@ -48,7 +48,9 @@
 	);
 
 	const isExplorePageOrProfilePage =
-		page.url.pathname.includes('/explore') || page.url.pathname.includes('/profile');
+		page.url.pathname.includes('/explore') ||
+		page.url.pathname.includes('/profile') ||
+		page.url.pathname.includes('/business/dashboard');
 </script>
 
 <nav class="bg-background sticky top-0 z-50 w-full border-b">
