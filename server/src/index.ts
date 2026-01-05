@@ -23,6 +23,9 @@ import { sitemapRouter } from "./routes/sitemap";
 import { locationRouter } from "./routes/location";
 import { notificationRouter } from "./routes/notification";
 import { businessRouter } from "./routes/business";
+import { analyticsRouter } from "./routes/analytics";
+import { cronRouter } from "./routes/cron";
+import { verifyCronSecret } from "./middleware/cron";
 
 validateEnv();
 
@@ -54,6 +57,7 @@ app.use("/api/auth/email-otp/*", authRateLimiter);
 app.use("/api/auth/sign-in/*", authRateLimiter);
 app.use("/api/auth/sign-up/*", authRateLimiter);
 app.use("/api/user", authMiddleware);
+app.use("/api/cron", verifyCronSecret);
 
 // custom routes
 app.route("/api/auth", betterAuthRouter);
@@ -66,6 +70,8 @@ app.route("/api/island", islandRouter);
 app.route("/api/review", reviewRouter);
 app.route("/api/location", locationRouter);
 app.route("/api/notification", notificationRouter);
+app.route("/api/analytics", analyticsRouter);
+app.route("/api/cron", cronRouter);
 app.route("sitemap.xml", sitemapRouter);
 
 app.get("/", (c) => {

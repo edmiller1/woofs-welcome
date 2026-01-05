@@ -36,6 +36,15 @@ const envSchema = z.object({
 
   // Sentry
   SENTRY_DSN: z.string().min(1, "SENTRY_DSN is required"),
+
+  // Redis (Upstash)
+  UPSTASH_REDIS_REST_URL: z
+    .string()
+    .min(1, "UPSTASH_REDIS_REST_URL is required"),
+  UPSTASH_REDIS_REST_TOKEN: z
+    .string()
+    .min(1, "UPSTASH_REDIS_REST_TOKEN is required"),
+  CRON_SECRET: z.string().min(1, "CRON_SECRET is required"),
 });
 
 export function validateEnv() {

@@ -4,6 +4,7 @@ import { eq } from "drizzle-orm";
 import { session, user } from "../db/schema";
 import { Session, User as betterAuthUser } from "better-auth/types";
 import { auth } from "../lib/auth";
+import { getUserBusiness } from "../lib/helpers";
 
 declare module "hono" {
   interface ContextVariableMap {
@@ -97,7 +98,9 @@ export const businessMiddleware = async (c: Context, next: Next) => {
     );
   }
 
-  if (!user.isBusinessAccount) {
+  const isBusinessAccount = await getUserBusiness(auth.id);
+
+  if (!isBusinessAccount) {
     return c.json(
       {
         error: "Business account required",

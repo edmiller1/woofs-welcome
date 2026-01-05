@@ -340,6 +340,11 @@ export const Place = pgTable(
     createdAt: timestamp("created_at").defaultNow().notNull(),
     updatedAt: timestamp("updated_at").defaultNow().notNull(),
     ownerId: text("owner_id").references(() => Business.id),
+
+    // Analytics (denormalized for quick access)
+    totalViews: integer("total_views").default(0).notNull(),
+    viewsThisMonth: integer("views_this_month").default(0).notNull(),
+    analyticsLastUpdated: timestamp("analytics_last_updated"),
   },
   (table) => ({
     slugIdx: index("place_slug_idx").on(table.slug),
@@ -382,6 +387,81 @@ export const PlaceImage = pgTable(
       table.placeId,
       table.isPrimary
     ),
+  })
+);
+
+export const PlaceView = pgTable(
+  "place_view",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    placeId: uuid("place_id")
+      .notNull()
+      .references(() => Place.id, { onDelete: "cascade" }),
+    userId: text("user_id").references(() => user.id, { onDelete: "set null" }),
+    sessionId: text("session_id").notNull(),
+
+    // Metadata
+    source: text("source"), // 'search', 'map', 'direct', 'business_profile'
+    referrer: text("referrer"),
+    city: text("city"),
+    region: text("region"),
+    country: text("country").default("NZ"),
+    deviceType: text("device_type"), // 'mobile', 'desktop', 'tablet'
+
+    // Timing
+    viewedAt: timestamp("viewed_at").defaultNow().notNull(),
+    timeOnPage: integer("time_on_page"), // seconds (added when view ends)
+  },
+  (table) => ({
+    placeIdIdx: index("place_view_place_id_idx").on(table.placeId),
+    viewedAtIdx: index("place_view_viewed_at_idx").on(table.viewedAt),
+    placeViewedIdx: index("place_view_place_viewed_idx").on(
+      table.placeId,
+      table.viewedAt
+    ),
+    sessionIdx: index("place_view_session_idx").on(table.sessionId),
+  })
+);
+
+// Daily aggregated analytics (permanent)
+export const PlaceDailyAnalytics = pgTable(
+  "place_daily_analytics",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    placeId: uuid("place_id")
+      .notNull()
+      .references(() => Place.id, { onDelete: "cascade" }),
+
+    date: timestamp("date").notNull(), // Midnight of the day
+
+    // View metrics
+    totalViews: integer("total_views").default(0).notNull(),
+    uniqueViews: integer("unique_views").default(0).notNull(), // Unique sessions
+
+    // Source breakdown
+    viewsBySource: jsonb("views_by_source")
+      .$type<Record<string, number>>()
+      .default({}),
+
+    // Geographic breakdown
+    viewsByCity: jsonb("views_by_city")
+      .$type<Array<{ city: string; views: number }>>()
+      .default([]),
+    viewsByRegion: jsonb("views_by_region")
+      .$type<Record<string, number>>()
+      .default({}),
+
+    // Engagement
+    avgTimeOnPage: integer("avg_time_on_page"), // seconds
+
+    createdAt: timestamp("created_at").defaultNow().notNull(),
+  },
+  (table) => ({
+    placeDateIdx: index("place_daily_analytics_place_date_idx").on(
+      table.placeId,
+      table.date
+    ),
+    dateIdx: index("place_daily_analytics_date_idx").on(table.date),
   })
 );
 
