@@ -36,6 +36,48 @@
       "when": 1767561067296,
       "tag": "0004_legal_post",
       "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1767583630512,
+      "tag": "0005_keen_luminals",
+      "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1767583700156,
+      "tag": "0006_sudden_ultimo",
+      "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1767583755705,
+      "tag": "0007_equal_apocalypse",
+      "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "7",
+      "when": 1767583777862,
+      "tag": "0008_omniscient_master_mold",
+      "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "7",
+      "when": 1767583824949,
+      "tag": "0009_strange_sir_ram",
+      "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "7",
+      "when": 1767736421778,
+      "tag": "0010_supreme_doctor_doom",
+      "breakpoints": true
     }
   ]
 }

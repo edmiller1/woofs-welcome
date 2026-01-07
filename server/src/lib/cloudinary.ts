@@ -91,6 +91,34 @@ export const Cloudinary = {
       return null;
     }
   },
+  uploadVerificationDocument: async (
+    file: string, // base64 string
+    businessId: string,
+    claimId: string,
+    fileName: string
+  ) => {
+    try {
+      const result = await cloudinary.uploader.upload(file, {
+        folder: `claim-verification-docs/${businessId}/${claimId}`,
+        resource_type: "auto", // Automatically detect file type (image, pdf, etc.)
+        public_id: fileName, // Use original filename
+        tags: ["claim-verification", businessId, claimId],
+      });
+
+      console.log(`✅ Uploaded verification document: ${fileName}`);
+
+      return {
+        publicId: result.public_id,
+        url: result.secure_url,
+        format: result.format,
+        resourceType: result.resource_type,
+        bytes: result.bytes,
+      };
+    } catch (error) {
+      console.error(`❌ Failed to upload verification document:`, error);
+      return null;
+    }
+  },
   deleteImage: async (publicId: string) => {
     try {
       const result = await cloudinary.uploader.destroy(publicId);

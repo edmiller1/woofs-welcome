@@ -43,6 +43,21 @@ export const reportStatusEnum = pgEnum("report_status", [
   "closed",
 ]);
 
+export const notificationTypeEnum = pgEnum("notification_type", [
+  "claim_submitted",
+  "claim_approved",
+  "claim_rejected",
+  "review_reply",
+  "review_like",
+  "new_review_on_favourite",
+  "place_update",
+]);
+
+export const notificationContextEnum = pgEnum("notification_context", [
+  "personal",
+  "business",
+]);
+
 export const user = pgTable(
   "user",
   {
@@ -68,27 +83,22 @@ export const user = pgTable(
     notificationPreferences: jsonb("notification_preferences")
       .default({
         email: {
-          // Engagement
           reviewReplies: true,
           reviewLikes: true,
           newReviewsOnFavourites: true,
-          // Digest
-          weeklyDigest: true,
-          // Marketing
           marketing: false,
           newsletter: false,
+          nearbyPlaces: false,
+          reportStatus: true,
         },
         push: {
-          // Engagement
           reviewReplies: true,
           reviewLikes: true,
           newReviewsOnFavourites: true,
-          // Discovery
           nearbyPlaces: false,
-          favourites: true,
         },
       })
-      .$type<NotificationPreferences>(),
+      .$type<UserNotificationPreferences>(),
   },
   (table) => ({
     emailIdx: uniqueIndex("email_idx").on(table.email),
@@ -167,33 +177,24 @@ export const Business = pgTable(
     notificationPreferences: jsonb("notification_preferences")
       .default({
         email: {
-          // Engagement
           reviewReplies: true,
           reviewLikes: true,
           newReviewsOnFavourites: true,
-          // Business/Admin
           placeUpdates: true,
           claimStatus: true,
           reportStatus: true,
-          // Digest
-          weeklyDigest: true,
-          // Marketing
           marketing: false,
           newsletter: false,
         },
         push: {
-          // Engagement
           reviewReplies: true,
           reviewLikes: true,
-          newReviewsOnFavourites: true,
-          // Discovery
+          newReviewsOnPlaces: true,
           nearbyPlaces: false,
-          favourites: true,
-          // Business/Admin
           claimStatus: true,
         },
       })
-      .$type<NotificationPreferences>(),
+      .$type<BusinessNotificationPreferences>(),
 
     // Timestamps
     createdAt: timestamp("created_at")
@@ -206,46 +207,6 @@ export const Business = pgTable(
   (table) => ({
     ownerIdx: index("business_owner_idx").on(table.ownerId),
     emailIdx: index("business_email_idx").on(table.email),
-  })
-);
-
-export const BusinessPlace = pgTable(
-  "business_place",
-  {
-    id: text("id").primaryKey(),
-    businessId: text("business_id")
-      .notNull()
-      .references(() => Business.id, { onDelete: "cascade" }),
-    placeId: uuid("place_id")
-      .notNull()
-      .references(() => Place.id, { onDelete: "cascade" }),
-
-    // Claim workflow
-    claimStatus: text("claim_status").default("pending").notNull(), // 'pending', 'approved', 'rejected'
-    claimedAt: timestamp("claimed_at")
-      .$defaultFn(() => new Date())
-      .notNull(),
-    verifiedAt: timestamp("verified_at"),
-
-    // Optional: admin notes
-    rejectionReason: text("rejection_reason"),
-
-    createdAt: timestamp("created_at")
-      .$defaultFn(() => new Date())
-      .notNull(),
-  },
-  (table) => ({
-    // Ensure a business can only claim a place once
-    businessPlaceIdx: uniqueIndex("business_place_unique_idx").on(
-      table.businessId,
-      table.placeId
-    ),
-    // For querying all places by business
-    businessIdx: index("bp_business_idx").on(table.businessId),
-    // For checking if a place is claimed
-    placeIdx: index("bp_place_idx").on(table.placeId),
-    // For admin reviewing pending claims
-    statusIdx: index("bp_status_idx").on(table.claimStatus),
   })
 );
 
@@ -339,7 +300,9 @@ export const Place = pgTable(
     isFeatured: boolean("is_featured").default(false),
     createdAt: timestamp("created_at").defaultNow().notNull(),
     updatedAt: timestamp("updated_at").defaultNow().notNull(),
-    ownerId: text("owner_id").references(() => Business.id),
+
+    claimedBy: text("claimed_by").references(() => Business.id),
+    claimedAt: timestamp("claimed_at"),
 
     // Analytics (denormalized for quick access)
     totalViews: integer("total_views").default(0).notNull(),
@@ -356,6 +319,7 @@ export const Place = pgTable(
     featuredIdx: index("place_featured_idx")
       .on(table.isFeatured)
       .where(sql`${table.isFeatured} = true`),
+    claimedByIdx: index("place_claimed_by_idx").on(table.claimedBy),
   })
 );
 
@@ -588,20 +552,123 @@ export const Claim = pgTable(
     placeId: uuid("place_id")
       .notNull()
       .references(() => Place.id, { onDelete: "cascade" }),
-    businessId: text("business_id").references(() => Business.id),
-    status: text("status").notNull().default("pending"), // pending, approved, rejected
-    proof: text("proof"), // Document/evidence for ownership
+    userId: text("user_id")
+      .notNull()
+      .references(() => user.id, { onDelete: "cascade" }),
+    businessId: text("business_id")
+      .notNull()
+      .references(() => Business.id, { onDelete: "cascade" }),
+    status: text("status").notNull().default("pending"),
+
+    // Contact verification
+    businessEmail: varchar("business_email", { length: 255 }).notNull(),
+    businessPhone: varchar("business_phone", { length: 50 }).notNull(),
+
+    // Role/authorization
+    role: varchar("role", { length: 100 }).notNull(),
+
+    // Document uploads
+    verificationDocuments: jsonb("verification_documents").$type<string[]>(),
+
+    // Admin review
+    reviewedBy: text("reviewed_by").references(() => user.id),
+    reviewedAt: timestamp("reviewed_at"),
+    rejectionReason: text("rejection_reason"),
+
+    // Metadata
+    claimedAt: timestamp("claimed_at").notNull().defaultNow(),
     approvedAt: timestamp("approved_at"),
-    approvedBy: text("approved_by").references(() => user.id),
+    additionalNotes: text("additional_notes"),
+
     createdAt: timestamp("created_at").defaultNow().notNull(),
     updatedAt: timestamp("updated_at").defaultNow().notNull(),
   },
-  (table) => {
-    return {
-      // A user can only claim a place once
-      businessPlaceUnique: unique().on(table.businessId, table.placeId),
-    };
-  }
+  (table) => ({
+    businessPlaceUnique: unique().on(table.businessId, table.placeId),
+    statusIdx: index("claim_status_idx").on(table.status),
+    businessIdx: index("claim_business_idx").on(table.businessId),
+    placeIdx: index("claim_place_idx").on(table.placeId),
+  })
+);
+
+// Track which places a business account manages
+export const BusinessPlace = pgTable(
+  "business_place",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    businessId: text("business_id")
+      .notNull()
+      .references(() => Business.id, { onDelete: "cascade" }),
+    placeId: uuid("place_id")
+      .notNull()
+      .references(() => Place.id, { onDelete: "cascade" }),
+    claimId: uuid("claim_id")
+      .notNull()
+      .references(() => Claim.id),
+
+    // Permissions (future: allow different access levels)
+    canEdit: boolean("can_edit").notNull().default(true),
+    canRespond: boolean("can_respond").notNull().default(true),
+
+    createdAt: timestamp("created_at").notNull().defaultNow(),
+  },
+  (table) => ({
+    // One business account can only claim a place once
+    uniqueBusinessPlace: unique().on(table.businessId, table.placeId),
+    businessIdx: index("business_places_business_idx").on(table.businessId),
+    placeIdx: index("business_places_place_idx").on(table.placeId),
+    claimIdx: index("business_places_claim_idx").on(table.claimId),
+  })
+);
+
+export const Notification = pgTable(
+  "notification",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    userId: text("user_id")
+      .notNull()
+      .references(() => user.id, { onDelete: "cascade" }),
+
+    //Context determines which notification settings to check
+    context: notificationContextEnum("context").notNull().default("personal"),
+
+    type: notificationTypeEnum("type").notNull(),
+    title: text("title").notNull(),
+    message: text("message").notNull(),
+
+    relatedClaimId: uuid("related_claim_id").references(() => Claim.id, {
+      onDelete: "cascade",
+    }),
+    relatedPlaceId: uuid("related_place_id").references(() => Place.id, {
+      onDelete: "cascade",
+    }),
+    relatedReviewId: uuid("related_review_id").references(() => Review.id, {
+      onDelete: "cascade",
+    }),
+
+    // Metadata
+    data: jsonb("data").$type<Record<string, any>>(), // Extra data like place name, image URL, etc.
+
+    isRead: boolean("is_read").default(false).notNull(),
+    readAt: timestamp("read_at"),
+
+    createdAt: timestamp("created_at").defaultNow().notNull(),
+  },
+  (table) => ({
+    userIdIdx: index("notification_user_id_idx").on(table.userId),
+    userContextIdx: index("notification_user_context_idx").on(
+      table.userId,
+      table.context
+    ),
+    userUnreadIdx: index("notification_user_unread_idx").on(
+      table.userId,
+      table.isRead,
+      table.context
+    ),
+    createdAtIdx: index("notification_created_at_idx").on(
+      table.createdAt.desc()
+    ),
+  })
 );
 
 export const Tag = pgTable("tag", {
@@ -643,6 +710,7 @@ export const usersRelations = relations(user, ({ many, one }) => ({
   favorites: many(Favourite),
   session: many(session),
   business: one(Business),
+  notifications: many(Notification),
 }));
 
 export const businessRelations = relations(Business, ({ many }) => ({
@@ -652,16 +720,20 @@ export const businessRelations = relations(Business, ({ many }) => ({
   placeClaims: many(Claim),
 }));
 
-export const businessPlaceRelations = {
-  business: {
+export const businessPlaceRelations = relations(BusinessPlace, ({ one }) => ({
+  business: one(Business, {
     fields: [BusinessPlace.businessId],
     references: [Business.id],
-  },
-  place: {
+  }),
+  place: one(Place, {
     fields: [BusinessPlace.placeId],
     references: [Place.id],
-  },
-};
+  }),
+  claim: one(Claim, {
+    fields: [BusinessPlace.claimId],
+    references: [Claim.id],
+  }),
+}));
 
 export const sessionRelations = relations(session, ({ one }) => ({
   user: one(user, {
@@ -792,8 +864,27 @@ export const claimRelations = relations(Claim, ({ one }) => ({
     references: [Business.id],
   }),
   approver: one(user, {
-    fields: [Claim.approvedBy],
+    fields: [Claim.reviewedBy],
     references: [user.id],
+  }),
+}));
+
+export const notificationRelations = relations(Notification, ({ one }) => ({
+  user: one(user, {
+    fields: [Notification.userId],
+    references: [user.id],
+  }),
+  relatedClaim: one(Claim, {
+    fields: [Notification.relatedClaimId],
+    references: [Claim.id],
+  }),
+  relatedPlace: one(Place, {
+    fields: [Notification.relatedPlaceId],
+    references: [Place.id],
+  }),
+  relatedReview: one(Review, {
+    fields: [Notification.relatedReviewId],
+    references: [Review.id],
   }),
 }));
 
@@ -835,6 +926,7 @@ export type PlaceTagSelect = InferSelectModel<typeof PlaceTag>;
 export type ReviewLikeSelect = InferSelectModel<typeof ReviewLike>;
 export type ReviewReportSelect = InferSelectModel<typeof ReviewReport>;
 export type ReviewImageSelect = InferSelectModel<typeof ReviewImage>;
+export type NotificationSelect = InferSelectModel<typeof Notification>;
 
 export type BusinessWithOwner = BusinessSelect & {
   owner: {
@@ -936,20 +1028,46 @@ export type RegionPlaceWithSingleImageSelect = {
   imageUrl: string | null;
 };
 
-export type NotificationPreferences = {
+// User notification preferences (personal context)
+export type UserNotificationPreferences = {
   email: {
     // Engagement
     reviewReplies: boolean;
     reviewLikes: boolean;
     newReviewsOnFavourites: boolean;
-
-    // Business/Admin
-    placeUpdates: boolean; // for claimed venues
-    claimStatus: boolean;
     reportStatus: boolean;
 
-    // Digest
-    weeklyDigest: boolean;
+    // Marketing
+    marketing: boolean;
+    newsletter: boolean;
+
+    // Discovery
+    nearbyPlaces: boolean;
+  };
+  push: {
+    // Engagement
+    reviewReplies: boolean;
+    reviewLikes: boolean;
+    newReviewsOnFavourites: boolean;
+    reportStatus: boolean;
+
+    // Discovery
+    nearbyPlaces: boolean;
+  };
+};
+
+// Business notification preferences (business context)
+export type BusinessNotificationPreferences = {
+  email: {
+    // Engagement
+    reviewReplies: boolean;
+    reviewLikes: boolean;
+    newReviewsOnPlaces: boolean;
+
+    // Business/Admin
+    placeUpdates: boolean;
+    claimStatus: boolean;
+    reportStatus: boolean;
 
     // Marketing
     marketing: boolean;
@@ -959,11 +1077,11 @@ export type NotificationPreferences = {
     // Engagement
     reviewReplies: boolean;
     reviewLikes: boolean;
-    newReviewsOnFavourites: boolean;
+    newReviewsOnPlaces: boolean;
+    reportStatus: boolean;
 
     // Discovery
     nearbyPlaces: boolean;
-    favourites: boolean;
 
     // Business/Admin
     claimStatus: boolean;

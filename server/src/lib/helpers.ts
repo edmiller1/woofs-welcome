@@ -2,6 +2,7 @@ import { and, desc, eq, gte, or, sql } from "drizzle-orm";
 import { db } from "../db";
 import {
   Business,
+  BusinessSelect,
   City,
   Favourite,
   Island,
@@ -255,6 +256,19 @@ export function getUserNotificationPreferences(
     push: {
       ...DEFAULT_NOTIFICATION_PREFERENCES.push,
       ...(user.notificationPreferences?.push || {}),
+    },
+  };
+}
+
+export function getBusinessNotificationPreferences(business: BusinessSelect) {
+  return {
+    email: {
+      ...DEFAULT_NOTIFICATION_PREFERENCES.email,
+      ...(business.notificationPreferences?.email || {}),
+    },
+    push: {
+      ...DEFAULT_NOTIFICATION_PREFERENCES.push,
+      ...(business.notificationPreferences?.push || {}),
     },
   };
 }

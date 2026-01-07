@@ -6,7 +6,7 @@ export const resetNotificationPreferences = async () => {
 		defaultPreferences: NotificationPreferences;
 		success: boolean;
 		message: string;
-	}>('/notification');
+	}>('/notification/user/preferences');
 
 	return response.data;
 };

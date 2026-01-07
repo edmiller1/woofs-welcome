@@ -1,4 +1,7 @@
-import { NotificationPreferences } from "../../db/schema";
+import {
+  BusinessNotificationPreferences,
+  UserNotificationPreferences,
+} from "../../db/schema";
 
 // These notification types bypass user preferences - always sent
 export const REQUIRED_NOTIFICATIONS = [
@@ -6,42 +9,67 @@ export const REQUIRED_NOTIFICATIONS = [
   "account_deletion",
   "terms_update",
   "privacy_update",
-  "password_reset",
 ] as const;
 
-export const DEFAULT_NOTIFICATION_PREFERENCES: NotificationPreferences = {
-  email: {
-    // Engagement
-    reviewReplies: true,
-    reviewLikes: true,
-    newReviewsOnFavourites: true,
+export const DEFAULT_USER_NOTIFICATION_PREFERENCES: UserNotificationPreferences =
+  {
+    email: {
+      // Engagement
+      reviewReplies: true,
+      reviewLikes: true,
+      newReviewsOnFavourites: true,
+      reportStatus: true,
 
-    // Business/Admin
-    placeUpdates: true,
-    claimStatus: true,
-    reportStatus: true,
+      // Marketing
+      marketing: false,
+      newsletter: false,
 
-    // Digest
-    weeklyDigest: true,
+      // Discovery
+      nearbyPlaces: false,
+    },
+    push: {
+      // Engagement
+      reviewReplies: true,
+      reviewLikes: true,
+      reportStatus: true,
+      newReviewsOnFavourites: true,
 
-    // Marketing
-    marketing: false,
-    newsletter: false,
-  },
-  push: {
-    // Engagement
-    reviewReplies: true,
-    reviewLikes: true,
-    newReviewsOnFavourites: true,
+      // Discovery
+      nearbyPlaces: false,
+    },
+  };
 
-    // Discovery
-    nearbyPlaces: false,
-    favourites: true,
+export const DEFAULT_BUSINESS_NOTIFICATION_PREFERENCES: BusinessNotificationPreferences =
+  {
+    email: {
+      // Engagement
+      reviewReplies: true,
+      reviewLikes: true,
+      newReviewsOnPlaces: true,
+      reportStatus: true,
 
-    // Business/Admin
-    claimStatus: true,
-  },
-};
+      // Marketing
+      marketing: false,
+      newsletter: false,
+
+      // Admin
+      claimStatus: true,
+      placeUpdates: true,
+    },
+    push: {
+      // Engagement
+      reviewReplies: true,
+      reviewLikes: true,
+      reportStatus: true,
+      newReviewsOnPlaces: true,
+
+      // Discovery
+      nearbyPlaces: false,
+
+      // Admin
+      claimStatus: true,
+    },
+  };
 
 // For better type safety and documentation
 export const NOTIFICATION_TYPES = {
@@ -49,19 +77,21 @@ export const NOTIFICATION_TYPES = {
     REVIEW_REPLIES: "reviewReplies",
     REVIEW_LIKES: "reviewLikes",
     NEW_REVIEWS_ON_FAVOURITES: "newReviewsOnFavourites",
+    NEW_REVIEWS_ON_PLACES: "newReviewsOnPlaces",
+    REPORT_STATUS: "reportStatus",
     PLACE_UPDATES: "placeUpdates",
     CLAIM_STATUS: "claimStatus",
-    REPORT_STATUS: "reportStatus",
-    WEEKLY_DIGEST: "weeklyDigest",
     MARKETING: "marketing",
     NEWSLETTER: "newsletter",
+    NEARBY_PLACES: "nearbyPlaces",
   },
   PUSH: {
     REVIEW_REPLIES: "reviewReplies",
     REVIEW_LIKES: "reviewLikes",
     NEW_REVIEWS_ON_FAVOURITES: "newReviewsOnFavourites",
+    NEW_REVIEWS_ON_PLACES: "newReviewsOnPlaces",
+    REPORT_STATUS: "reportStatus",
     NEARBY_PLACES: "nearbyPlaces",
-    FAVOURITES: "favourites",
     CLAIM_STATUS: "claimStatus",
   },
 } as const;

@@ -35,12 +35,12 @@
 	const navItems = [
 		{
 			name: 'Dashboard',
-			href: '/dashboard',
+			href: '/business/dashboard',
 			icon: LayoutDashboard
 		},
 		{
 			name: 'Places',
-			href: '/dashboard/places',
+			href: '/business/dashboard/places',
 			icon: MapPinHouse
 		},
 		{

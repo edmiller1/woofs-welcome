@@ -10,6 +10,7 @@ declare module "hono" {
   interface ContextVariableMap {
     user: betterAuthUser | null;
     session: Session | null;
+    userContext: "personal" | "business";
   }
 }
 
@@ -40,8 +41,12 @@ export const authMiddleware = async (c: Context, next: Next) => {
       return c.json({ error: "Unauthorized - Session expired" }, 401);
     }
 
+    // get user context
+    const userContext = c.req.header("X-User-Context") || "personal";
+
     c.set("user", userSession.user);
     c.set("session", userSession);
+    c.set("userContext", userContext as "personal" | "business");
 
     await next();
   } catch (error) {

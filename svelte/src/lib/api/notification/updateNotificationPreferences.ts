@@ -6,7 +6,7 @@ import type {
 
 export const updateNotificationPreferences = async (updates: NotificationPreferencesInput) => {
 	const response = await protectedProcedure.patch<{ updatedPrefs: NotificationPreferences }>(
-		'/notification',
+		'/notification/user/preferences',
 		updates
 	);
 

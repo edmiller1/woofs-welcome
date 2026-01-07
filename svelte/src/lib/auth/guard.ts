@@ -25,7 +25,7 @@ export async function getUser() {
 	if (!session.data) {
 		return null;
 	}
-	return session.data.user as BAUser;
+	return session.data.user as unknown as BAUser;
 }
 
 export async function getBusinessUser() {
@@ -35,7 +35,7 @@ export async function getBusinessUser() {
 		return null;
 	}
 
-	const user = session.data.user as BAUser;
+	const user = session.data.user as unknown as BAUser;
 
 	if (!user.isBusinessAccount) {
 		redirect(302, '/');

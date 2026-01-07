@@ -26,6 +26,7 @@ import { businessRouter } from "./routes/business";
 import { analyticsRouter } from "./routes/analytics";
 import { cronRouter } from "./routes/cron";
 import { verifyCronSecret } from "./middleware/cron";
+import { claimRouter } from "./routes/claim";
 
 validateEnv();
 
@@ -72,6 +73,7 @@ app.route("/api/location", locationRouter);
 app.route("/api/notification", notificationRouter);
 app.route("/api/analytics", analyticsRouter);
 app.route("/api/cron", cronRouter);
+app.route("/api/claim", claimRouter);
 app.route("sitemap.xml", sitemapRouter);
 
 app.get("/", (c) => {

@@ -3,6 +3,7 @@ import { PUBLIC_BASE_URL, PUBLIC_NODE_ENV } from '$env/static/public';
 import { browser } from '$app/environment';
 import { authClient } from './auth/auth-client';
 import { parseApiError } from './errors';
+import { getUser } from './auth/guard';
 
 const baseConfig = {
 	baseURL: PUBLIC_NODE_ENV === 'development' ? `${PUBLIC_BASE_URL}` : '',
@@ -23,6 +24,12 @@ protectedProcedure.interceptors.request.use(
 			// Get token from auth store/session
 			const { data } = await authClient.getSession();
 			if (data?.session) {
+				// Add context header
+				const user = await getUser();
+				if (user) {
+					// Use the user's activeContext field
+					config.headers['X-User-Context'] = user.activeContext || 'personal';
+				}
 				config.headers.Authorization = `Bearer ${data.session.token}`;
 			}
 		}

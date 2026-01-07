@@ -45,6 +45,11 @@ const envSchema = z.object({
     .string()
     .min(1, "UPSTASH_REDIS_REST_TOKEN is required"),
   CRON_SECRET: z.string().min(1, "CRON_SECRET is required"),
+
+  // Discord
+  DISCORD_CLAIM_WEBHOOK_URL: z
+    .string()
+    .min(1, "DISCORD_CLAIM_WEBHOOK_URL is required"),
 });
 
 export function validateEnv() {
