@@ -28,6 +28,25 @@ export interface ClaimWithDetails extends Claim {
 		name: string;
 		slug: string;
 		address: string | null;
+		images: Array<{
+			url: string;
+			altText: string | null;
+			src: string;
+			srcset: string;
+			sizes: string;
+			responsive: {
+				xs: string;
+				sm: string;
+				md: string;
+				lg: string;
+				xl: string;
+				'2xl': string;
+			};
+			webp: {
+				src: string;
+				srcset: string;
+			};
+		}>;
 	};
 	business: {
 		id: string;

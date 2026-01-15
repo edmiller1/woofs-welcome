@@ -115,10 +115,10 @@
 				{@const reviewId = review.id}
 				{@const placeSlug = review.place.slug}
 				<div class="rounded-lg border p-6 shadow-sm">
-					<div class="itesm-start mb-4 flex gap-4">
+					<div class="mb-4 flex items-start gap-4">
 						<Avatar.Root class="size-12">
 							<Avatar.Image
-								src={user.image}
+								src={user.image?.responsive.md}
 								alt="review user avatar"
 								referrerpolicy="no-referrer"
 							/>

@@ -1,5 +1,5 @@
 import { db } from "../db";
-import { Claim, Place, BusinessPlace, Business } from "../db/schema";
+import { Claim, Place, BusinessPlace, Business, PlaceImage } from "../db/schema";
 import { eq, and } from "drizzle-orm";
 import {
   NotFoundError,
@@ -16,6 +16,7 @@ import { env } from "../config/env";
 import { NotificationService } from "./notification.service";
 import { Cloudinary } from "../lib/cloudinary";
 import { EmailService } from "./email.service";
+import { getResponsiveImageUrls } from "../lib/helpers";
 
 const resend = new Resend(env.RESEND_API_KEY);
 
@@ -458,12 +459,34 @@ export class ClaimService {
             slug: true,
             address: true,
           },
+          with: {
+            images: {
+              limit: 1,
+              orderBy: (images, { desc }) => [desc(images.isPrimary)],
+              columns: {
+                url: true,
+                altText: true,
+              },
+            },
+          },
         },
       },
       orderBy: (claims, { desc }) => [desc(claims.createdAt)],
     });
 
-    return claims;
+    // Optimize images with responsive URLs
+    const claimsWithOptimizedImages = claims.map((claim) => ({
+      ...claim,
+      place: {
+        ...claim.place,
+        images: claim.place.images.map((image) => ({
+          ...image,
+          ...getResponsiveImageUrls(image.url),
+        })),
+      },
+    }));
+
+    return claimsWithOptimizedImages;
   }
 
   /**

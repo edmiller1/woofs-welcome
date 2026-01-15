@@ -10,6 +10,7 @@
 		Heart,
 		LayoutDashboard,
 		MapPinHouse,
+		Newspaper,
 		Settings,
 		UserStar
 	} from '@lucide/svelte';
@@ -37,6 +38,11 @@
 			name: 'Dashboard',
 			href: '/business/dashboard',
 			icon: LayoutDashboard
+		},
+		{
+			name: 'Claims',
+			href: '/business/dashboard/claims',
+			icon: Newspaper
 		},
 		{
 			name: 'Places',
@@ -84,8 +90,8 @@
 
 	// Check if parent item should be active
 	const isParentActive = (item: NavItem) => {
-		if (item.href === '/profile') {
-			return page.url.pathname === '/profile';
+		if (item.href === '/business/dashboard') {
+			return page.url.pathname === '/business/dashboard';
 		}
 		return page.url.pathname.startsWith(item.href);
 	};
