@@ -100,8 +100,8 @@
 						</div>
 					{:else}
 						<div class="hidden flex-col items-end md:flex">
-							<span class="text-sm font-semibold">{user.business.name}</span>
-							<span class="text-muted-foreground text-xs">{user.business.email}</span>
+							<span class="text-sm font-semibold">{user.business.name ?? ''}</span>
+							<span class="text-muted-foreground text-xs">{user.business.email ?? ''}</span>
 						</div>
 					{/if}
 					{#if user.activeContext === 'personal'}

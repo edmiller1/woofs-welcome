@@ -36,6 +36,7 @@ function createContextStore() {
 
 			if (response.success) {
 				set(context);
+				window.location.reload();
 			}
 		}
 	};

@@ -100,28 +100,10 @@
 			category: 'Engagement'
 		},
 		{
-			title: 'Place Updates',
-			description: 'Get notified about updates to places you claimed',
-			key: 'placeUpdates',
-			category: 'Business/Admin'
-		},
-		{
-			title: 'Claim Status',
-			description: 'Get notified about your place claim status changes',
-			key: 'claimStatus',
-			category: 'Business/Admin'
-		},
-		{
 			title: 'Report Status',
 			description: 'Get notified about report status updates',
 			key: 'reportStatus',
-			category: 'Business/Admin'
-		},
-		{
-			title: 'Weekly Digest',
-			description: 'Receive a weekly summary of new places and updates',
-			key: 'weeklyDigest',
-			category: 'Digest'
+			category: 'Engagement'
 		},
 		{
 			title: 'Marketing',
@@ -134,6 +116,12 @@
 			description: 'Receive our newsletter with tips and updates',
 			key: 'newsletter',
 			category: 'Marketing'
+		},
+		{
+			title: 'Nearby places',
+			description: 'Get notified about new dog-friendly places near you',
+			key: 'nearbyPlaces',
+			category: 'Discovery'
 		}
 	];
 
@@ -158,22 +146,16 @@
 			category: 'Engagement'
 		},
 		{
-			title: 'Nearby Places',
+			title: 'Report Status',
+			description: 'Get notified about report status updates',
+			key: 'reportStatus',
+			category: 'Engagement'
+		},
+		{
+			title: 'Nearby places',
 			description: 'Get notified about new dog-friendly places near you',
 			key: 'nearbyPlaces',
 			category: 'Discovery'
-		},
-		{
-			title: 'Favourites',
-			description: 'Updates about your favorite places',
-			key: 'favourites',
-			category: 'Discovery'
-		},
-		{
-			title: 'Claim Status',
-			description: 'Push notifications for claim status changes',
-			key: 'claimStatus',
-			category: 'Business/Admin'
 		}
 	];
 

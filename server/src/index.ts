@@ -32,8 +32,6 @@ validateEnv();
 
 const app = new Hono();
 
-app.use("*", globalRateLimiter); // (200 req / 15min total)
-app.use("*", logger());
 app.use(
   "*",
   cors({
@@ -44,10 +42,17 @@ app.use(
     maxAge: 86400,
     allowMethods: ["GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"],
     exposeHeaders: ["Content-Length"],
-    allowHeaders: ["Content-Type", "Authorization"],
+    allowHeaders: ["Content-Type", "Authorization", "X-User-Context"],
     credentials: true,
   })
 );
+
+app.get("/api/test", (c) => {
+  return c.json({ message: "test works" }, 200);
+});
+
+app.use("*", globalRateLimiter); // (200 req / 15min total)
+app.use("*", logger());
 
 app.all("/api/auth/*", (c) => {
   return auth.handler(c.req.raw);

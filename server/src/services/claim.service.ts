@@ -7,6 +7,7 @@ import {
   UnauthorizedError,
   AppError,
   DatabaseError,
+  BadRequestError,
 } from "../lib/errors";
 import type { SubmitClaimInput } from "../routes/claim/schemas";
 import { sendDiscordNewClaimNotification } from "../lib/discord";
@@ -14,6 +15,7 @@ import { Resend } from "resend";
 import { env } from "../config/env";
 import { NotificationService } from "./notification.service";
 import { Cloudinary } from "../lib/cloudinary";
+import { EmailService } from "./email.service";
 
 const resend = new Resend(env.RESEND_API_KEY);
 
@@ -21,10 +23,10 @@ export class ClaimService {
   /**
    * Check if a place can be claimed
    */
-  static async checkClaimEligibility(placeId: string) {
+  static async checkClaimEligibility(placeSlug: string) {
     try {
       const place = await db.query.Place.findFirst({
-        where: eq(Place.id, placeId),
+        where: eq(Place.slug, placeSlug),
         columns: {
           id: true,
           name: true,
@@ -48,7 +50,7 @@ export class ClaimService {
 
       // Check for pending claims
       const pendingClaim = await db.query.Claim.findFirst({
-        where: and(eq(Claim.placeId, placeId), eq(Claim.status, "pending")),
+        where: and(eq(Claim.placeId, place.id), eq(Claim.status, "pending")),
       });
 
       if (pendingClaim) {
@@ -74,12 +76,23 @@ export class ClaimService {
   }
 
   /**
-   * Submit a new claim
+   * Submit a new claim with verification documents (transactional)
    */
-  static async submitClaim(userId: string, input: SubmitClaimInput) {
+  static async submitClaim(
+    userId: string,
+    input: SubmitClaimInput,
+    files?: Array<{ data: string; fileName: string }>
+  ) {
     try {
+      // Validate files are provided
+      if (!files || files.length === 0) {
+        throw new BadRequestError(
+          "At least one verification document is required"
+        );
+      }
+
       // First, verify the place can be claimed
-      const eligibility = await this.checkClaimEligibility(input.placeId);
+      const eligibility = await this.checkClaimEligibility(input.placeSlug);
 
       if (!eligibility.canClaim) {
         throw new ConflictError(
@@ -88,7 +101,7 @@ export class ClaimService {
       }
 
       const place = await db.query.Place.findFirst({
-        where: eq(Place.id, input.placeId),
+        where: eq(Place.slug, input.placeSlug),
         with: {
           images: {
             limit: 1,
@@ -118,7 +131,7 @@ export class ClaimService {
       // Check if this business already has a claim for this place
       const existingClaim = await db.query.Claim.findFirst({
         where: and(
-          eq(Claim.placeId, input.placeId),
+          eq(Claim.placeId, place.id),
           eq(Claim.businessId, input.businessId)
         ),
       });
@@ -129,11 +142,55 @@ export class ClaimService {
         );
       }
 
-      // Create the claim
+      // Generate claim ID upfront so we can use it for file uploads
+      const { randomUUID } = await import("crypto");
+      const claimId = randomUUID();
+
+      // Upload verification documents with proper claim ID
+      let uploadedUrls: string[] = [];
+      const uploadErrors: string[] = [];
+
+      for (const file of files) {
+        try {
+          const result = await Cloudinary.uploadVerificationDocument(
+            file.data,
+            input.businessId,
+            claimId, // Use the actual claim ID
+            file.fileName
+          );
+
+          if (result) {
+            uploadedUrls.push(result.url);
+          } else {
+            uploadErrors.push(file.fileName);
+          }
+        } catch (error) {
+          console.error(`Failed to upload file ${file.fileName}:`, error);
+          uploadErrors.push(file.fileName);
+        }
+      }
+
+      // Ensure at least one file was successfully uploaded
+      if (uploadedUrls.length === 0) {
+        throw new AppError(
+          "Failed to upload verification documents. Please try again.",
+          500
+        );
+      }
+
+      // Log if some files failed
+      if (uploadErrors.length > 0) {
+        console.warn(
+          `Some files failed to upload: ${uploadErrors.join(", ")}`
+        );
+      }
+
+      // Create the claim with documents - use explicit ID
       const [claim] = await db
         .insert(Claim)
         .values({
-          placeId: input.placeId,
+          id: claimId, // Use the pre-generated ID
+          placeId: place.id,
           userId,
           businessId: input.businessId,
           businessEmail: input.businessEmail,
@@ -141,7 +198,7 @@ export class ClaimService {
           role: input.role,
           additionalNotes: input.additionalNotes,
           status: "pending",
-          verificationDocuments: [], // Will be updated when documents are uploaded
+          verificationDocuments: uploadedUrls,
         })
         .returning();
 
@@ -410,93 +467,9 @@ export class ClaimService {
   }
 
   /**
-   * Admin: Approve a claim
-   */
-  async approveClaim(claimId: string, adminUserId: string) {
-    const claim = await db.query.Claim.findFirst({
-      where: eq(Claim.id, claimId),
-    });
-
-    if (!claim) {
-      throw new NotFoundError("Claim not found");
-    }
-
-    if (claim.status !== "pending") {
-      throw new ConflictError("Only pending claims can be approved");
-    }
-
-    // Start a transaction
-    await db.transaction(async (tx) => {
-      // Update claim status
-      await tx
-        .update(Claim)
-        .set({
-          status: "approved",
-          approvedAt: new Date(),
-          reviewedBy: adminUserId,
-          reviewedAt: new Date(),
-        })
-        .where(eq(Claim.id, claimId));
-
-      // Create BusinessPlace relationship
-      await tx.insert(BusinessPlace).values({
-        businessId: claim.businessId,
-        placeId: claim.placeId,
-        claimId: claim.id,
-        canEdit: true,
-        canRespond: true,
-      });
-
-      // Update Place with claimedBy
-      await tx
-        .update(Place)
-        .set({
-          claimedBy: claim.businessId,
-          claimedAt: new Date(),
-        })
-        .where(eq(Place.id, claim.placeId));
-    });
-
-    return { success: true };
-  }
-
-  /**
-   * Admin: Reject a claim
-   */
-  async rejectClaim(
-    claimId: string,
-    adminUserId: string,
-    rejectionReason: string
-  ) {
-    const claim = await db.query.Claim.findFirst({
-      where: eq(Claim.id, claimId),
-    });
-
-    if (!claim) {
-      throw new NotFoundError("Claim not found");
-    }
-
-    if (claim.status !== "pending") {
-      throw new ConflictError("Only pending claims can be rejected");
-    }
-
-    await db
-      .update(Claim)
-      .set({
-        status: "rejected",
-        rejectionReason,
-        reviewedBy: adminUserId,
-        reviewedAt: new Date(),
-      })
-      .where(eq(Claim.id, claimId));
-
-    return { success: true };
-  }
-
-  /**
    * Admin: Get all pending claims
    */
-  async getPendingClaims() {
+  static async getPendingClaims() {
     const claims = await db.query.Claim.findMany({
       where: eq(Claim.status, "pending"),
       with: {
@@ -520,5 +493,292 @@ export class ClaimService {
     });
 
     return claims;
+  }
+
+  /**
+   * Admin: Get all claims (with optional status filter)
+   */
+
+  static async getAllClaims(status?: string) {
+    try {
+      const claims = await db.query.Claim.findMany({
+        where: status ? eq(Claim.status, status) : undefined,
+        with: {
+          place: {
+            columns: {
+              id: true,
+              name: true,
+              slug: true,
+              address: true,
+            },
+          },
+          business: {
+            columns: {
+              id: true,
+              name: true,
+              email: true,
+            },
+          },
+        },
+        orderBy: (claims, { desc }) => [desc(claims.createdAt)],
+      });
+
+      return claims;
+    } catch (error) {
+      if (error instanceof AppError) {
+        throw error;
+      }
+      throw new DatabaseError("Failed to fetch claims", {
+        originalError: error,
+      });
+    }
+  }
+
+  /**
+   * Admin: Approve a claim
+   */
+  static async approveClaim(claimId: string, adminUserId: string) {
+    try {
+      const claim = await db.query.Claim.findFirst({
+        where: eq(Claim.id, claimId),
+        with: {
+          place: {
+            columns: {
+              id: true,
+              name: true,
+              slug: true,
+            },
+          },
+          business: {
+            columns: {
+              id: true,
+              name: true,
+              ownerId: true,
+              notificationPreferences: true,
+            },
+          },
+        },
+      });
+
+      if (!claim) {
+        throw new NotFoundError("Claim not found");
+      }
+
+      if (claim.status !== "pending") {
+        throw new ConflictError("Only pending claims can be approved");
+      }
+
+      // Start a transaction
+      await db.transaction(async (tx) => {
+        // 1. Update claim status
+        await tx
+          .update(Claim)
+          .set({
+            status: "approved",
+            approvedAt: new Date(),
+            reviewedBy: adminUserId,
+            reviewedAt: new Date(),
+          })
+          .where(eq(Claim.id, claimId));
+
+        // 2. Create BusinessPlace relationship
+        await tx.insert(BusinessPlace).values({
+          businessId: claim.businessId,
+          placeId: claim.placeId,
+          claimId: claim.id,
+          canEdit: true,
+          canRespond: true,
+        });
+
+        // 3. Update Place with claimedBy
+        await tx
+          .update(Place)
+          .set({
+            claimedBy: claim.businessId,
+            claimedAt: new Date(),
+          })
+          .where(eq(Place.id, claim.placeId));
+      });
+
+      // ========================================
+      // NOTIFICATIONS
+      // ========================================
+
+      // Send in app notification
+      if (claim.business.notificationPreferences?.push.claimStatus) {
+        await NotificationService.createNotification({
+          userId: claim.business.ownerId,
+          context: "business",
+          businessId: claim.businessId,
+          type: "claim_approved",
+          title: "Claim approved! 🎉",
+          message: `Your claim for ${claim.place.name} has been approved. You can now manage this place.`,
+          relatedClaimId: claim.id,
+          relatedPlaceId: claim.placeId,
+          data: {
+            placeName: claim.place.name,
+            placeSlug: claim.place.slug,
+          },
+        });
+      }
+
+      // Send email notification
+      if (claim.business.notificationPreferences?.email.claimStatus) {
+        await EmailService.sendEmailIfEnabled(
+          claim.business.ownerId,
+          "business",
+          claim.businessId,
+          "claimStatus",
+          {
+            to: claim.businessEmail,
+            subject: "Your place claim has been approved! 🎉",
+            html: `
+            <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+              <h2>Claim Approved! 🎉</h2>
+              <p>Great news!</p>
+              <p>Your claim for <strong>${claim.place.name}</strong> has been approved.</p>
+              
+              <div style="background: #f0fdf4; padding: 15px; border-radius: 8px; margin: 20px 0; border-left: 4px solid #22c55e;">
+                <h3 style="margin-top: 0; color: #15803d;">What's Next?</h3>
+                <ul style="margin: 10px 0;">
+                  <li>Update your place information</li>
+                  <li>Upload new photos</li>
+                  <li>Respond to reviews</li>
+                  <li>View analytics for your place</li>
+                </ul>
+              </div>
+
+              <p><a href="${env.CLIENT_BASE_URL || "https://woofswelcome.app"}/business/dashboard" style="display: inline-block; background: #22c55e; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; margin: 10px 0;">Go to Business Dashboard</a></p>
+              
+              <p>If you have any questions, feel free to reply to this email.</p>
+              
+              <p>Best regards,<br>The Woofs Welcome Team</p>
+            </div>
+          `,
+          }
+        );
+      }
+
+      return { success: true };
+    } catch (error) {
+      if (error instanceof AppError) {
+        throw error;
+      }
+      throw new DatabaseError("Failed to approve claim", {
+        originalError: error,
+      });
+    }
+  }
+
+  /**
+   * Admin: Reject a claim
+   */
+  static async rejectClaim(
+    claimId: string,
+    adminUserId: string,
+    rejectionReason: string
+  ) {
+    try {
+      const claim = await db.query.Claim.findFirst({
+        where: eq(Claim.id, claimId),
+        with: {
+          place: {
+            columns: {
+              id: true,
+              name: true,
+            },
+          },
+          business: {
+            columns: {
+              id: true,
+              ownerId: true,
+              notificationPreferences: true,
+            },
+          },
+        },
+      });
+
+      if (!claim) {
+        throw new NotFoundError("Claim not found");
+      }
+
+      if (claim.status !== "pending") {
+        throw new ConflictError("Only pending claims can be rejected");
+      }
+
+      // Update claim status
+      await db
+        .update(Claim)
+        .set({
+          status: "rejected",
+          rejectionReason,
+          reviewedBy: adminUserId,
+          reviewedAt: new Date(),
+        })
+        .where(eq(Claim.id, claimId));
+
+      // ========================================
+      // NOTIFICATIONS
+      // ========================================
+
+      // Create in-app notification
+      if (claim.business.notificationPreferences?.push.claimStatus) {
+        await NotificationService.createNotification({
+          userId: claim.business.ownerId,
+          context: "business",
+          businessId: claim.businessId,
+          type: "claim_rejected",
+          title: "Claim update",
+          message: `Your claim for ${claim.place.name} requires additional information.`,
+          relatedClaimId: claim.id,
+          relatedPlaceId: claim.placeId,
+          data: {
+            placeName: claim.place.name,
+            rejectionReason,
+          },
+        });
+      }
+
+      // Send email notification
+      if (claim.business.notificationPreferences?.email.claimStatus) {
+        await EmailService.sendEmailIfEnabled(
+          claim.business.ownerId,
+          "business",
+          claim.businessId,
+          "claimStatus",
+          {
+            to: claim.businessEmail,
+            subject: "Update on your place claim",
+            html: `
+            <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+              <h2>Update on Your Claim</h2>
+              <p>Hi there,</p>
+              <p>Thank you for submitting a claim for <strong>${claim.place.name}</strong>.</p>
+              
+              <div style="background: #fef2f2; padding: 15px; border-radius: 8px; margin: 20px 0; border-left: 4px solid #ef4444;">
+                <h3 style="margin-top: 0; color: #991b1b;">Additional Information Needed</h3>
+                <p style="margin: 10px 0;">${rejectionReason}</p>
+              </div>
+
+              <p>Please review the feedback above and feel free to submit a new claim with the requested information.</p>
+              
+              <p>If you have any questions or believe this was made in error, please reply to this email and we'll be happy to help.</p>
+              
+              <p>Best regards,<br>The Woofs Welcome Team</p>
+            </div>
+          `,
+          }
+        );
+
+        return { success: true };
+      }
+    } catch (error) {
+      if (error instanceof AppError) {
+        throw error;
+      }
+      throw new DatabaseError("Failed to reject claim", {
+        originalError: error,
+      });
+    }
   }
 }

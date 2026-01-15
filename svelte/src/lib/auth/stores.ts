@@ -1,4 +1,3 @@
-// src/lib/auth/stores.ts
 import { writable, derived } from 'svelte/store';
 import { browser } from '$app/environment';
 import { authClient } from './auth-client';
@@ -48,11 +47,14 @@ export const auth = {
 		const result = await authClient.signIn.emailOtp({ email: email.trim(), otp: otp.trim() });
 
 		console.log('Auth store - verifyOtp result:', result);
+
 		if (result.data) {
-			//@ts-ignore
-			sessionCache.setSession(result.data);
-			//@ts-ignore
-			session.set(result.data);
+			sessionCache.invalidate();
+			const freshSession = await sessionCache.getSession();
+
+			if (freshSession.data) {
+				session.set(freshSession.data);
+			}
 		}
 		return result;
 	},

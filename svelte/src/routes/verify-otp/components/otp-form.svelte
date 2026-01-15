@@ -70,6 +70,8 @@
 
 			toast.success('Code verified successfully!');
 
+			await new Promise((resolve) => setTimeout(resolve, 100));
+
 			if (isBusiness) {
 				sessionStorage.setItem('onboarding_type', 'business');
 				goto('/onboarding?business=true', { replaceState: true });

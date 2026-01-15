@@ -8,6 +8,10 @@ import {
   getBusinessClaimsSchema,
   GetClaimByIdInput,
   getClaimByIdSchema,
+  GetClaimsAdminInput,
+  getClaimsAdminSchema,
+  RejectClaimInput,
+  rejectClaimSchema,
   SubmitClaimInput,
   submitClaimSchema,
   UploadVerificationDocsInput,
@@ -23,7 +27,7 @@ export const claimRouter = new Hono();
  * Check if a place can be claimed
  */
 claimRouter.get(
-  "/eligibility/:placeId",
+  "/eligibility/:placeSlug",
   authMiddleware,
   validateParams(checkClaimEligibilitySchema),
   async (c) => {
@@ -33,9 +37,11 @@ claimRouter.get(
       throw new UnauthorizedError("Unauthorized");
     }
 
-    const { placeId } = c.get("validatedParams") as CheckClaimEligibilityInput;
+    const { placeSlug } = c.get(
+      "validatedParams"
+    ) as CheckClaimEligibilityInput;
 
-    const result = await ClaimService.checkClaimEligibility(placeId);
+    const result = await ClaimService.checkClaimEligibility(placeSlug);
 
     return c.json(result, 200);
   }
@@ -43,7 +49,7 @@ claimRouter.get(
 
 /**
  * POST /claims/submit
- * Submit a new claim for a place
+ * Submit a new claim for a place with verification documents
  */
 claimRouter.post(
   "/submit",
@@ -58,7 +64,11 @@ claimRouter.post(
 
     const body = c.get("validatedBody") as SubmitClaimInput;
 
-    const result = ClaimService.submitClaim(auth.id, body);
+    const result = await ClaimService.submitClaim(
+      auth.id,
+      body,
+      body.verificationDocuments
+    );
 
     return c.json(result, 201);
   }
@@ -139,6 +149,130 @@ claimRouter.get(
     const { businessId } = c.get("validatedParams") as GetBusinessClaimsInput;
 
     const result = await ClaimService.getBusinessClaims(businessId, auth.id);
+
+    return c.json(result, 200);
+  }
+);
+
+/**
+ * ADMIN ROUTES
+ * All routes below require admin access
+ */
+
+/**
+ * GET /claims/admin/pending
+ * Admin: Get all pending claims
+ */
+claimRouter.get("/admin/pending", authMiddleware, async (c) => {
+  const auth = c.get("user");
+
+  if (!auth) {
+    throw new UnauthorizedError("Unauthorized");
+  }
+
+  const isAdmin = c.get("isAdmin");
+
+  if (!isAdmin) {
+    throw new UnauthorizedError("Unauthorized");
+  }
+
+  const claims = await ClaimService.getPendingClaims();
+
+  return c.json({
+    success: true,
+    data: claims,
+  });
+});
+
+/**
+ * GET /claims/admin/all
+ * Admin: Get all claims with optional status filter
+ */
+claimRouter.get(
+  "/admin/all",
+  authMiddleware,
+  validateBody(getClaimsAdminSchema),
+  async (c) => {
+    const auth = c.get("user");
+
+    if (!auth) {
+      throw new UnauthorizedError("Unauthorized");
+    }
+
+    const isAdmin = c.get("isAdmin");
+
+    if (!isAdmin) {
+      throw new UnauthorizedError("Unauthorized");
+    }
+
+    const { status } = c.get("validatedBody") as GetClaimsAdminInput;
+
+    const result = await ClaimService.getAllClaims(status);
+
+    return c.json(result, 200);
+  }
+);
+
+/**
+ * POST /claims/admin/:claimId/approve
+ * Admin: Approve a claim
+ */
+claimRouter.post(
+  "/admin/:claimId/approve",
+  authMiddleware,
+  validateParams(getClaimByIdSchema),
+  async (c) => {
+    const auth = c.get("user");
+
+    if (!auth) {
+      throw new UnauthorizedError("Unauthorized");
+    }
+
+    const isAdmin = c.get("isAdmin");
+
+    if (!isAdmin) {
+      throw new UnauthorizedError("Unauthorized");
+    }
+
+    const { claimId } = c.req.param() as GetClaimByIdInput;
+
+    const result = await ClaimService.approveClaim(claimId, auth.id);
+
+    return c.json(result, 200);
+  }
+);
+
+/**
+ * POST /claims/admin/:claimId/reject
+ * Admin: Reject a claim
+ */
+claimRouter.post(
+  "admin/:claimId/reject",
+  authMiddleware,
+  validateParams(getClaimByIdSchema),
+  validateBody(rejectClaimSchema),
+  async (c) => {
+    const auth = c.get("user");
+
+    if (!auth) {
+      throw new UnauthorizedError("Unauthorized");
+    }
+
+    const isAdmin = c.get("isAdmin");
+
+    if (!isAdmin) {
+      throw new UnauthorizedError("Unauthorized");
+    }
+
+    const { claimId } = c.get("validatedParams") as GetClaimByIdInput;
+
+    const { rejectionReason } = c.get("validatedBody") as RejectClaimInput;
+
+    const result = await ClaimService.rejectClaim(
+      claimId,
+      auth.id,
+      rejectionReason
+    );
 
     return c.json(result, 200);
   }

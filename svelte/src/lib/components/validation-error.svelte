@@ -14,7 +14,7 @@
 </script>
 
 {#if error}
-	<div class={cn('flex items-center gap-2 text-sm text-red-600', className)}>
+	<div class={cn('text-destructive flex items-center gap-2 text-sm', className)}>
 		<CircleAlert class="h-4 w-4" />
 		<span>{error}</span>
 	</div>

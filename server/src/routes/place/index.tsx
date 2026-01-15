@@ -63,25 +63,6 @@ placeRouter.get(
   }
 );
 
-/**
- * GET /place/:slug
- * Get a place by slug
- */
-placeRouter.get(
-  "/:slug",
-  readRateLimiter,
-  optionalAuthMiddleware,
-  validateParams(placeSlugParamSchema),
-  async (c) => {
-    const { slug } = c.req.param() as PlaceSlugParam;
-    const auth = c.get("user");
-
-    const result = await PlaceService.getPlace(slug, auth?.id);
-
-    return c.json(result, 200);
-  }
-);
-
 placeRouter.get("/", readRateLimiter, async (c) => {
   const places = await db.query.Place.findMany({
     with: {
@@ -152,6 +133,25 @@ placeRouter.get(
       limit,
       auth?.id
     );
+    return c.json(result, 200);
+  }
+);
+
+/**
+ * GET /place/:slug
+ * Get a place by slug
+ */
+placeRouter.get(
+  "/:slug",
+  readRateLimiter,
+  optionalAuthMiddleware,
+  validateParams(placeSlugParamSchema),
+  async (c) => {
+    const { slug } = c.req.param() as PlaceSlugParam;
+    const auth = c.get("user");
+
+    const result = await PlaceService.getPlace(slug, auth?.id);
+
     return c.json(result, 200);
   }
 );

@@ -7,6 +7,7 @@ import { review } from './review';
 import { location } from './location';
 import { notification } from './notification';
 import { business } from './business';
+import { claim } from './claim';
 
 export const api = {
 	auth,
@@ -17,5 +18,6 @@ export const api = {
 	city,
 	review,
 	location,
-	notification
+	notification,
+	claim
 };

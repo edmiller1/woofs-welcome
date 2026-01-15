@@ -236,6 +236,11 @@
 	});
 </script>
 
+<svelte:head>
+	<title>Explore - Woofs Welcome</title>
+	<meta name="description" content="Explore dog froendly places newar you" /></svelte:head
+>
+
 <div class="bg-background min-h-screen">
 	<Navbar user={data.user} />
 

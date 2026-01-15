@@ -67,6 +67,8 @@ export class IslandService {
         .orderBy(desc(Place.rating))
         .limit(6);
 
+      console.log("Popular places", popularPlaces);
+
       const optimizedPlaces = await optimizePlaceImage(popularPlaces);
 
       // Check favorites if user is logged in
@@ -126,6 +128,7 @@ export class IslandService {
 
       return result;
     } catch (error) {
+      console.error("Island service error:", error);
       if (error instanceof AppError) {
         console.error("Island service error:", error);
         throw error;
@@ -160,6 +163,8 @@ export class IslandService {
 
       const places = await getPlacesByPlaceSort(island.id, placeFilterType);
 
+      console.log("Places", places);
+
       const optimizedPlaces = await optimizePlaceImage(places);
 
       let placesWithFavourites = optimizedPlaces;
@@ -186,6 +191,7 @@ export class IslandService {
         events: [],
       };
     } catch (error) {
+      console.error("Island service error:", error);
       if (error instanceof AppError) {
         console.error("Island service error:", error);
         throw error;

@@ -11,6 +11,7 @@ declare module "hono" {
     user: betterAuthUser | null;
     session: Session | null;
     userContext: "personal" | "business";
+    isAdmin: boolean;
   }
 }
 
@@ -44,9 +45,12 @@ export const authMiddleware = async (c: Context, next: Next) => {
     // get user context
     const userContext = c.req.header("X-User-Context") || "personal";
 
+    const isAdmin = userSession.user.isAdmin as boolean;
+
     c.set("user", userSession.user);
     c.set("session", userSession);
     c.set("userContext", userContext as "personal" | "business");
+    c.set("isAdmin", isAdmin);
 
     await next();
   } catch (error) {

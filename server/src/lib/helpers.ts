@@ -2,11 +2,11 @@ import { and, desc, eq, gte, or, sql } from "drizzle-orm";
 import { db } from "../db";
 import {
   Business,
+  BusinessNotificationPreferences,
   BusinessSelect,
   City,
   Favourite,
   Island,
-  NotificationPreferences,
   Place,
   PlaceImage,
   PlaceImageSelect,
@@ -15,6 +15,7 @@ import {
   ReviewImage,
   ReviewImageSelect,
   user,
+  UserNotificationPreferences,
   UserReviewSelect,
   UserSelect,
 } from "../db/schema";
@@ -223,51 +224,73 @@ export const calculateDistance = (
   return R * c;
 };
 
-export const DEFAULT_NOTIFICATION_PREFERENCES: NotificationPreferences = {
-  email: {
-    reviewReplies: true,
-    reviewLikes: true,
-    newReviewsOnFavourites: true,
-    placeUpdates: true,
-    claimStatus: true,
-    reportStatus: true,
-    weeklyDigest: true,
-    marketing: false,
-    newsletter: false,
-  },
-  push: {
-    reviewReplies: true,
-    reviewLikes: true,
-    newReviewsOnFavourites: true,
-    nearbyPlaces: false,
-    favourites: true,
-    claimStatus: true,
-  },
-};
+export const DEFAULT_USER_NOTIFICATION_PREFERENCES: UserNotificationPreferences =
+  {
+    email: {
+      reviewReplies: true,
+      reviewLikes: true,
+      newReviewsOnFavourites: true,
+      reportStatus: true,
+      marketing: false,
+      newsletter: false,
+      nearbyPlaces: false,
+    },
+    push: {
+      reviewReplies: true,
+      reviewLikes: true,
+      newReviewsOnFavourites: true,
+      reportStatus: true,
+      nearbyPlaces: false,
+    },
+  };
+
+export const DEFAULT_BUSINESS_NOTIFICATION_PREFERENCES: BusinessNotificationPreferences =
+  {
+    email: {
+      reviewReplies: true,
+      reviewLikes: true,
+      newReviewsOnPlaces: true,
+      reportStatus: true,
+      placeUpdates: true,
+      claimStatus: true,
+      marketing: false,
+      newsletter: false,
+    },
+    push: {
+      reviewReplies: true,
+      reviewLikes: true,
+      newReviewsOnPlaces: true,
+      reportStatus: true,
+      claimStatus: true,
+      nearbyPlaces: false,
+    },
+  };
 
 export function getUserNotificationPreferences(
   user: UserSelect
-): NotificationPreferences {
+): UserNotificationPreferences {
   return {
     email: {
-      ...DEFAULT_NOTIFICATION_PREFERENCES.email,
+      ...DEFAULT_USER_NOTIFICATION_PREFERENCES.email,
       ...(user.notificationPreferences?.email || {}),
     },
     push: {
-      ...DEFAULT_NOTIFICATION_PREFERENCES.push,
+      ...DEFAULT_USER_NOTIFICATION_PREFERENCES.push,
       ...(user.notificationPreferences?.push || {}),
     },
   };
 }
 
-export function getBusinessNotificationPreferences(business: BusinessSelect) {
+export function getBusinessNotificationPreferences(
+  business: BusinessSelect
+): BusinessNotificationPreferences {
   return {
     email: {
-      ...DEFAULT_NOTIFICATION_PREFERENCES.email,
+      ...DEFAULT_BUSINESS_NOTIFICATION_PREFERENCES.email,
       ...(business.notificationPreferences?.email || {}),
     },
     push: {
-      ...DEFAULT_NOTIFICATION_PREFERENCES.push,
+      ...DEFAULT_BUSINESS_NOTIFICATION_PREFERENCES.push,
       ...(business.notificationPreferences?.push || {}),
     },
   };
