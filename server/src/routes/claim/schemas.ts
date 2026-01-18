@@ -9,6 +9,14 @@ export const claimRoleEnum = z.enum([
   "Other",
 ]);
 
+export const claimStatusEnum = z.enum([
+  "pending",
+  "approved",
+  "resolved",
+  "rejected",
+  "closed",
+]);
+
 // Schema for submitting a claim
 export const submitClaimSchema = z.object({
   placeSlug: z.string().min(1, "Place slug is required"),
@@ -70,6 +78,27 @@ export const rejectClaimSchema = z.object({
   rejectionReason: z.string().min(1, "Rejection reason is required"),
 });
 
+// Schema for updating a pending claim
+export const updatePendingClaimSchema = z.object({
+  role: claimRoleEnum.optional(),
+  additionalNotes: z.string().optional(),
+  documentsToRemove: z.string().url().array().optional(),
+  documentsToAdd: z
+    .object({
+      data: z.string().min(1, "File data is required"),
+      fileName: z.string().min(1, "File name is required"),
+    })
+    .array()
+    .max(10, "Maximum 10 files allowed")
+    .optional(),
+});
+
+export type ClaimStatus =
+  | "pending"
+  | "approved"
+  | "rejected"
+  | "resolved"
+  | "closed";
 export type SubmitClaimInput = z.infer<typeof submitClaimSchema>;
 export type UploadVerificationDocsInput = z.infer<
   typeof uploadVerificationDocsSchema
@@ -82,3 +111,4 @@ export type ReviewClaimInput = z.infer<typeof reviewClaimSchema>;
 export type GetBusinessClaimsInput = z.infer<typeof getBusinessClaimsSchema>;
 export type GetClaimsAdminInput = z.infer<typeof getClaimsAdminSchema>;
 export type RejectClaimInput = z.infer<typeof rejectClaimSchema>;
+export type UpdatePendingClaimInput = z.infer<typeof updatePendingClaimSchema>;

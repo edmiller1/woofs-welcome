@@ -17,8 +17,7 @@
 		Heart,
 		LoaderCircle
 	} from '@lucide/svelte';
-	import { goto } from '$app/navigation';
-	import type { BAUser, PlaceWithOptimizedImages } from '$lib/types/models';
+	import { goto, invalidateAll } from '$app/navigation';
 	import { getCurrentDayStatus, orderHoursByDay } from '$lib/helpers';
 	import { cn } from '$lib/utils';
 	import { page } from '$app/state';
@@ -26,9 +25,11 @@
 	import * as DropdownMenu from '$lib/components/ui/dropdown-menu/index.js';
 	import { createMutation, useQueryClient } from '@tanstack/svelte-query';
 	import { api } from '$lib/api';
+	import type { GetPlaceResponse } from '$lib/types/place';
+	import type { BAUser } from '$lib/types/user';
 
 	interface Props {
-		place: PlaceWithOptimizedImages;
+		place: GetPlaceResponse;
 		onClose: () => void;
 		mapboxToken: string;
 		user: BAUser | null;
@@ -44,9 +45,7 @@
 		mutationFn: api.place.favouritePlace,
 		onSuccess: (data) => {
 			toast.success(`Place ${data.action === 'added' ? 'added to' : 'removed from'} favourites`);
-			queryClient.invalidateQueries({
-				queryKey: ['explore-places', searchParams]
-			});
+			invalidateAll();
 		},
 		onError: (error) => {
 			toast.error(`Operation failed: ${error.message}`);
@@ -130,7 +129,7 @@
 		<div class="group relative col-span-2 row-span-2 cursor-pointer">
 			{#if images[0]}
 				<img
-					src={images[0].url}
+					src={images[0].responsive.sm}
 					alt={images[0].altText}
 					class="h-full w-full rounded-l-lg object-cover transition duration-300 group-hover:brightness-90"
 				/>
@@ -140,7 +139,7 @@
 		{#if images[1]}
 			<div class="group relative row-span-1 cursor-pointer">
 				<img
-					src={images[1].url}
+					src={images[1].responsive.sm}
 					alt={images[1].altText}
 					class="h-full w-full rounded-tr-lg object-cover transition duration-300 group-hover:brightness-90"
 				/>
@@ -150,7 +149,7 @@
 		{#if images[2]}
 			<div class="group relative row-span-1 cursor-pointer">
 				<img
-					src={images[2].url}
+					src={images[2].responsive.sm}
 					alt={images[2].altText}
 					class="h-full w-full rounded-br-lg object-cover transition duration-300 group-hover:brightness-90"
 				/>

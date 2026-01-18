@@ -28,7 +28,12 @@ export const load: Load = async ({ params, url }) => {
 		}
 
 		if (user.business && user.activeContext === 'personal') {
-			contextStore.setContext('business');
+			// Switch context without reload - just update server
+			await api.auth.switchContext('business');
+			// Update local store without triggering reload
+			contextStore.set('business');
+			// Update user object
+			user.activeContext = 'business';
 		}
 
 		// Check if eligible

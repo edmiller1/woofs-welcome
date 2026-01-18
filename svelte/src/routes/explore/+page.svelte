@@ -70,9 +70,7 @@
 		},
 		onSuccess: (result) => {
 			toast.success(`Place ${result.action === 'added' ? 'added to' : 'removed from'} favourites`);
-			queryClient.invalidateQueries({
-				queryKey: ['profile-favourites']
-			});
+			invalidateAll();
 		},
 		onError: (error) => {
 			toast.error(`Operation failed: ${error.message}`);

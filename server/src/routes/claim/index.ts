@@ -9,11 +9,12 @@ import {
   GetClaimByIdInput,
   getClaimByIdSchema,
   GetClaimsAdminInput,
-  getClaimsAdminSchema,
   RejectClaimInput,
   rejectClaimSchema,
   SubmitClaimInput,
   submitClaimSchema,
+  UpdatePendingClaimInput,
+  updatePendingClaimSchema,
   UploadVerificationDocsInput,
   uploadVerificationDocsSchema,
 } from "./schemas";
@@ -132,6 +133,35 @@ claimRouter.get(
 );
 
 /**
+ * PATCH /claims/:claimId
+ * Update a pending claim (role, notes, documents)
+ */
+claimRouter.patch(
+  "/:claimId",
+  authMiddleware,
+  validateParams(getClaimByIdSchema),
+  validateBody(updatePendingClaimSchema),
+  async (c) => {
+    const auth = c.get("user");
+
+    if (!auth) {
+      throw new UnauthorizedError("Unauthorized");
+    }
+
+    const { claimId } = c.get("validatedParams") as GetClaimByIdInput;
+    const body = c.get("validatedBody") as UpdatePendingClaimInput;
+
+    const result = await ClaimService.updatePendingClaim(
+      claimId,
+      auth.id,
+      body
+    );
+
+    return c.json(result, 200);
+  }
+);
+
+/**
  * GET /claims/business/:businessId
  * Get all claims for a business
  */
@@ -188,30 +218,25 @@ claimRouter.get("/admin/pending", authMiddleware, async (c) => {
  * GET /claims/admin/all
  * Admin: Get all claims with optional status filter
  */
-claimRouter.get(
-  "/admin/all",
-  authMiddleware,
-  validateBody(getClaimsAdminSchema),
-  async (c) => {
-    const auth = c.get("user");
+claimRouter.get("/admin/all", authMiddleware, async (c) => {
+  const auth = c.get("user");
 
-    if (!auth) {
-      throw new UnauthorizedError("Unauthorized");
-    }
-
-    const isAdmin = c.get("isAdmin");
-
-    if (!isAdmin) {
-      throw new UnauthorizedError("Unauthorized");
-    }
-
-    const { status } = c.get("validatedBody") as GetClaimsAdminInput;
-
-    const result = await ClaimService.getAllClaims(status);
-
-    return c.json(result, 200);
+  if (!auth) {
+    throw new UnauthorizedError("Unauthorized");
   }
-);
+
+  const isAdmin = c.get("isAdmin");
+
+  if (!isAdmin) {
+    throw new UnauthorizedError("Unauthorized");
+  }
+
+  const status = c.req.query("status") as GetClaimsAdminInput["status"];
+
+  const result = await ClaimService.getAllClaims(status);
+
+  return c.json(result, 200);
+});
 
 /**
  * POST /claims/admin/:claimId/approve
@@ -247,7 +272,7 @@ claimRouter.post(
  * Admin: Reject a claim
  */
 claimRouter.post(
-  "admin/:claimId/reject",
+  "/admin/:claimId/reject",
   authMiddleware,
   validateParams(getClaimByIdSchema),
   validateBody(rejectClaimSchema),

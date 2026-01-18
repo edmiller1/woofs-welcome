@@ -8,6 +8,7 @@ import { location } from './location';
 import { notification } from './notification';
 import { business } from './business';
 import { claim } from './claim';
+import { admin } from './admin';
 
 export const api = {
 	auth,
@@ -19,5 +20,6 @@ export const api = {
 	review,
 	location,
 	notification,
-	claim
+	claim,
+	admin
 };

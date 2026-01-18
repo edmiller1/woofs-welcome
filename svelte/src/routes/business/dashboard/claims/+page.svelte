@@ -9,7 +9,10 @@
 	import type { PageData } from './$types';
 	import { createQuery } from '@tanstack/svelte-query';
 	import { api } from '$lib/api';
-	import { LoaderCircle } from '@lucide/svelte';
+	import { LoaderCircle, Newspaper, SquarePen } from '@lucide/svelte';
+	import Button, { buttonVariants } from '$lib/components/ui/button/button.svelte';
+	import EditClaimDialog from './components/edit-claim-dialog.svelte';
+	import { cn } from '$lib/utils';
 
 	interface Props {
 		data: PageData;
@@ -18,6 +21,19 @@
 	let { data }: Props = $props();
 
 	const user = data.user;
+
+	let editingClaim = $state<ClaimWithDetails | null>(null);
+	let editDialogOpen = $state(false);
+
+	function openEditDialog(claim: ClaimWithDetails) {
+		editingClaim = claim;
+		editDialogOpen = true;
+	}
+
+	function closeEditDialog() {
+		editDialogOpen = false;
+		editingClaim = null;
+	}
 
 	const claims = createQuery({
 		queryKey: ['business-dashboard-claims'],
@@ -114,19 +130,32 @@
 
 		<!-- Claims List -->
 		{#if filteredClaims && filteredClaims.length === 0}
-			<Card>
-				<CardContent class="py-12 text-center">
-					<p class="text-muted-foreground">
-						{selectedStatus === 'all'
-							? 'No claims found. Start by claiming a location.'
-							: `No ${selectedStatus} claims found.`}
-					</p>
-				</CardContent>
-			</Card>
+			<div class="py-12 text-center">
+				<p class="text-muted-foreground">
+					{selectedStatus === 'all'
+						? 'No claims found. Start by claiming a location.'
+						: `No ${selectedStatus} claims found.`}
+				</p>
+			</div>
 		{:else}
 			<div class="grid gap-4 md:grid-cols-2">
 				{#each filteredClaims as claim (claim.id)}
-					<Card class="pt-0 transition-shadow hover:shadow-md">
+					<Card class="relative pt-0 transition-shadow hover:shadow-md">
+						<!-- Edit Button for Pending Claims -->
+						{#if claim.status === 'pending'}
+							<div class="absolute right-3 top-3 z-10">
+								<Button
+									variant="secondary"
+									size="sm"
+									onclick={() => openEditDialog(claim)}
+									class="shadow-md"
+								>
+									<SquarePen class="mr-1.5 h-4 w-4" />
+									Edit
+								</Button>
+							</div>
+						{/if}
+
 						<!-- Place Image -->
 						{#if claim.place.images && claim.place.images.length > 0}
 							<div class="relative h-48 w-full overflow-hidden rounded-t-lg">
@@ -141,15 +170,17 @@
 										srcset={claim.place.images[0].srcset}
 										sizes="(max-width: 768px) 100vw, (max-width: 1024px) 50vw, 600px"
 										alt={claim.place.images[0].altText || claim.place.name}
-										class="h-full w-full object-cover transition-transform duration-300 hover:scale-105"
+										class="h-full w-full object-cover"
 										loading="lazy"
 									/>
 								</picture>
-								<div class="absolute right-3 top-3">
-									<Badge variant={getStatusBadgeVariant(claim.status)}>
-										{claim.status.charAt(0).toUpperCase() + claim.status.slice(1)}
-									</Badge>
-								</div>
+								{#if claim.status !== 'pending'}
+									<div class="absolute right-3 top-3">
+										<Badge variant={getStatusBadgeVariant(claim.status)}>
+											{claim.status.charAt(0).toUpperCase() + claim.status.slice(1)}
+										</Badge>
+									</div>
+								{/if}
 							</div>
 						{:else}
 							<div
@@ -169,11 +200,13 @@
 										d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"
 									/>
 								</svg>
-								<div class="absolute right-3 top-3">
-									<Badge variant={getStatusBadgeVariant(claim.status)}>
-										{claim.status.charAt(0).toUpperCase() + claim.status.slice(1)}
-									</Badge>
-								</div>
+								{#if claim.status !== 'pending'}
+									<div class="absolute right-3 top-3">
+										<Badge variant={getStatusBadgeVariant(claim.status)}>
+											{claim.status.charAt(0).toUpperCase() + claim.status.slice(1)}
+										</Badge>
+									</div>
+								{/if}
 							</div>
 						{/if}
 
@@ -269,10 +302,28 @@
 		{/if}
 	</div>
 {:else if $claims.data && $claims.data.length === 0}
-	<div class="flex items-center justify-center">
+	<div class="max-w-full">
+		<div class="mb-6">
+			<h1 class="mb-2 text-2xl font-bold">Claims</h1>
+			<p class="text-muted-foreground text-sm">
+				Manage your business location claims and their verification status
+			</p>
+		</div>
+
+		<Separator class="mb-6" />
+	</div>
+	<div class="mt-24 flex items-center justify-center">
 		<div class="flex flex-col items-center justify-center gap-3">
+			<Newspaper class="text-muted-foreground size-10" />
 			<p class="text-muted-foreground">You have no claimed businesses.</p>
-			<a href="/explore" class="btn btn-primary">Explore places to claim</a>
+			<a href="/explore" class={cn(buttonVariants({ variant: 'outline' }))}
+				>Search or explore places to claim</a
+			>
 		</div>
 	</div>
+{/if}
+
+<!-- Edit Claim Dialog -->
+{#if editingClaim}
+	<EditClaimDialog claim={editingClaim} bind:open={editDialogOpen} onClose={closeEditDialog} />
 {/if}

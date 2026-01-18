@@ -21,25 +21,11 @@
 	import type { AxiosError } from 'axios';
 	import { page } from '$app/state';
 	import { goto } from '$app/navigation';
+	import { contextStore } from '$lib/stores/context';
 
 	const { user, className }: { user: BAUser; className?: string } = $props();
 
-	const switchContext = createMutation({
-		mutationFn: async (context: Context) => api.auth.switchContext(context),
-		onSuccess: () => {
-			toast.success('Switched to account ' + user.name);
-			if (page.url.pathname.includes('/business/dashboard')) {
-				window.location.reload();
-			}
-		},
-		onError: (error: AxiosError<ErrorResponse>) => {
-			if (error.response?.data.error) {
-				toast.error(error.response.data.error);
-			} else {
-				toast.error('Failed to switch to personal account. Please try again.');
-			}
-		}
-	});
+	const userImage = $derived(user.image ? user.image.responsive.xs : user.googleImage);
 </script>
 
 <DropdownMenu>
@@ -68,15 +54,11 @@
 			<DropdownMenuSubContent>
 				<DropdownMenuItem
 					class="flex items-start justify-between"
-					onclick={() => $switchContext.mutate('personal')}
+					onclick={() => contextStore.setContext('personal')}
 				>
 					<div class="flex items-center">
 						<Avatar>
-							<AvatarImage
-								src={user.image?.responsive.xs}
-								alt={user.name}
-								class="object-cover object-center"
-							/>
+							<AvatarImage src={userImage} alt={user.name} class="object-cover object-center" />
 							<AvatarFallback>{getUserInitials(user.name)}</AvatarFallback>
 						</Avatar>
 						<div class="ml-2 flex flex-col">

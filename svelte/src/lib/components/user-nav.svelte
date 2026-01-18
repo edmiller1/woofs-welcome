@@ -14,40 +14,18 @@
 	} from './ui/dropdown-menu';
 	import type { BAUser } from '$lib/types/user';
 	import { getUserInitials } from '$lib/helpers';
-	import type { Context, ErrorResponse } from '$lib/types/types';
-	import { api } from '$lib/api';
-	import { toast } from 'svelte-sonner';
-	import { createMutation } from '@tanstack/svelte-query';
-	import type { AxiosError } from 'axios';
-	import { page } from '$app/state';
-	import { goto } from '$app/navigation';
+	import { contextStore } from '$lib/stores/context';
 
 	const { user, className }: { user: BAUser; className?: string } = $props();
 
-	const switchContext = createMutation({
-		mutationFn: async (context: Context) => api.auth.switchContext(context),
-		onSuccess: () => {
-			toast.success('Switched to account ' + user.business.name);
-			if (page.url.pathname.includes('/profile')) {
-				console.log('Redirecting to business dashboard');
-				window.location.reload();
-			}
-		},
-		onError: (error: AxiosError<ErrorResponse>) => {
-			if (error.response?.data.error) {
-				toast.error(error.response.data.error);
-			} else {
-				toast.error('Failed to switch to business account. Please try again.');
-			}
-		}
-	});
+	const userImage = $derived(user.image ? user.image.responsive.xs : user.googleImage);
 </script>
 
 <DropdownMenu>
 	<DropdownMenuTrigger class={cn('cursor-pointer', className)}>
 		<Avatar class="ml-auto">
 			<AvatarImage
-				src={user.image?.responsive.xs}
+				src={userImage!}
 				alt={user.name}
 				referrerpolicy="no-referrer"
 				class="object-cover object-center"
@@ -71,11 +49,7 @@
 					<DropdownMenuItem class="flex items-start justify-between">
 						<div class="flex items-center">
 							<Avatar>
-								<AvatarImage
-									src={user.image?.responsive.xs}
-									alt={user.name}
-									class="object-cover object-center"
-								/>
+								<AvatarImage src={userImage} alt={user.name} class="object-cover object-center" />
 								<AvatarFallback>{getUserInitials(user.name)}</AvatarFallback>
 							</Avatar>
 							<div class="ml-2 flex flex-col">
@@ -91,7 +65,7 @@
 					</DropdownMenuItem>
 					<DropdownMenuItem
 						class="flex items-start justify-between"
-						onclick={() => $switchContext.mutate('business')}
+						onclick={() => contextStore.setContext('business')}
 					>
 						<div class="flex items-center">
 							<Avatar>

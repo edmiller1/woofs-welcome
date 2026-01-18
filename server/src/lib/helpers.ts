@@ -390,3 +390,15 @@ export const getContext = async (userId: string) => {
 
   return userRecord.activeContext || "personal";
 };
+
+export const isUserAdmin = async (userId: string) => {
+  const userRecord = await db.query.user.findFirst({
+    where: eq(user.id, userId),
+  });
+
+  if (!userRecord) {
+    return false;
+  }
+
+  return userRecord.isAdmin;
+};

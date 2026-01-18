@@ -1,5 +1,6 @@
 import type { CityWithRegion } from '../city';
 import type { Claim } from '../claim';
+import type { Review } from '../review';
 import type { Hours, OptimizedImage, OptimizedPlaceImage } from '../types';
 
 export interface Place {
@@ -20,6 +21,7 @@ export interface Place {
 	indoorAllowed: boolean;
 	outdoorAllowed: boolean;
 	hasDogMenu: boolean;
+	hasFavourited: boolean;
 	rating: string;
 	reviewsCount: string;
 	isVerified: string;
@@ -93,13 +95,13 @@ export interface GetPlaceResponse {
 	description: string | null;
 	dogPolicy: string | null;
 	email: string | null;
+	hasFavourited: boolean;
 	hasDogMenu: boolean;
 	hours: Hours | null;
 	id: string;
 	images: OptimizedPlaceImage[];
 	indoorAllowed: boolean;
 	isFavourited: boolean;
-	hasFavourited: boolean;
 	isFeatured: boolean;
 	isVerified: boolean;
 	latitude: string;
@@ -108,6 +110,7 @@ export interface GetPlaceResponse {
 	outdoorAllowed: boolean;
 	phone: string | null;
 	rating: string;
+	reviews: Review[];
 	reviewsCount: number;
 	slug: string;
 	types: string[];

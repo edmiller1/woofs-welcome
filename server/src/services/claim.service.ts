@@ -1,5 +1,11 @@
 import { db } from "../db";
-import { Claim, Place, BusinessPlace, Business, PlaceImage } from "../db/schema";
+import {
+  Claim,
+  Place,
+  BusinessPlace,
+  Business,
+  PlaceImage,
+} from "../db/schema";
 import { eq, and } from "drizzle-orm";
 import {
   NotFoundError,
@@ -9,7 +15,11 @@ import {
   DatabaseError,
   BadRequestError,
 } from "../lib/errors";
-import type { SubmitClaimInput } from "../routes/claim/schemas";
+import type {
+  ClaimStatus,
+  SubmitClaimInput,
+  UpdatePendingClaimInput,
+} from "../routes/claim/schemas";
 import { sendDiscordNewClaimNotification } from "../lib/discord";
 import { Resend } from "resend";
 import { env } from "../config/env";
@@ -181,9 +191,7 @@ export class ClaimService {
 
       // Log if some files failed
       if (uploadErrors.length > 0) {
-        console.warn(
-          `Some files failed to upload: ${uploadErrors.join(", ")}`
-        );
+        console.warn(`Some files failed to upload: ${uploadErrors.join(", ")}`);
       }
 
       // Create the claim with documents - use explicit ID
@@ -490,6 +498,156 @@ export class ClaimService {
   }
 
   /**
+   * Update a pending claim (role, notes, documents)
+   */
+  static async updatePendingClaim(
+    claimId: string,
+    userId: string,
+    input: UpdatePendingClaimInput
+  ) {
+    try {
+      // 1. Fetch and validate claim
+      const claim = await db.query.Claim.findFirst({
+        where: eq(Claim.id, claimId),
+        with: {
+          business: {
+            columns: {
+              id: true,
+              ownerId: true,
+            },
+          },
+        },
+      });
+
+      if (!claim) {
+        throw new NotFoundError("Claim not found");
+      }
+
+      // 2. Authorization check - user must own the business
+      if (claim.business.ownerId !== userId) {
+        throw new UnauthorizedError(
+          "You are not authorized to update this claim"
+        );
+      }
+
+      // 3. Status check - only pending claims can be updated
+      if (claim.status !== "pending") {
+        throw new ConflictError("Only pending claims can be updated");
+      }
+
+      // 4. Handle document operations
+      let updatedDocuments = claim.verificationDocuments || [];
+
+      // Remove documents if specified
+      if (input.documentsToRemove && input.documentsToRemove.length > 0) {
+        updatedDocuments = updatedDocuments.filter(
+          (doc) => !input.documentsToRemove?.includes(doc)
+        );
+
+        // Delete from Cloudinary
+        for (const docUrl of input.documentsToRemove) {
+          try {
+            // Extract public_id from Cloudinary URL
+            // URL format: https://res.cloudinary.com/{cloud_name}/image/upload/v{version}/{public_id}.{format}
+            const urlParts = docUrl.split("/");
+            const uploadIndex = urlParts.indexOf("upload");
+            if (uploadIndex !== -1 && uploadIndex + 2 < urlParts.length) {
+              // Get everything after /upload/v{version}/
+              const publicIdWithExt = urlParts.slice(uploadIndex + 2).join("/");
+              // Remove file extension
+              const publicId = publicIdWithExt.substring(
+                0,
+                publicIdWithExt.lastIndexOf(".")
+              );
+              await Cloudinary.deleteImage(publicId);
+            }
+          } catch (error) {
+            console.error(`Failed to delete document ${docUrl}:`, error);
+            // Continue even if deletion fails
+          }
+        }
+      }
+
+      // Add new documents if specified
+      if (input.documentsToAdd && input.documentsToAdd.length > 0) {
+        const uploadedUrls: string[] = [];
+        const uploadErrors: string[] = [];
+
+        for (const file of input.documentsToAdd) {
+          try {
+            const result = await Cloudinary.uploadVerificationDocument(
+              file.data,
+              claim.businessId,
+              claimId,
+              file.fileName
+            );
+
+            if (result) {
+              uploadedUrls.push(result.url);
+            } else {
+              uploadErrors.push(file.fileName);
+            }
+          } catch (error) {
+            console.error(`Failed to upload file ${file.fileName}:`, error);
+            uploadErrors.push(file.fileName);
+          }
+        }
+
+        // Add successfully uploaded documents
+        updatedDocuments = [...updatedDocuments, ...uploadedUrls];
+
+        // Log if some files failed
+        if (uploadErrors.length > 0) {
+          console.warn(
+            `Some files failed to upload: ${uploadErrors.join(", ")}`
+          );
+        }
+      }
+
+      // 5. Ensure at least one document remains
+      if (updatedDocuments.length === 0) {
+        throw new BadRequestError(
+          "At least one verification document is required"
+        );
+      }
+
+      // 6. Build update object
+      const updateData: Partial<typeof Claim.$inferInsert> = {
+        updatedAt: new Date(),
+        verificationDocuments: updatedDocuments,
+      };
+
+      if (input.role !== undefined) {
+        updateData.role = input.role;
+      }
+
+      if (input.additionalNotes !== undefined) {
+        updateData.additionalNotes = input.additionalNotes;
+      }
+
+      // 7. Update the claim
+      const [updatedClaim] = await db
+        .update(Claim)
+        .set(updateData)
+        .where(eq(Claim.id, claimId))
+        .returning();
+
+      return {
+        success: true,
+        claim: updatedClaim,
+      };
+    } catch (error) {
+      console.log(error);
+      if (error instanceof AppError) {
+        throw error;
+      }
+      throw new DatabaseError("Failed to update claim", {
+        originalError: error,
+      });
+    }
+  }
+
+  /**
    * Admin: Get all pending claims
    */
   static async getPendingClaims() {
@@ -522,7 +680,7 @@ export class ClaimService {
    * Admin: Get all claims (with optional status filter)
    */
 
-  static async getAllClaims(status?: string) {
+  static async getAllClaims(status?: ClaimStatus) {
     try {
       const claims = await db.query.Claim.findMany({
         where: status ? eq(Claim.status, status) : undefined,

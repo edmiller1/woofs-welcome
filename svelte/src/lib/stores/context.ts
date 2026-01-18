@@ -1,6 +1,7 @@
 import { page } from '$app/state';
 import { switchContext } from '$lib/api/auth/switchContext';
 import type { Context } from '$lib/types/types';
+import { toast } from 'svelte-sonner';
 import { writable, derived } from 'svelte/store';
 
 function createContextStore() {
@@ -35,6 +36,7 @@ function createContextStore() {
 			const response = await switchContext(context);
 
 			if (response.success) {
+				toast.success(`Switched to ${context} account`);
 				set(context);
 				window.location.reload();
 			}

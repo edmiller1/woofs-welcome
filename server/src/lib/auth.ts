@@ -15,6 +15,7 @@ import {
   getUserBusiness,
   getUserPrivacySettings,
   getUserProvider,
+  isUserAdmin,
   optimizeImage,
 } from "./helpers";
 
@@ -50,15 +51,18 @@ export const auth = betterAuth({
       const isBusinessAccount = await getUserBusiness(user.id);
       const userBusiness = await getBusiness(user.id);
       const context = await getContext(user.id);
+      const isAdmin = await isUserAdmin(user.id);
       return {
         user: {
           ...user,
-          image: user.image ? await optimizeImage(user.image) : null,
+          image: user.image?.includes("cloudinary") ? user.image : null,
+          googleImage: user.image?.includes("googleuser") ? user.image : null,
           provider: provider || "google",
           isProfilePublic: isProfilePublic ?? true,
           isBusinessAccount,
           business: userBusiness,
           activeContext: context || "personal",
+          isAdmin,
         },
         session,
       };
@@ -143,12 +147,18 @@ export const auth = betterAuth({
         },
       },
       create: {
-        after: async (user) => {
-          console.log("User created:", user);
+        after: async (newUser) => {
+          console.log("User created:", newUser);
+          if (newUser.image && newUser.image.includes("googleuser")) {
+            await db
+              .update(user)
+              .set({ provider: "google" })
+              .where(eq(user.id, newUser.id));
+          }
           // Send welcome email
           const { error } = await resend.emails.send({
             from: "Woofs Welcome <hello@woofswelcome.app>",
-            to: user.email!,
+            to: newUser.email!,
             subject: "Welcome",
             html: createWelcomeEmail(),
           });

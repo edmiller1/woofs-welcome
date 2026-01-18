@@ -43,3 +43,19 @@ export async function getBusinessUser() {
 
 	return user;
 }
+
+export async function getAdminUser() {
+	const session = await sessionCache.getSession();
+
+	if (!session.data) {
+		return null;
+	}
+
+	const user = session.data.user as unknown as BAUser;
+
+	if (!user.isAdmin) {
+		return null;
+	}
+
+	return user;
+}

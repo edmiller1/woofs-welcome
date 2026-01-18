@@ -37,9 +37,9 @@ export const placeTypeEnum = pgEnum("place_type", [
 
 export const reportStatusEnum = pgEnum("report_status", [
   "pending",
-  "in_review",
+  "approved",
   "resolved",
-  "dismissed",
+  "rejected",
   "closed",
 ]);
 
@@ -558,7 +558,7 @@ export const Claim = pgTable(
     businessId: text("business_id")
       .notNull()
       .references(() => Business.id, { onDelete: "cascade" }),
-    status: text("status").notNull().default("pending"),
+    status: reportStatusEnum("status").notNull().default("pending"),
 
     // Contact verification
     businessEmail: varchar("business_email", { length: 255 }).notNull(),

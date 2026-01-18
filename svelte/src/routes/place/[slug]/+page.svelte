@@ -35,6 +35,7 @@
 	import Navbar from '$lib/components/navbar.svelte';
 	import type { Tab } from '$lib/types/types';
 	import type { BAUser } from '$lib/types/user';
+	import { goto } from '$app/navigation';
 
 	interface Props {
 		data: {
@@ -312,14 +313,19 @@
 						<div class="flex items-center gap-4">
 							<ShareButton link={page.url.href} name={$place.data.name} />
 							{#if !$place.data.activeClaim}
-								<Button
-									class="rounded-full"
-									onclick={user
-										? () => {
-												console.log('Claiming place');
-											}
-										: openAuthModal}>Claim <BadgeCheck class="size-4" /></Button
-								>
+								{#if user && user.isBusinessAccount}
+									<a href={`/claim/${$place.data.slug}`}>
+										<Button>Claim <BadgeCheck class="size-4" /></Button>
+									</a>
+								{:else if user && !user.isBusinessAccount}
+									<a href="/sign-in?business=true">
+										<Button>Claim <BadgeCheck class="size-4" /></Button>
+									</a>
+								{:else}
+									<a href="/sign-in">
+										<Button>Claim <BadgeCheck class="size-4" /></Button>
+									</a>
+								{/if}
 							{/if}
 
 							<SaveButton

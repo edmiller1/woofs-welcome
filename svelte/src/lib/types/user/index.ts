@@ -11,9 +11,11 @@ export interface BAUser {
 	createdAt: string;
 	updatedAt: string | Date;
 	image?: OptimizedImage | null;
+	googleImage?: string | null;
 	provider: string;
 	isProfilePublic: boolean;
 	isBusinessAccount: boolean;
+	isAdmin: boolean;
 	activeContext: 'business' | 'personal';
 	business: {
 		email: string;
